@@ -1,7 +1,7 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import { User } from '../models/user.model.js';
-import { cloudinaryUpload } from '../utils/cloudinary.js';
+import { uploadOnCloudinary } from '../utils/cloudinary.js';
 import apiResponse from '../utils/apiResponse.js';
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -25,8 +25,8 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new apiError('Avatar image is required', 400);
   }
 
-  const avatarUploadResult = await cloudinaryUpload(avatarPath);
-  const coverUploadResult = await cloudinaryUpload(coverPath);
+  const avatarUploadResult = await uploadOnCloudinary(avatarPath);
+  const coverUploadResult = await uploadOnCloudinary(coverPath);
 
   if (!avatarUploadResult) {
     throw new apiError('Avatar upload failed', 500);
