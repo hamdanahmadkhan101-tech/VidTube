@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
+    "dev": "nodemon src/index.js",
     "format": "prettier --write \"src/**/*.js\"",
     "format:check": "prettier --check \"src/**/*.js\""
   },
@@ -22,7 +22,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.1",
     "mongoose-aggregate-paginate-v2": "^1.1.4",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "nodemon": "^3.1.11"
   },
   "devDependencies": {
     "prettier": "^3.7.4"
