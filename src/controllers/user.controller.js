@@ -1,7 +1,7 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import { User } from '../models/user.model.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { uploadOnCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js';
 import apiResponse from '../utils/apiResponse.js';
 import jwt from 'jsonwebtoken';
 
@@ -121,11 +121,15 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  await User.findByIdAndUpdate(
-    req.user._id,
-    { $pull: { refreshTokens: req.cookies.refreshToken } },
-    { new: true }
-  );
+  const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+  if (refreshToken) {
+    await User.findByIdAndUpdate(
+      req.user._id,
+      { $pull: { refreshTokens: refreshToken } },
+      { new: true }
+    );
+  }
 
   const options = { httpOnly: true, secure: true, sameSite: 'None' };
   res
@@ -152,12 +156,16 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new apiError(401, 'Invalid refresh token');
   }
 
-  if (
-    incomingRefreshToken !==
-    user?.refreshTokens?.find((token) => token === incomingRefreshToken)
-  ) {
+  if (!user.refreshTokens?.includes(incomingRefreshToken)) {
     throw new apiError(401, 'Refresh token is expired or used');
   }
+
+  // Remove old refresh token
+  await User.findByIdAndUpdate(
+    user._id,
+    { $pull: { refreshTokens: incomingRefreshToken } },
+    { new: true }
+  );
 
   const { accessToken, refreshToken: newRefreshToken } =
     await generateAcessAndRefreshTokens(user._id);
@@ -175,4 +183,151 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const changeCurrentUserPassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    throw new apiError(400, 'Current password and new password are required');
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    throw new apiError(404, 'User not found');
+  }
+  const isPasswordValid = await user.comparePassword(currentPassword);
+  if (!isPasswordValid) {
+    throw new apiError(401, 'Current password is incorrect');
+  }
+
+  user.password = newPassword;
+  user.refreshTokens = []; // Clear all refresh tokens for security
+  await user.save({ validateBeforeSave: false });
+
+  res
+    .status(200)
+    .json(
+      new apiResponse(200, 'Password changed successfully. Please login again.')
+    );
+});
+
+const getCurrentUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select(
+    '-password -refreshTokens'
+  );
+  if (!user) {
+    throw new apiError(404, 'User not found');
+  }
+
+  res
+    .status(200)
+    .json(new apiResponse(200, 'User profile fetched successfully', user));
+});
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
+
+  if (!fullName && !email) {
+    throw new apiError(
+      400,
+      'At least one field (fullName or email) is required'
+    );
+  }
+
+  // Check if email is being updated and if it's already taken
+  if (email) {
+    const existingUser = await User.findOne({
+      email,
+      _id: { $ne: req.user._id },
+    });
+    if (existingUser) {
+      throw new apiError(409, 'Email is already taken');
+    }
+  }
+
+  const updateFields = {};
+  if (fullName) updateFields.fullName = fullName;
+  if (email) updateFields.email = email;
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { $set: updateFields },
+    { new: true }
+  ).select('-password -refreshTokens');
+
+  res
+    .status(200)
+    .json(new apiResponse(200, 'Account details updated successfully', user));
+});
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  const avatarPath = req.file?.path;
+
+  if (!avatarPath) {
+    throw new apiError(400, 'Avatar file is required');
+  }
+
+  // Optional: Get old avatar URL for cleanup
+  const currentUser = await User.findById(req.user._id);
+  const oldAvatarUrl = currentUser?.avatarUrl;
+
+  const avatarUploadResult = await uploadOnCloudinary(avatarPath);
+  if (!avatarUploadResult) {
+    throw new apiError(500, 'Avatar upload failed');
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { $set: { avatarUrl: avatarUploadResult.url } },
+    { new: true }
+  ).select('-password -refreshTokens');
+
+  // Optional: Delete old image from Cloudinary
+  if (oldAvatarUrl) await deleteFromCloudinary(oldAvatarUrl);
+
+  res
+    .status(200)
+    .json(new apiResponse(200, 'Avatar updated successfully', user));
+});
+
+
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+  const coverPath = req.file?.path;
+
+  if (!coverPath) {
+    throw new apiError(400, 'Cover image file is required');
+  }
+
+  // Get old cover URL for cleanup
+  const currentUser = await User.findById(req.user._id);
+  const oldCoverUrl = currentUser?.coverUrl;
+
+  const coverUploadResult = await uploadOnCloudinary(coverPath);
+  if (!coverUploadResult) {
+    throw new apiError(500, 'Cover image upload failed');
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { $set: { coverUrl: coverUploadResult.url } },
+    { new: true }
+  ).select('-password -refreshTokens');
+
+  // Delete old image from Cloudinary
+  if (oldCoverUrl) await deleteFromCloudinary(oldCoverUrl);
+
+  res
+    .status(200)
+    .json(new apiResponse(200, 'Cover image updated successfully', user));
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentUserPassword,
+  getCurrentUserProfile,
+  updateAccountDetails,
+  updateUserAvatar,
+  updateUserCoverImage,
+};
