@@ -114,8 +114,6 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
 
-  console.log(req.body);
-
   if (!email && !username) {
     throw new apiError(400, 'Please provide either email or username to login');
   }
@@ -467,7 +465,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   if (!channel.length) {
     throw new apiError(404, 'Channel not found');
   }
-  console.log(channel);
   res
     .status(200)
     .json(
@@ -482,50 +479,50 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
  */
 const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
-  
+
   // Validate channelId format
   if (!channelId || !mongoose.Types.ObjectId.isValid(channelId)) {
     throw new apiError(400, 'Invalid channel ID');
   }
-  
+
   // Check if channel exists
   const channel = await User.findById(channelId);
   if (!channel) {
     throw new apiError(404, 'Channel not found');
   }
-  
+
   // Prevent users from subscribing to their own channel
   if (channelId === req.user._id.toString()) {
     throw new apiError(400, 'You cannot subscribe to your own channel');
   }
-  
+
   // Check if subscription already exists
   const existingSubscription = await Subscription.findOne({
     subscriber: req.user._id,
-    channel: channelId
+    channel: channelId,
   });
-  
+
   if (existingSubscription) {
     // User is subscribed - unsubscribe them
     await Subscription.findByIdAndDelete(existingSubscription._id);
-    
+
     res.status(200).json(
       new apiResponse(200, 'Successfully unsubscribed from channel', {
         isSubscribed: false,
-        action: 'unsubscribed'
+        action: 'unsubscribed',
       })
     );
   } else {
     // User is not subscribed - subscribe them
     await Subscription.create({
       subscriber: req.user._id,
-      channel: channelId
+      channel: channelId,
     });
-    
+
     res.status(200).json(
       new apiResponse(200, 'Successfully subscribed to channel', {
         isSubscribed: true,
-        action: 'subscribed'
+        action: 'subscribed',
       })
     );
   }
@@ -544,19 +541,22 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
   // Get pagination parameters from query string
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
-  
+
   // Validate pagination parameters
   if (page < 1 || limit < 1 || limit > 50) {
-    throw new apiError(400, 'Invalid pagination parameters. Page must be >= 1, limit must be 1-50');
+    throw new apiError(
+      400,
+      'Invalid pagination parameters. Page must be >= 1, limit must be 1-50'
+    );
   }
-  
+
   // Aggregate pipeline to fetch watch history with video and owner details
   const watchHistory = await User.aggregate([
     {
       // Match the current user
       $match: {
-        _id: req.user._id
-      }
+        _id: req.user._id,
+      },
     },
     {
       // Lookup videos from watchHistory array
@@ -569,8 +569,8 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
           {
             // Only include published videos
             $match: {
-              isPublished: true
-            }
+              isPublished: true,
+            },
           },
           {
             // Lookup video owner details
@@ -585,19 +585,19 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
                   $project: {
                     username: 1,
                     fullName: 1,
-                    avatarUrl: 1
-                  }
-                }
-              ]
-            }
+                    avatarUrl: 1,
+                  },
+                },
+              ],
+            },
           },
           {
             // Convert owner array to object
             $addFields: {
               owner: {
-                $first: '$owner'
-              }
-            }
+                $first: '$owner',
+              },
+            },
           },
           {
             // Select video fields to return
@@ -609,20 +609,20 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
               duration: 1,
               views: 1,
               createdAt: 1,
-              owner: 1
-            }
-          }
-        ]
-      }
+              owner: 1,
+            },
+          },
+        ],
+      },
     },
     {
       // Project only the watchHistory field
       $project: {
-        watchHistory: 1
-      }
-    }
+        watchHistory: 1,
+      },
+    },
   ]);
-  
+
   // Check if user exists and has watch history
   if (!watchHistory.length) {
     return res.status(200).json(
@@ -633,23 +633,23 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
           totalPages: 0,
           totalVideos: 0,
           hasNextPage: false,
-          hasPrevPage: false
-        }
+          hasPrevPage: false,
+        },
       })
     );
   }
-  
+
   const videos = watchHistory[0].watchHistory || [];
-  
+
   // Apply pagination
   const startIndex = (page - 1) * limit;
   const endIndex = startIndex + limit;
   const paginatedVideos = videos.slice(startIndex, endIndex);
-  
+
   // Calculate pagination metadata
   const totalVideos = videos.length;
   const totalPages = Math.ceil(totalVideos / limit);
-  
+
   res.status(200).json(
     new apiResponse(200, 'Watch history retrieved successfully', {
       videos: paginatedVideos,
@@ -658,8 +658,8 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
         totalPages,
         totalVideos,
         hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
-      }
+        hasPrevPage: page > 1,
+      },
     })
   );
 });
@@ -673,20 +673,20 @@ export {
   loginUser,
   logoutUser,
   refreshAccessToken,
-  
+
   // Profile Management Controllers
   getCurrentUserProfile,
   updateUserProfile,
   updateUserAvatar,
   updateUserCoverImage,
-  
+
   // Account Security Controllers
   changeCurrentUserPassword,
-  
+
   // Channel & Social Controllers
   getUserChannelProfile,
   toggleSubscription,
-  
+
   // Content Controllers
   getUserWatchHistory,
 };

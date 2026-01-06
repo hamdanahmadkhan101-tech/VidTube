@@ -5,13 +5,32 @@ import httpClient from "./httpClient.js";
  * @param {Object} params - Query parameters (page, limit)
  * @returns {Promise}
  */
-export const getWatchHistory = (params = {}) => {
+export const getWatchHistory = async (params = {}) => {
   const queryParams = new URLSearchParams();
   if (params.page) queryParams.append("page", params.page);
   if (params.limit) queryParams.append("limit", params.limit);
 
   const query = queryParams.toString();
-  return httpClient.get(`/users/watch-history${query ? `?${query}` : ""}`);
+  const response = await httpClient.get(
+    `/users/watch-history${query ? `?${query}` : ""}`
+  );
+
+  // Transform backend response to expected format
+  const data = response.data.data;
+  return {
+    ...response,
+    data: {
+      ...response.data,
+      data: {
+        docs: data.videos || [],
+        hasNextPage: data.pagination?.hasNextPage || false,
+        hasPrevPage: data.pagination?.hasPrevPage || false,
+        totalDocs: data.pagination?.totalVideos || 0,
+        page: data.pagination?.currentPage || 1,
+        totalPages: data.pagination?.totalPages || 0,
+      },
+    },
+  };
 };
 
 /**

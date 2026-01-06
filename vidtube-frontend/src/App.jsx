@@ -18,6 +18,7 @@ import ProfileSettingsPage from "./pages/user/ProfileSettingsPage.jsx";
 import PasswordChangePage from "./pages/settings/PasswordChangePage.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
+import ErrorBoundary from "./components/common/ErrorBoundary.jsx";
 import AuthLayout from "./components/auth/AuthLayout.jsx";
 import useAuth from "./hooks/useAuth.js";
 
@@ -33,117 +34,119 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: "#272727",
-              color: "#ffffff",
-              border: "1px solid #404040",
-            },
-          }}
-        />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-          </Route>
-
-          {/* Video Routes */}
-          <Route
-            path="/upload"
-            element={
-              <ProtectedRoute>
-                <UploadPage />
-              </ProtectedRoute>
-            }
+        <ErrorBoundary>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#272727",
+                color: "#ffffff",
+                border: "1px solid #404040",
+              },
+            }}
           />
-          <Route path="/video/:videoId" element={<VideoDetailPage />} />
-          <Route
-            path="/video/:videoId/edit"
-            element={
-              <ProtectedRoute>
-                <VideoEditPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/search" element={<SearchPage />} />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
 
-          {/* Channel Routes */}
-          <Route path="/channel/:username" element={<ChannelPage />} />
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+            </Route>
 
-          {/* Dashboard Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Video Routes */}
+            <Route
+              path="/upload"
+              element={
+                <ProtectedRoute>
+                  <UploadPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/video/:videoId" element={<VideoDetailPage />} />
+            <Route
+              path="/video/:videoId/edit"
+              element={
+                <ProtectedRoute>
+                  <VideoEditPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/search" element={<SearchPage />} />
 
-          {/* Notifications Route */}
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <NotificationsPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Channel Routes */}
+            <Route path="/channel/:username" element={<ChannelPage />} />
 
-          {/* Watch History Route */}
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <WatchHistoryPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Dashboard Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Liked Videos Route */}
-          <Route
-            path="/liked"
-            element={
-              <ProtectedRoute>
-                <LikedVideosPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Notifications Route */}
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Settings Routes */}
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <ProfileSettingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings/password"
-            element={
-              <ProtectedRoute>
-                <PasswordChangePage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Watch History Route */}
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute>
+                  <WatchHistoryPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Profile Route - Redirect to channel */}
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfileRedirect />
-              </ProtectedRoute>
-            }
-          />
+            {/* Liked Videos Route */}
+            <Route
+              path="/liked"
+              element={
+                <ProtectedRoute>
+                  <LikedVideosPage />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+            {/* Settings Routes */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <ProfileSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/password"
+              element={
+                <ProtectedRoute>
+                  <PasswordChangePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Profile Route - Redirect to channel */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfileRedirect />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>
   );
