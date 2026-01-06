@@ -1,7 +1,7 @@
 {
-  "name": "chai-aur-backend",
+  "name": "vidtube-backend",
   "version": "1.0.0",
-  "description": "chai aur backend",
+  "description": "vidtube backend",
   "license": "ISC",
   "author": "Hamdan Ahmad Khan",
   "type": "module",
