@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import {
@@ -44,6 +44,7 @@ export default function VideoDetailPage() {
     count: 0,
     isLiked: false,
   });
+  const isInitialMount = useRef(true);
 
   // Handle video progress saving
   const handleProgress = useCallback((vidId, currentTime, duration) => {
@@ -82,10 +83,14 @@ export default function VideoDetailPage() {
           isLiked: videoData.isLiked || false,
         });
       } catch (error) {
-        toast.error("Failed to load video");
+        // Don't show toast on initial mount for transient errors
+        if (!isInitialMount.current) {
+          toast.error("Failed to load video");
+        }
         navigate("/");
       } finally {
         setLoading(false);
+        isInitialMount.current = false;
       }
     };
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Heart, SortAsc } from "lucide-react";
 import toast from "react-hot-toast";
 import Header from "../../components/layout/Header.jsx";
@@ -14,8 +14,9 @@ export default function LikedVideosPage() {
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [sortBy, setSortBy] = useState("createdAt"); // createdAt, title, duration
+  const isInitialMount = useRef(true);
 
-  const fetchLikedVideos = useCallback(async (pageNum = 1, reset = false) => {
+  const fetchLikedVideos = async (pageNum = 1, reset = false) => {
     try {
       if (pageNum === 1) {
         setLoading(true);
@@ -42,15 +43,19 @@ export default function LikedVideosPage() {
     } catch (err) {
       console.error("Failed to load liked videos:", err);
       setError("Failed to load liked videos");
-      toast.error("Failed to load liked videos");
+      // Don't show toast on initial load
+      if (!isInitialMount.current) {
+        toast.error("Failed to load liked videos");
+      }
     } finally {
       setLoading(false);
+      isInitialMount.current = false;
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchLikedVideos();
-  }, [fetchLikedVideos]);
+  }, []);
 
   const handleUnlike = async (videoId) => {
     try {

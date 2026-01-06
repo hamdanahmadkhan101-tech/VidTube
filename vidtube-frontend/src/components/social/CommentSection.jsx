@@ -1,13 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { MessageCircle } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import CommentForm from './CommentForm.jsx';
-import CommentItem from './CommentItem.jsx';
-import Button from '../ui/Button.jsx';
-import {
-  getVideoComments,
-  addComment,
-} from '../../services/commentService.js';
+import { useState, useEffect, useRef } from "react";
+import { MessageCircle } from "lucide-react";
+import { toast } from "react-hot-toast";
+import CommentForm from "./CommentForm.jsx";
+import CommentItem from "./CommentItem.jsx";
+import Button from "../ui/Button.jsx";
+import { getVideoComments, addComment } from "../../services/commentService.js";
 
 export default function CommentSection({ videoId }) {
   const [comments, setComments] = useState([]);
@@ -16,11 +13,12 @@ export default function CommentSection({ videoId }) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [totalComments, setTotalComments] = useState(0);
+  const isInitialMount = useRef(true);
 
-  const fetchComments = useCallback(async (pageNum = 1) => {
+  const fetchComments = async (pageNum = 1, currentVideoId) => {
     try {
       if (pageNum === 1) setLoading(true);
-      const response = await getVideoComments(videoId, {
+      const response = await getVideoComments(currentVideoId, {
         page: pageNum,
         limit: 20,
       });
@@ -36,17 +34,21 @@ export default function CommentSection({ videoId }) {
       setHasMore(data.hasNextPage || false);
       setPage(pageNum);
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || 'Failed to load comments'
-      );
+      // Don't show toast on initial mount
+      if (!isInitialMount.current) {
+        toast.error(error.response?.data?.message || "Failed to load comments");
+      }
     } finally {
       setLoading(false);
+      isInitialMount.current = false;
     }
-  }, [videoId]);
+  };
 
   useEffect(() => {
-    fetchComments(1);
-  }, [fetchComments]);
+    if (videoId) {
+      fetchComments(1, videoId);
+    }
+  }, [videoId]);
 
   const handleSubmit = async (content) => {
     setIsSubmitting(true);
@@ -55,11 +57,9 @@ export default function CommentSection({ videoId }) {
       const newComment = response.data.data;
       setComments((prev) => [newComment, ...prev]);
       setTotalComments((prev) => prev + 1);
-      toast.success('Comment added');
+      toast.success("Comment added");
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || 'Failed to add comment'
-      );
+      toast.error(error.response?.data?.message || "Failed to add comment");
     } finally {
       setIsSubmitting(false);
     }
@@ -77,7 +77,7 @@ export default function CommentSection({ videoId }) {
   };
 
   const formatCount = (count) => {
-    if (!count) return '0';
+    if (!count) return "0";
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
     return count.toString();
@@ -112,7 +112,9 @@ export default function CommentSection({ videoId }) {
       ) : comments.length === 0 ? (
         <div className="py-8 text-center">
           <MessageCircle className="h-12 w-12 text-textSecondary mx-auto mb-3" />
-          <p className="text-textSecondary">No comments yet. Be the first to comment!</p>
+          <p className="text-textSecondary">
+            No comments yet. Be the first to comment!
+          </p>
         </div>
       ) : (
         <>
@@ -133,7 +135,7 @@ export default function CommentSection({ videoId }) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => fetchComments(page + 1)}
+                onClick={() => fetchComments(page + 1, videoId)}
               >
                 Load More Comments
               </Button>
@@ -144,4 +146,3 @@ export default function CommentSection({ videoId }) {
     </div>
   );
 }
-

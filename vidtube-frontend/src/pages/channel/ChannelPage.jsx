@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { User, Video, Eye, Calendar } from "lucide-react";
 import Header from "../../components/layout/Header.jsx";
@@ -22,6 +22,7 @@ export default function ChannelPage() {
   const [hasMore, setHasMore] = useState(false);
   const [totalVideos, setTotalVideos] = useState(0);
   const [totalViews, setTotalViews] = useState(0);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     fetchChannelData();
@@ -64,8 +65,11 @@ export default function ChannelPage() {
           setChannelUser(userData);
           setUserId(targetUserId);
         } catch (err) {
-          toast.error("Channel not found");
+          if (!isInitialMount.current) {
+            toast.error("Channel not found");
+          }
           setChannelUser(null);
+          isInitialMount.current = false;
           return;
         }
       }
@@ -75,9 +79,12 @@ export default function ChannelPage() {
         await fetchVideos(1, targetUserId);
       }
     } catch (error) {
-      toast.error("Failed to load channel");
+      if (!isInitialMount.current) {
+        toast.error("Failed to load channel");
+      }
     } finally {
       setLoading(false);
+      isInitialMount.current = false;
     }
   };
 
@@ -239,9 +246,7 @@ export default function ChannelPage() {
                     channelId={channelUser._id}
                     channelUsername={channelUser.username}
                     initialIsSubscribed={channelUser.isSubscribed || false}
-                    initialSubscribersCount={
-                      channelUser.subscribersCount || 0
-                    }
+                    initialSubscribersCount={channelUser.subscribersCount || 0}
                     onSubscriptionChange={(isSubscribed, count) => {
                       setChannelUser((prev) => ({
                         ...prev,

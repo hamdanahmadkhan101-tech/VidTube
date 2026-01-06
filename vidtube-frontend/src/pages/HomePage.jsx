@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { TrendingUp } from "lucide-react";
 import toast from "react-hot-toast";
@@ -16,52 +16,59 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [sortBy, setSortBy] = useState("createdAt");
+  const isInitialMount = useRef(true);
+  const hasShownError = useRef(false);
 
-  const fetchVideos = useCallback(
-    async (pageNum = 1) => {
-      try {
-        if (pageNum === 1) {
-          setLoading(true);
-          setError(null);
-        }
-        const response = await getAllVideos({
-          page: pageNum,
-          limit: 20,
-          sortBy: sortBy,
-          sortType: "desc",
-        });
-        const data = response.data.data;
-
-        if (pageNum === 1) {
-          setVideos(data.docs || []);
-        } else {
-          setVideos((prev) => [...prev, ...(data.docs || [])]);
-        }
-
-        setHasMore(data.hasNextPage || false);
-        setPage(pageNum);
+  // Fetch videos function - no useCallback to avoid stale closures
+  const fetchVideos = async (pageNum = 1, currentSortBy = sortBy) => {
+    try {
+      if (pageNum === 1) {
+        setLoading(true);
         setError(null);
-      } catch (err) {
-        console.error("Failed to load videos:", err);
-        const errorMessage =
-          err.response?.data?.message ||
-          "Failed to load videos. Please try again.";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } finally {
-        setLoading(false);
       }
-    },
-    [sortBy]
-  );
+      const response = await getAllVideos({
+        page: pageNum,
+        limit: 20,
+        sortBy: currentSortBy,
+        sortType: "desc",
+      });
+      const data = response.data.data;
 
+      if (pageNum === 1) {
+        setVideos(data.docs || []);
+      } else {
+        setVideos((prev) => [...prev, ...(data.docs || [])]);
+      }
+
+      setHasMore(data.hasNextPage || false);
+      setPage(pageNum);
+      setError(null);
+      hasShownError.current = false;
+    } catch (err) {
+      console.error("Failed to load videos:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to load videos. Please try again.";
+      setError(errorMessage);
+      // Only show toast error once, not on initial load if no videos exist
+      if (!isInitialMount.current && !hasShownError.current) {
+        toast.error(errorMessage);
+        hasShownError.current = true;
+      }
+    } finally {
+      setLoading(false);
+      isInitialMount.current = false;
+    }
+  };
+
+  // Initial load and sortBy change
   useEffect(() => {
-    fetchVideos();
-  }, [fetchVideos]);
+    fetchVideos(1, sortBy);
+  }, [sortBy]);
 
   const handleLoadMore = () => {
     if (!loading && hasMore) {
-      fetchVideos(page + 1);
+      fetchVideos(page + 1, sortBy);
     }
   };
 
@@ -132,7 +139,7 @@ export default function HomePage() {
             <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-6 py-4 max-w-md">
               <p className="text-red-400">{error}</p>
             </div>
-            <Button onClick={() => fetchVideos(1)} variant="primary">
+            <Button onClick={() => fetchVideos(1, sortBy)} variant="primary">
               Retry
             </Button>
           </div>

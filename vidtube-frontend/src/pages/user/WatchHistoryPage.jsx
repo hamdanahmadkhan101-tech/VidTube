@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { History, Trash2, Search, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 import Header from "../../components/layout/Header.jsx";
@@ -20,8 +20,9 @@ export default function WatchHistoryPage() {
   const [hasMore, setHasMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [clearing, setClearing] = useState(false);
+  const isInitialMount = useRef(true);
 
-  const fetchHistory = useCallback(async (pageNum = 1, reset = false) => {
+  const fetchHistory = async (pageNum = 1, reset = false) => {
     try {
       if (pageNum === 1) {
         setLoading(true);
@@ -44,15 +45,19 @@ export default function WatchHistoryPage() {
     } catch (err) {
       console.error("Failed to load history:", err);
       setError("Failed to load watch history");
-      toast.error("Failed to load watch history");
+      // Don't show toast on initial load
+      if (!isInitialMount.current) {
+        toast.error("Failed to load watch history");
+      }
     } finally {
       setLoading(false);
+      isInitialMount.current = false;
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchHistory();
-  }, [fetchHistory]);
+  }, []);
 
   const handleRemoveVideo = async (videoId) => {
     try {
