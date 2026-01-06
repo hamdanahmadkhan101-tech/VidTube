@@ -22,7 +22,7 @@ import {
   // Content Controllers
   getUserWatchHistory,
 } from '../controllers/user.controller.js';
-import upload from '../middlewares/multer.middleware.js';
+import { uploadImage } from '../middlewares/multer.middleware.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -33,7 +33,7 @@ const router = Router();
 
 // User Registration & Authentication
 router.route('/register').post(
-  upload.fields([
+  uploadImage.fields([
     { name: 'avatar', maxCount: 1 },
     { name: 'coverImage', maxCount: 1 },
   ]),
@@ -56,10 +56,10 @@ router.route('/update-profile').patch(verifyJWT, updateUserProfile);
 // Media Upload & Management
 router
   .route('/avatar')
-  .patch(verifyJWT, upload.single('avatar'), updateUserAvatar);
+  .patch(verifyJWT, uploadImage.single('avatar'), updateUserAvatar);
 router
   .route('/cover-image')
-  .patch(verifyJWT, upload.single('coverImage'), updateUserCoverImage);
+  .patch(verifyJWT, uploadImage.single('coverImage'), updateUserCoverImage);
 
 // Account Security
 router.route('/change-password').patch(verifyJWT, changeCurrentUserPassword);
