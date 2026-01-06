@@ -1,0 +1,237 @@
+import { useRef, useState, useEffect } from "react";
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize,
+} from "lucide-react";
+
+export default function VideoPlayer({ videoUrl, poster, autoPlay = false }) {
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const controlsTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const updateTime = () => setCurrentTime(video.currentTime);
+    const updateDuration = () => setDuration(video.duration);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => setIsPlaying(false);
+
+    video.addEventListener("timeupdate", updateTime);
+    video.addEventListener("loadedmetadata", updateDuration);
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("pause", handlePause);
+    video.addEventListener("ended", handleEnded);
+
+    return () => {
+      video.removeEventListener("timeupdate", updateTime);
+      video.removeEventListener("loadedmetadata", updateDuration);
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("pause", handlePause);
+      video.removeEventListener("ended", handleEnded);
+    };
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isPlaying) {
+      video.play().catch((err) => {
+        // Auto-play blocked by browser - user needs to interact
+        if (err.name === "NotAllowedError") {
+          // This is expected behavior, no action needed
+        }
+      });
+    } else {
+      video.pause();
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = isMuted;
+    video.volume = volume;
+  }, [isMuted, volume]);
+
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+  };
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+  };
+
+  const handleSeek = (e) => {
+    const video = videoRef.current;
+    if (!video) return;
+    const newTime = parseFloat(e.target.value);
+    video.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  const toggleFullscreen = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (!isFullscreen) {
+      if (video.requestFullscreen) {
+        video.requestFullscreen();
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+      } else if (video.msRequestFullscreen) {
+        video.msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    }
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (isPlaying) {
+        setShowControls(false);
+      }
+    }, 3000);
+  };
+
+  const handleMouseLeave = () => {
+    if (isPlaying) {
+      setShowControls(false);
+    }
+  };
+
+  return (
+    <div
+      className="relative w-full bg-black rounded-lg overflow-hidden group"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        poster={poster}
+        className="w-full h-full"
+        playsInline
+        onClick={togglePlay}
+      />
+
+      {/* Controls overlay */}
+      <div
+        className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent transition-opacity duration-300 ${
+          showControls ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        {/* Progress bar */}
+        <div className="absolute bottom-16 left-0 right-0 px-4">
+          <input
+            type="range"
+            min="0"
+            max={duration || 0}
+            value={currentTime}
+            onChange={handleSeek}
+            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+            style={{
+              background: `linear-gradient(to right, #ff0000 0%, #ff0000 ${
+                (currentTime / duration) * 100
+              }%, rgba(255,255,255,0.2) ${
+                (currentTime / duration) * 100
+              }%, rgba(255,255,255,0.2) 100%)`,
+            }}
+          />
+        </div>
+
+        {/* Control buttons */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center gap-4">
+          <button
+            onClick={togglePlay}
+            className="text-white hover:text-primary transition-colors"
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? (
+              <Pause className="h-6 w-6" />
+            ) : (
+              <Play className="h-6 w-6" />
+            )}
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleMute}
+              className="text-white hover:text-primary transition-colors"
+              aria-label={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? (
+                <VolumeX className="h-5 w-5" />
+              ) : (
+                <Volume2 className="h-5 w-5" />
+              )}
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={isMuted ? 0 : volume}
+              onChange={handleVolumeChange}
+              className="w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+            />
+          </div>
+
+          <div className="flex-1 text-white text-sm font-medium">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </div>
+
+          <button
+            onClick={toggleFullscreen}
+            className="text-white hover:text-primary transition-colors"
+            aria-label="Fullscreen"
+          >
+            {isFullscreen ? (
+              <Minimize className="h-5 w-5" />
+            ) : (
+              <Maximize className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

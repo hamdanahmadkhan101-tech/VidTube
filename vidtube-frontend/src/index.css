@@ -22,3 +22,22 @@
     min-height: 100vh;
   }
 }
+
+/* Video Player Slider Styles */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff0000;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff0000;
+  cursor: pointer;
+  border: none;
+}

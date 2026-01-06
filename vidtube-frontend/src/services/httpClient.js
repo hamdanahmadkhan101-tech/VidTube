@@ -1,6 +1,6 @@
-import axios from 'axios';
-import Cookies from 'js-cookie';
-import { API_BASE_URL } from '../utils/constants.js';
+import axios from "axios";
+import Cookies from "js-cookie";
+import { API_BASE_URL } from "../utils/constants.js";
 
 const httpClient = axios.create({
   baseURL: API_BASE_URL,
@@ -8,7 +8,7 @@ const httpClient = axios.create({
 });
 
 httpClient.interceptors.request.use((config) => {
-  const token = Cookies.get('accessToken');
+  const token = Cookies.get("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -23,20 +23,29 @@ httpClient.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('/users/login') &&
-      !originalRequest.url.includes('/users/register')
+      !originalRequest.url.includes("/users/login") &&
+      !originalRequest.url.includes("/users/register")
     ) {
       originalRequest._retry = true;
       try {
-        await axios.post(
+        const response = await axios.post(
           `${API_BASE_URL}/users/refresh-token`,
           {},
           { withCredentials: true }
         );
+
+        // Extract and store the new access token
+        const newAccessToken = response.data?.data?.accessToken;
+        if (newAccessToken) {
+          Cookies.set("accessToken", newAccessToken);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        }
+
         return httpClient(originalRequest);
       } catch (refreshError) {
-        Cookies.remove('accessToken');
-        window.location.href = '/login';
+        Cookies.remove("accessToken");
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
       }
     }
 
@@ -45,5 +54,3 @@ httpClient.interceptors.response.use(
 );
 
 export default httpClient;
-
-

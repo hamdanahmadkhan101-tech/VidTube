@@ -1,26 +1,40 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import './index.css';
-import LoginPage from './pages/auth/LoginPage.jsx';
-import RegisterPage from './pages/auth/RegisterPage.jsx';
-import HomePage from './pages/HomePage.jsx';
-import NotFoundPage from './pages/NotFoundPage.jsx';
-import { AuthProvider } from './context/AuthContext.jsx';
-import ProtectedRoute from './components/common/ProtectedRoute.jsx';
-import AuthLayout from './components/auth/AuthLayout.jsx';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import "./index.css";
+import LoginPage from "./pages/auth/LoginPage.jsx";
+import RegisterPage from "./pages/auth/RegisterPage.jsx";
+import HomePage from "./pages/HomePage.jsx";
+import NotFoundPage from "./pages/NotFoundPage.jsx";
+import UploadPage from "./pages/video/UploadPage.jsx";
+import VideoDetailPage from "./pages/video/VideoDetailPage.jsx";
+import VideoEditPage from "./pages/video/VideoEditPage.jsx";
+import SearchPage from "./pages/video/SearchPage.jsx";
+import ChannelPage from "./pages/channel/ChannelPage.jsx";
+import { AuthProvider } from "./context/AuthContext.jsx";
+import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
+import AuthLayout from "./components/auth/AuthLayout.jsx";
+import useAuth from "./hooks/useAuth.js";
+
+function ProfileRedirect() {
+  const { user } = useAuth();
+  if (user?.username) {
+    return <Navigate to={`/channel/${user.username}`} replace />;
+  }
+  return <Navigate to="/" replace />;
+}
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster 
-          position="top-right" 
+        <Toaster
+          position="top-right"
           toastOptions={{
             style: {
-              background: '#272727',
-              color: '#ffffff',
-              border: '1px solid #404040'
-            }
+              background: "#272727",
+              color: "#ffffff",
+              border: "1px solid #404040",
+            },
           }}
         />
         <Routes>
@@ -31,16 +45,35 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
           </Route>
 
+          {/* Video Routes */}
+          <Route
+            path="/upload"
+            element={
+              <ProtectedRoute>
+                <UploadPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/video/:videoId" element={<VideoDetailPage />} />
+          <Route
+            path="/video/:videoId/edit"
+            element={
+              <ProtectedRoute>
+                <VideoEditPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/search" element={<SearchPage />} />
+
+          {/* Channel Routes */}
+          <Route path="/channel/:username" element={<ChannelPage />} />
+
+          {/* Profile Route - Redirect to channel */}
           <Route
             path="/profile"
             element={
               <ProtectedRoute>
-                <div className="min-h-screen bg-background text-white flex items-center justify-center">
-                  <div className="text-center">
-                    <h1 className="text-2xl font-semibold mb-2">Profile Page</h1>
-                    <p className="text-textSecondary">Coming in Phase 2</p>
-                  </div>
-                </div>
+                <ProfileRedirect />
               </ProtectedRoute>
             }
           />
