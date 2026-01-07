@@ -13,7 +13,7 @@ We take the security of VidTube seriously. If you discover a security vulnerabil
 ### How to Report
 
 1. **DO NOT** create a public GitHub issue for security vulnerabilities
-2. Email your findings to: **[your-email@example.com]** (replace with your actual email)
+2. Email your findings to: **hamdanahmadkhan101@gmail.com**
 3. Include the following information:
    - Description of the vulnerability
    - Steps to reproduce the issue
@@ -32,18 +32,21 @@ We take the security of VidTube seriously. If you discover a security vulnerabil
 This application implements the following security measures:
 
 ### Authentication & Authorization
+
 - JWT-based authentication with access and refresh tokens
 - Bcrypt password hashing with salt rounds
 - HTTP-only cookies for refresh tokens
 - Token expiration and rotation
 
 ### API Security
+
 - CORS restricted to allowed origins only
 - Input validation and sanitization
 - Rate limiting (recommended for production)
 - Request size limits
 
 ### Data Protection
+
 - Passwords are never stored in plain text
 - Sensitive data excluded from API responses
 - Environment variables for secrets (never committed to repo)
@@ -67,7 +70,7 @@ npm audit fix
 
 ## Contact
 
-For security concerns, please contact: **[your-email@example.com]**
+For security concerns, please contact: **hamdanahmadkhan101@gmail.com**
 
 ---
 
