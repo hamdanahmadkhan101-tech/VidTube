@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { User, Video, Eye, Calendar } from "lucide-react";
+import { Users, Video, Eye, Calendar } from "lucide-react";
 import Header from "../../components/layout/Header.jsx";
 import VideoGrid from "../../components/video/VideoGrid.jsx";
 import SubscribeButton from "../../components/social/SubscribeButton.jsx";
@@ -202,7 +202,7 @@ export default function ChannelPage() {
       <Header />
 
       {/* Cover Image */}
-      <div className="relative w-full h-32 sm:h-48 md:h-64 bg-surface-light">
+      <div className="relative w-full h-32 sm:h-48 md:h-64 bg-surface-light z-0">
         {channelUser.coverUrl ? (
           <img
             src={channelUser.coverUrl}
@@ -215,20 +215,20 @@ export default function ChannelPage() {
       </div>
 
       {/* Channel Header */}
-      <div className="border-b border-border bg-surface">
+      <div className="border-b border-border bg-surface relative z-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           {/* Avatar - overlapping cover */}
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6 -mt-16 md:-mt-20">
             {/* Avatar */}
-            <div className="shrink-0">
+            <div className="shrink-0 relative z-20">
               {channelUser.avatarUrl ? (
                 <img
                   src={channelUser.avatarUrl}
                   alt={channelUser.fullName || channelUser.username}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-surface"
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-surface shadow-lg"
                 />
               ) : (
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-4xl border-4 border-surface">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-4xl border-4 border-surface shadow-lg">
                   {(channelUser.fullName || channelUser.username || "U")
                     .charAt(0)
                     .toUpperCase()}
@@ -245,6 +245,12 @@ export default function ChannelPage() {
 
               {/* Stats */}
               <div className="flex flex-wrap gap-6">
+                <div className="flex items-center gap-2 text-textSecondary">
+                  <Users className="h-5 w-5" />
+                  <span className="font-medium">
+                    {channelUser.subscribersCount || 0} subscribers
+                  </span>
+                </div>
                 <div className="flex items-center gap-2 text-textSecondary">
                   <Video className="h-5 w-5" />
                   <span className="font-medium">{totalVideos} videos</span>
