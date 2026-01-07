@@ -221,26 +221,26 @@ export default function VideoPlayer({
           </button>
         )}
         {/* Progress bar */}
-        <div className="absolute bottom-16 left-0 right-0 px-4 pointer-events-auto">
+        <div className="absolute bottom-14 left-0 right-0 px-4 pointer-events-auto z-10">
           <input
             type="range"
             min="0"
             max={duration || 0}
             value={currentTime}
             onChange={handleSeek}
-            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+            className="w-full h-2 bg-white/30 rounded-lg appearance-none cursor-pointer"
             style={{
-              background: `linear-gradient(to right, #ff0000 0%, #ff0000 ${
-                (currentTime / duration) * 100
-              }%, rgba(255,255,255,0.2) ${
-                (currentTime / duration) * 100
-              }%, rgba(255,255,255,0.2) 100%)`,
+              background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${
+                (currentTime / (duration || 1)) * 100
+              }%, rgba(255,255,255,0.3) ${
+                (currentTime / (duration || 1)) * 100
+              }%, rgba(255,255,255,0.3) 100%)`,
             }}
           />
         </div>
 
         {/* Control buttons */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center gap-4 pointer-events-auto">
+        <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center gap-4 pointer-events-auto z-10 bg-gradient-to-t from-black/90 to-transparent">
           <button
             onClick={togglePlay}
             className="text-white hover:text-primary transition-colors"
