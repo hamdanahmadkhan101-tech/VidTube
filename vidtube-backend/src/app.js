@@ -38,8 +38,8 @@ const corsOptions = {
   ],
 };
 
-// Handle preflight requests for all routes
-app.options('*', cors(corsOptions));
+// Handle preflight requests for all routes (express@5 requires a leading slash)
+app.options('/*', cors(corsOptions));
 app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '16kb' }));
