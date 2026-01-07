@@ -198,14 +198,27 @@ export default function VideoPlayer({
         onClick={togglePlay}
       />
 
+      {/* Big play button overlay - always visible when paused */}
+      {!isPlaying && (
+        <button
+          onClick={togglePlay}
+          className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors cursor-pointer"
+          aria-label="Play video"
+        >
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/90 hover:bg-primary flex items-center justify-center transition-colors shadow-lg">
+            <Play className="h-8 w-8 md:h-10 md:w-10 text-white ml-1" />
+          </div>
+        </button>
+      )}
+
       {/* Controls overlay */}
       <div
-        className={`absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent transition-opacity duration-300 pointer-events-none ${
           showControls ? "opacity-100" : "opacity-0"
         }`}
       >
         {/* Progress bar */}
-        <div className="absolute bottom-16 left-0 right-0 px-4">
+        <div className="absolute bottom-16 left-0 right-0 px-4 pointer-events-auto">
           <input
             type="range"
             min="0"
@@ -224,7 +237,7 @@ export default function VideoPlayer({
         </div>
 
         {/* Control buttons */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center gap-4">
+        <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center gap-4 pointer-events-auto">
           <button
             onClick={togglePlay}
             className="text-white hover:text-primary transition-colors"

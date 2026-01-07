@@ -1,14 +1,20 @@
-import { useState, useRef } from 'react';
-import { Upload, X, Video, Image as ImageIcon, AlertCircle } from 'lucide-react';
-import Button from '../ui/Button.jsx';
-import Input from '../ui/Input.jsx';
+import { useState, useRef } from "react";
+import {
+  Upload,
+  X,
+  Video,
+  Image as ImageIcon,
+  AlertCircle,
+} from "lucide-react";
+import Button from "../ui/Button.jsx";
+import Input from "../ui/Input.jsx";
 
 export default function VideoUpload({ onUploadSuccess, onCancel }) {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    videoformat: 'mp4',
-    duration: '',
+    title: "",
+    description: "",
+    videoformat: "mp4",
+    duration: "",
   });
   const [videoFile, setVideoFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -25,7 +31,7 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -33,39 +39,45 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('video/')) {
-      setErrors((prev) => ({ ...prev, video: 'Please select a valid video file' }));
+    if (!file.type.startsWith("video/")) {
+      setErrors((prev) => ({
+        ...prev,
+        video: "Please select a valid video file",
+      }));
       return;
     }
 
     if (file.size > 500 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, video: 'Video file size must be less than 500MB' }));
+      setErrors((prev) => ({
+        ...prev,
+        video: "Video file size must be less than 500MB",
+      }));
       return;
     }
 
     setVideoFile(file);
-    setErrors((prev) => ({ ...prev, video: '' }));
+    setErrors((prev) => ({ ...prev, video: "" }));
 
-    // Create preview and detect duration
-    const video = document.createElement('video');
-    video.preload = 'metadata';
-    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setVideoPreview(previewUrl);
+
+    // Create separate video element for metadata detection
+    const video = document.createElement("video");
+    video.preload = "metadata";
+
     video.onloadedmetadata = () => {
       // Auto-fill duration
-      setFormData((prev) => ({ 
-        ...prev, 
-        duration: video.duration.toFixed(2) 
+      setFormData((prev) => ({
+        ...prev,
+        duration: video.duration.toFixed(2),
       }));
-      
-      // Clean up
-      window.URL.revokeObjectURL(video.src);
     };
-    
-    video.src = URL.createObjectURL(file);
-    setVideoPreview(video.src);
+
+    video.src = previewUrl;
 
     // Auto-detect format
-    const format = file.name.split('.').pop().toLowerCase();
+    const format = file.name.split(".").pop().toLowerCase();
     setFormData((prev) => ({ ...prev, videoformat: format }));
   };
 
@@ -73,18 +85,24 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setErrors((prev) => ({ ...prev, thumbnail: 'Please select a valid image file' }));
+    if (!file.type.startsWith("image/")) {
+      setErrors((prev) => ({
+        ...prev,
+        thumbnail: "Please select a valid image file",
+      }));
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, thumbnail: 'Thumbnail file size must be less than 10MB' }));
+      setErrors((prev) => ({
+        ...prev,
+        thumbnail: "Thumbnail file size must be less than 10MB",
+      }));
       return;
     }
 
     setThumbnailFile(file);
-    setErrors((prev) => ({ ...prev, thumbnail: '' }));
+    setErrors((prev) => ({ ...prev, thumbnail: "" }));
 
     // Create preview
     const reader = new FileReader();
@@ -98,15 +116,15 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
+      newErrors.title = "Title is required";
     }
 
     if (!videoFile) {
-      newErrors.video = 'Video file is required';
+      newErrors.video = "Video file is required";
     }
 
     if (!formData.duration || parseFloat(formData.duration) <= 0) {
-      newErrors.duration = 'Valid duration is required';
+      newErrors.duration = "Valid duration is required";
     }
 
     setErrors(newErrors);
@@ -123,13 +141,13 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
 
     try {
       const uploadFormData = new FormData();
-      uploadFormData.append('title', formData.title.trim());
-      uploadFormData.append('description', formData.description.trim());
-      uploadFormData.append('videoformat', formData.videoformat);
-      uploadFormData.append('duration', formData.duration);
-      uploadFormData.append('video', videoFile);
+      uploadFormData.append("title", formData.title.trim());
+      uploadFormData.append("description", formData.description.trim());
+      uploadFormData.append("videoformat", formData.videoformat);
+      uploadFormData.append("duration", formData.duration);
+      uploadFormData.append("video", videoFile);
       if (thumbnailFile) {
-        uploadFormData.append('thumbnail', thumbnailFile);
+        uploadFormData.append("thumbnail", thumbnailFile);
       }
 
       if (onUploadSuccess) {
@@ -140,7 +158,8 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
-        submit: error.response?.data?.message || 'Upload failed. Please try again.',
+        submit:
+          error.response?.data?.message || "Upload failed. Please try again.",
       }));
     } finally {
       setIsUploading(false);
@@ -149,10 +168,10 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
 
   const resetForm = () => {
     setFormData({
-      title: '',
-      description: '',
-      videoformat: 'mp4',
-      duration: '',
+      title: "",
+      description: "",
+      videoformat: "mp4",
+      duration: "",
     });
     setVideoFile(null);
     setThumbnailFile(null);
@@ -160,8 +179,8 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
     setThumbnailPreview(null);
     setErrors({});
     setUploadProgress(0);
-    if (videoInputRef.current) videoInputRef.current.value = '';
-    if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
+    if (videoInputRef.current) videoInputRef.current.value = "";
+    if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
   };
 
   return (
@@ -191,7 +210,7 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
                 onClick={() => {
                   setVideoFile(null);
                   setVideoPreview(null);
-                  if (videoInputRef.current) videoInputRef.current.value = '';
+                  if (videoInputRef.current) videoInputRef.current.value = "";
                 }}
                 className="absolute top-2 right-2 p-1.5 bg-black/70 hover:bg-black/90 rounded-full text-white transition-colors"
               >
@@ -243,7 +262,8 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
                 onClick={() => {
                   setThumbnailFile(null);
                   setThumbnailPreview(null);
-                  if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
+                  if (thumbnailInputRef.current)
+                    thumbnailInputRef.current.value = "";
                 }}
                 className="absolute top-2 right-2 p-1.5 bg-black/70 hover:bg-black/90 rounded-full text-white transition-colors"
               >
@@ -297,7 +317,7 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
           placeholder="Enter video description (optional)"
           rows={4}
           className={`block w-full rounded-md border bg-surface px-3 py-2 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${
-            errors.description ? 'border-red-500' : 'border-zinc-700'
+            errors.description ? "border-red-500" : "border-zinc-700"
           }`}
         />
       </div>
@@ -351,7 +371,7 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
           disabled={isUploading}
           className="flex-1"
         >
-          {isUploading ? 'Uploading...' : 'Upload Video'}
+          {isUploading ? "Uploading..." : "Upload Video"}
         </Button>
         {onCancel && (
           <Button
@@ -367,4 +387,3 @@ export default function VideoUpload({ onUploadSuccess, onCancel }) {
     </form>
   );
 }
-

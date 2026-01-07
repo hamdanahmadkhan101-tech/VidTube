@@ -134,7 +134,11 @@ const uploadVideo = asyncHandler(async (req, res) => {
   res
     .status(201)
     .json(
-      new apiResponse(201, 'Video uploaded successfully', createdVideo || newVideo)
+      new apiResponse(
+        201,
+        'Video uploaded successfully',
+        createdVideo || newVideo
+      )
     );
 });
 
@@ -188,20 +192,15 @@ const getVideoById = asyncHandler(async (req, res) => {
   }
 
   const isOwner =
-    req.user && video.owner && video.owner.toString() === req.user._id.toString();
+    req.user &&
+    video.owner &&
+    video.owner.toString() === req.user._id.toString();
 
   if (!video.isPublished && !isOwner) {
     throw new apiError(403, 'Video is not published');
   }
 
-  // Only increment views for non-owners to avoid inflating own video views
-  if (!isOwner) {
-    await Video.findByIdAndUpdate(
-      videoId,
-      { $inc: { views: 1 } },
-      { new: false }
-    );
-  }
+  // Views are now only tracked via the /watch endpoint to prevent inflation
 
   const currentUserId = req.user?._id
     ? new mongoose.Types.ObjectId(req.user._id)
@@ -360,9 +359,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
   await Video.deleteOne({ _id: video._id });
 
-  res
-    .status(200)
-    .json(new apiResponse(200, 'Video deleted successfully'));
+  res.status(200).json(new apiResponse(200, 'Video deleted successfully'));
 });
 
 /**
@@ -386,14 +383,12 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   video.isPublished = !video.isPublished;
   await video.save({ validateBeforeSave: false });
 
-  res
-    .status(200)
-    .json(
-      new apiResponse(200, 'Video publish status updated', {
-        videoId: video._id,
-        isPublished: video.isPublished,
-      })
-    );
+  res.status(200).json(
+    new apiResponse(200, 'Video publish status updated', {
+      videoId: video._id,
+      isPublished: video.isPublished,
+    })
+  );
 });
 
 // ============================================
@@ -494,19 +489,21 @@ const addVideoToWatchHistory = asyncHandler(async (req, res) => {
     throw new apiError(404, 'Video not found');
   }
 
-  // Increment views
-  await Video.findByIdAndUpdate(
-    videoId,
-    { $inc: { views: 1 } },
-    { new: false }
-  );
-
-  // Avoid duplicates in watch history
+  // Check if video is already in watch history to prevent duplicate view counts
   const alreadyInHistory = req.user.watchHistory?.some(
     (v) => v.toString() === videoId.toString()
   );
 
+  // Only increment views if this is the first time user watches
   if (!alreadyInHistory) {
+    // Increment views
+    await Video.findByIdAndUpdate(
+      videoId,
+      { $inc: { views: 1 } },
+      { new: false }
+    );
+
+    // Add to watch history
     await User.findByIdAndUpdate(
       req.user._id,
       { $push: { watchHistory: videoId } },
@@ -514,13 +511,11 @@ const addVideoToWatchHistory = asyncHandler(async (req, res) => {
     );
   }
 
-  res
-    .status(200)
-    .json(
-      new apiResponse(200, 'Video added to watch history successfully', {
-        videoId,
-      })
-    );
+  res.status(200).json(
+    new apiResponse(200, 'Video added to watch history successfully', {
+      videoId,
+    })
+  );
 });
 
 // ============================================
@@ -545,5 +540,3 @@ export {
   // Video Interactions
   addVideoToWatchHistory,
 };
-
-

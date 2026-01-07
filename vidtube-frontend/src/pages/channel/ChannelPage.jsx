@@ -200,20 +200,35 @@ export default function ChannelPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
+      {/* Cover Image */}
+      <div className="relative w-full h-32 sm:h-48 md:h-64 bg-surface-light">
+        {channelUser.coverUrl ? (
+          <img
+            src={channelUser.coverUrl}
+            alt={`${channelUser.fullName || channelUser.username}'s cover`}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-primary/20 to-primary/5" />
+        )}
+      </div>
+
       {/* Channel Header */}
       <div className="border-b border-border bg-surface">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+          {/* Avatar - overlapping cover */}
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 -mt-16 md:-mt-20">
             {/* Avatar */}
             <div className="shrink-0">
               {channelUser.avatarUrl ? (
                 <img
                   src={channelUser.avatarUrl}
                   alt={channelUser.fullName || channelUser.username}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-border"
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-surface"
                 />
               ) : (
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-4xl border-4 border-border">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-4xl border-4 border-surface">
                   {(channelUser.fullName || channelUser.username || "U")
                     .charAt(0)
                     .toUpperCase()}
