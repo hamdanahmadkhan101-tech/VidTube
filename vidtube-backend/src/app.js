@@ -17,8 +17,8 @@ const allowedOrigins = process.env.CORS_ORIGIN
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or Postman) in development
-      if (!origin && process.env.NODE_ENV !== 'production') {
+      // Allow requests with no origin (health checks, mobile apps, Postman, server-to-server)
+      if (!origin) {
         return callback(null, true);
       }
       if (allowedOrigins.includes(origin)) {
