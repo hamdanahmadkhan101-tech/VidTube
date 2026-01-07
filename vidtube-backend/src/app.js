@@ -40,10 +40,8 @@ const corsOptions = {
     'Accept',
   ],
   optionsSuccessStatus: 204,
+  preflightContinue: false,
 };
-
-// Explicit preflight handler for API routes (Express 5-compatible pattern)
-app.options('/api/:path*', cors(corsOptions));
 
 app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: true }));
