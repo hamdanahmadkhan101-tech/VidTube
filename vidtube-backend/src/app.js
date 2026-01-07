@@ -9,41 +9,17 @@ import commentRoutes from './routes/comment.routes.js';
 
 const app = express();
 
-// CORS Configuration - restrict to frontend domain in production
+// CORS Configuration
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
   : ['http://localhost:5173'];
 
-// Log allowed origins for deployment debugging
-console.log('CORS allowed origins:', allowedOrigins);
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (health checks, mobile apps, Postman, server-to-server)
-    if (!origin) {
-      return callback(null, true);
-    }
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    console.log(
-      `CORS blocked origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`
-    );
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Accept',
-  ],
-  optionsSuccessStatus: 204,
-  preflightContinue: false,
-};
-
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '16kb' }));
 app.use(express.static('public'));
