@@ -55,7 +55,7 @@ export default function ChannelPage() {
             userData = videoData.docs[0].owner;
             setChannelUser(userData);
           }
-        } catch (err) {
+        } catch {
           // Silently continue - will try username lookup next
         }
       } else {
@@ -90,7 +90,7 @@ export default function ChannelPage() {
       if (targetUserId) {
         await fetchVideos(1, targetUserId);
       }
-    } catch (error) {
+    } catch {
       if (!isInitialMount.current) {
         toast.error("Failed to load channel");
       }
@@ -132,7 +132,7 @@ export default function ChannelPage() {
 
       setHasMore(data.hasNextPage || false);
       setPage(pageNum);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load videos");
     } finally {
       setVideosLoading(false);
@@ -210,7 +210,7 @@ export default function ChannelPage() {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-primary/20 to-primary/5" />
+          <div className="w-full h-full bg-linear-to-r from-primary/20 to-primary/5" />
         )}
       </div>
 
