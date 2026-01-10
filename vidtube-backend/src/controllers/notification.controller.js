@@ -65,7 +65,7 @@ const getNotifications = asyncHandler(async (req, res) => {
 
   const totalCount = await Notification.countDocuments(matchStage);
 
-  const response = apiResponse(200, 'Notifications fetched successfully', {
+  const response = new apiResponse(200, 'Notifications fetched successfully', {
     notifications,
     pagination: {
       page,
@@ -86,13 +86,13 @@ const getNotifications = asyncHandler(async (req, res) => {
  * @access Private
  */
 const getUnreadCount = asyncHandler(async (req, res) => {
-  const unreadCount = await Notification.countDocuments({
+  const count = await Notification.countDocuments({
     recipient: req.user._id,
     isRead: false,
   });
 
-  const response = apiResponse(200, 'Unread count fetched successfully', {
-    unreadCount,
+  const response = new apiResponse(200, 'Unread count fetched successfully', {
+    count,
   });
 
   res.status(200).json(response);
@@ -122,7 +122,7 @@ const markAsRead = asyncHandler(async (req, res) => {
   notification.readAt = new Date();
   await notification.save();
 
-  const response = apiResponse(
+  const response = new apiResponse(
     200,
     'Notification marked as read',
     notification
@@ -147,7 +147,7 @@ const markAllAsRead = asyncHandler(async (req, res) => {
     }
   );
 
-  const response = apiResponse(200, 'All notifications marked as read', {
+  const response = new apiResponse(200, 'All notifications marked as read', {
     modifiedCount: result.modifiedCount,
   });
 
@@ -176,7 +176,11 @@ const deleteNotification = asyncHandler(async (req, res) => {
 
   await Notification.deleteOne({ _id: notificationId });
 
-  const response = apiResponse(200, 'Notification deleted successfully', null);
+  const response = new apiResponse(
+    200,
+    'Notification deleted successfully',
+    null
+  );
 
   res.status(200).json(response);
 });
@@ -189,9 +193,13 @@ const deleteNotification = asyncHandler(async (req, res) => {
 const deleteAllNotifications = asyncHandler(async (req, res) => {
   const result = await Notification.deleteMany({ recipient: req.user._id });
 
-  const response = apiResponse(200, 'All notifications deleted successfully', {
-    deletedCount: result.deletedCount,
-  });
+  const response = new apiResponse(
+    200,
+    'All notifications deleted successfully',
+    {
+      deletedCount: result.deletedCount,
+    }
+  );
 
   res.status(200).json(response);
 });
@@ -240,7 +248,7 @@ const createNotification = asyncHandler(async (req, res) => {
     relatedUser: relatedUser || null,
   });
 
-  const response = apiResponse(
+  const response = new apiResponse(
     201,
     'Notification created successfully',
     notification

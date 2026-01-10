@@ -56,7 +56,7 @@ export default function VideoDetailPage() {
     };
 
     fetchVideo();
-  }, [videoId, navigate, getCachedVideo, cacheVideo, setCurrentVideo]);
+  }, [videoId, navigate]);
 
   useEffect(() => {
     const fetchRelatedVideos = async () => {

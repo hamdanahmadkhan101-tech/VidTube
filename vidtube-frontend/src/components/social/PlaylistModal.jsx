@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus, Check } from "lucide-react";
-import playlistService from "../../services/playlistService";
-import { useAuthStore } from "../../store/useAuthStore";
+import {
+  createPlaylist,
+  getUserPlaylists,
+  addVideoToPlaylist,
+  removeVideoFromPlaylist,
+} from "../../services/playlistService.js";
+import { useAuthStore } from "../../store/index.js";
 
 const PlaylistModal = ({ videoId, isOpen, onClose }) => {
   const [playlists, setPlaylists] = useState([]);
@@ -19,7 +24,7 @@ const PlaylistModal = ({ videoId, isOpen, onClose }) => {
   const fetchPlaylists = async () => {
     try {
       setLoading(true);
-      const response = await playlistService.getUserPlaylists(user._id);
+      const response = await getUserPlaylists(user._id);
       // We need to check if each playlist already contains this video
       setPlaylists(response.data);
     } catch (error) {
@@ -32,9 +37,9 @@ const PlaylistModal = ({ videoId, isOpen, onClose }) => {
   const handleToggleVideo = async (playlistId, isAlreadyIn) => {
     try {
       if (isAlreadyIn) {
-        await playlistService.removeVideoFromPlaylist(playlistId, videoId);
+        await removeVideoFromPlaylist(playlistId, videoId);
       } else {
-        await playlistService.addVideoToPlaylist(playlistId, videoId);
+        await addVideoToPlaylist(playlistId, videoId);
       }
       // Refresh to update UI
       fetchPlaylists();
@@ -48,12 +53,12 @@ const PlaylistModal = ({ videoId, isOpen, onClose }) => {
     if (!newPlaylistName.trim()) return;
 
     try {
-      const response = await playlistService.createPlaylist({
+      const response = await createPlaylist({
         name: newPlaylistName,
         isPublic: true,
       });
       // Add the video to the newly created playlist automatically
-      await playlistService.addVideoToPlaylist(response.data._id, videoId);
+      await addVideoToPlaylist(response.data._id, videoId);
       setNewPlaylistName("");
       setIsCreating(false);
       fetchPlaylists();

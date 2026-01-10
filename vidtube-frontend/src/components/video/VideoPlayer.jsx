@@ -10,14 +10,17 @@ import {
 import { useUIStore } from "../../store/index.js";
 import { formatDuration } from "../../utils/formatters.js";
 
-export default function VideoPlayer({ videoUrl, poster, autoPlay = false, title }) {
+export default function VideoPlayer({
+  videoUrl,
+  poster,
+  autoPlay = false,
+  title,
+}) {
   const videoRef = useRef(null);
-  const { playerVolume, playerMuted, setPlayerVolume, setPlayerMuted } = useUIStore((state) => ({
-    playerVolume: state.playerVolume,
-    playerMuted: state.playerMuted,
-    setPlayerVolume: state.setPlayerVolume,
-    setPlayerMuted: state.setPlayerMuted,
-  }));
+  const playerVolume = useUIStore((state) => state.playerVolume);
+  const playerMuted = useUIStore((state) => state.playerMuted);
+  const setPlayerVolume = useUIStore((state) => state.setPlayerVolume);
+  const setPlayerMuted = useUIStore((state) => state.setPlayerMuted);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMuted, setIsMuted] = useState(playerMuted);
   const [volume, setVolume] = useState(playerVolume);
@@ -64,8 +67,8 @@ export default function VideoPlayer({ videoUrl, poster, autoPlay = false, title 
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
 
     return () => {
       video.removeEventListener("timeupdate", updateTime);
@@ -76,8 +79,11 @@ export default function VideoPlayer({ videoUrl, poster, autoPlay = false, title 
       video.removeEventListener("loadstart", handleLoadStart);
       video.removeEventListener("canplay", handleCanPlay);
       video.removeEventListener("loadeddata", handleLoadedData);
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange
+      );
     };
   }, []);
 
@@ -102,7 +108,7 @@ export default function VideoPlayer({ videoUrl, poster, autoPlay = false, title 
     if (!video) return;
     video.muted = isMuted;
     video.volume = volume;
-    
+
     // Sync with UI store
     setPlayerMuted(isMuted);
     setPlayerVolume(volume);
@@ -112,10 +118,14 @@ export default function VideoPlayer({ videoUrl, poster, autoPlay = false, title 
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Don't handle if user is typing in input/textarea
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+      if (
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
+        e.target.isContentEditable
+      ) {
         return;
       }
-      
+
       const video = videoRef.current;
       if (!video) return;
 
@@ -126,37 +136,37 @@ export default function VideoPlayer({ videoUrl, poster, autoPlay = false, title 
       if (!isVideoVisible) return;
 
       switch (e.key) {
-        case ' ': // Spacebar - play/pause
+        case " ": // Spacebar - play/pause
           e.preventDefault();
           togglePlay();
           break;
-        case 'ArrowLeft': // Seek backward 5 seconds
+        case "ArrowLeft": // Seek backward 5 seconds
           e.preventDefault();
           video.currentTime = Math.max(0, video.currentTime - 5);
           break;
-        case 'ArrowRight': // Seek forward 5 seconds
+        case "ArrowRight": // Seek forward 5 seconds
           e.preventDefault();
           video.currentTime = Math.min(duration, video.currentTime + 5);
           break;
-        case 'ArrowUp': // Volume up
+        case "ArrowUp": // Volume up
           e.preventDefault();
           const newVolUp = Math.min(1, volume + 0.1);
           setVolume(newVolUp);
           setIsMuted(false);
           break;
-        case 'ArrowDown': // Volume down
+        case "ArrowDown": // Volume down
           e.preventDefault();
           const newVolDown = Math.max(0, volume - 0.1);
           setVolume(newVolDown);
           if (newVolDown === 0) setIsMuted(true);
           break;
-        case 'm':
-        case 'M': // Toggle mute
+        case "m":
+        case "M": // Toggle mute
           e.preventDefault();
           toggleMute();
           break;
-        case 'f':
-        case 'F': // Toggle fullscreen
+        case "f":
+        case "F": // Toggle fullscreen
           e.preventDefault();
           toggleFullscreen();
           break;
@@ -165,8 +175,8 @@ export default function VideoPlayer({ videoUrl, poster, autoPlay = false, title 
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [volume, duration, isPlaying]);
 
   const togglePlay = () => {
@@ -259,91 +269,106 @@ export default function VideoPlayer({ videoUrl, poster, autoPlay = false, title 
 
       {/* Controls overlay */}
       <div
-        className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent transition-opacity duration-300 pointer-events-none ${
           showControls ? "opacity-100" : "opacity-0"
         }`}
-      >
-        {/* Progress bar */}
-        <div className="absolute bottom-16 left-0 right-0 px-4">
+      ></div>
+
+      {/* Interactive controls - always clickable */}
+      <div
+        className="absolute inset-0"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      ></div>
+
+      {/* Progress bar - always visible for seeking */}
+      <div className="absolute bottom-16 left-0 right-0 px-4">
+        <input
+          type="range"
+          min="0"
+          max={duration || 0}
+          value={currentTime}
+          onChange={handleSeek}
+          className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+          style={{
+            background: `linear-gradient(to right, #ff0000 0%, #ff0000 ${
+              duration ? (currentTime / duration) * 100 : 0
+            }%, rgba(255,255,255,0.2) ${
+              duration ? (currentTime / duration) * 100 : 0
+            }%, rgba(255,255,255,0.2) 100%)`,
+          }}
+          aria-label="Video progress"
+          aria-valuemin={0}
+          aria-valuemax={duration || 0}
+          aria-valuenow={currentTime}
+        />
+      </div>
+
+      {/* Control buttons - always visible for clicking */}
+      <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center gap-4 bg-gradient-to-t from-black/80 to-transparent">
+        <button
+          onClick={togglePlay}
+          className="text-white hover:text-primary transition-colors"
+          aria-label={isPlaying ? "Pause" : "Play"}
+        >
+          {isPlaying ? (
+            <Pause className="h-6 w-6" />
+          ) : (
+            <Play className="h-6 w-6" />
+          )}
+        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleMute}
+            className="text-white hover:text-primary transition-colors"
+            aria-label={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? (
+              <VolumeX className="h-5 w-5" />
+            ) : (
+              <Volume2 className="h-5 w-5" />
+            )}
+          </button>
           <input
             type="range"
             min="0"
-            max={duration || 0}
-            value={currentTime}
-            onChange={handleSeek}
-            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
-            style={{
-              background: `linear-gradient(to right, #ff0000 0%, #ff0000 ${
-                duration ? (currentTime / duration) * 100 : 0
-              }%, rgba(255,255,255,0.2) ${
-                duration ? (currentTime / duration) * 100 : 0
-              }%, rgba(255,255,255,0.2) 100%)`,
-            }}
-            aria-label="Video progress"
+            max="1"
+            step="0.01"
+            value={isMuted ? 0 : volume}
+            onChange={handleVolumeChange}
+            className="w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+            aria-label="Volume"
             aria-valuemin={0}
-            aria-valuemax={duration || 0}
-            aria-valuenow={currentTime}
+            aria-valuemax={1}
+            aria-valuenow={isMuted ? 0 : volume}
           />
         </div>
 
-        {/* Control buttons */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center gap-4">
-          <button
-            onClick={togglePlay}
-            className="text-white hover:text-primary transition-colors"
-            aria-label={isPlaying ? "Pause" : "Play"}
-          >
-            {isPlaying ? (
-              <Pause className="h-6 w-6" />
-            ) : (
-              <Play className="h-6 w-6" />
-            )}
-          </button>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleMute}
-              className="text-white hover:text-primary transition-colors"
-              aria-label={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? (
-                <VolumeX className="h-5 w-5" />
-              ) : (
-                <Volume2 className="h-5 w-5" />
-              )}
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={isMuted ? 0 : volume}
-              onChange={handleVolumeChange}
-              className="w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
-              aria-label="Volume"
-              aria-valuemin={0}
-              aria-valuemax={1}
-              aria-valuenow={isMuted ? 0 : volume}
-            />
-          </div>
-
-          <div className="flex-1 text-white text-sm font-medium" aria-live="polite" aria-atomic="true">
-            <span className="sr-only">Current time: {formatTime(currentTime)} of {formatTime(duration)}</span>
-            <span aria-hidden="true">{formatTime(currentTime)} / {formatTime(duration)}</span>
-          </div>
-
-          <button
-            onClick={toggleFullscreen}
-            className="text-white hover:text-primary transition-colors"
-            aria-label="Fullscreen"
-          >
-            {isFullscreen ? (
-              <Minimize className="h-5 w-5" />
-            ) : (
-              <Maximize className="h-5 w-5" />
-            )}
-          </button>
+        <div
+          className="flex-1 text-white text-sm font-medium"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span className="sr-only">
+            Current time: {formatTime(currentTime)} of {formatTime(duration)}
+          </span>
+          <span aria-hidden="true">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
         </div>
+
+        <button
+          onClick={toggleFullscreen}
+          className="text-white hover:text-primary transition-colors"
+          aria-label="Fullscreen"
+        >
+          {isFullscreen ? (
+            <Minimize className="h-5 w-5" />
+          ) : (
+            <Maximize className="h-5 w-5" />
+          )}
+        </button>
       </div>
     </div>
   );
