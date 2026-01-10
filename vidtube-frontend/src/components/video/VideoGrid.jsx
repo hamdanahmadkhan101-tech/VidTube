@@ -1,9 +1,15 @@
-import VideoCard from './VideoCard.jsx';
-import { VideoGridSkeleton } from '../common/LoadingSkeleton.jsx';
-import { EmptyVideoList } from '../common/EmptyState.jsx';
-import { handleApiError } from '../../utils/apiErrorHandler.js';
+import VideoCard from "./VideoCard.jsx";
+import { VideoGridSkeleton } from "../common/LoadingSkeleton.jsx";
+import { EmptyVideoList } from "../common/EmptyState.jsx";
+import { handleApiError } from "../../utils/apiErrorHandler.js";
 
-export default function VideoGrid({ videos, loading, error, emptyMessage = 'No videos found' }) {
+export default function VideoGrid({
+  videos,
+  loading,
+  error,
+  emptyMessage = "No videos found",
+  showUpload = false,
+}) {
   if (loading) {
     return <VideoGridSkeleton count={12} />;
   }
@@ -11,14 +17,16 @@ export default function VideoGrid({ videos, loading, error, emptyMessage = 'No v
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4">
-        <div className="text-red-500 text-lg font-semibold mb-2">Error loading videos</div>
+        <div className="text-red-500 text-lg font-semibold mb-2">
+          Error loading videos
+        </div>
         <p className="text-textSecondary text-sm">{error}</p>
       </div>
     );
   }
 
   if (!videos || videos.length === 0) {
-    return <EmptyVideoList message={emptyMessage} />;
+    return <EmptyVideoList message={emptyMessage} showUpload={showUpload} />;
   }
 
   return (
@@ -29,4 +37,3 @@ export default function VideoGrid({ videos, loading, error, emptyMessage = 'No v
     </div>
   );
 }
-

@@ -11,24 +11,18 @@ import { handleApiError } from "../utils/apiErrorHandler.js";
 export default function HomePage() {
   const { isAuthenticated } = useAuth();
   const [sortBy, setSortBy] = useState("createdAt");
-  
-  const {
-    videos,
-    loading,
-    error,
-    pagination,
-    fetchVideos,
-    nextPage,
-  } = useVideoPagination({
-    initialPage: 1,
-    initialLimit: 20,
-    sortBy,
-    sortType: 'desc',
-    autoFetch: true,
-  });
+
+  const { videos, loading, error, pagination, fetchVideos, nextPage } =
+    useVideoPagination({
+      initialPage: 1,
+      initialLimit: 20,
+      sortBy,
+      sortType: "desc",
+      autoFetch: true,
+    });
 
   useEffect(() => {
-    fetchVideos(1, sortBy, 'desc');
+    fetchVideos(1, sortBy, "desc");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy]); // fetchVideos is stable from useVideoPagination
 
@@ -93,19 +87,33 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Error State */}
-        {error && !loading && (
+        {/* Error State - only show if it's a real error, not just empty data */}
+        {error && !loading && videos.length > 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-6 py-4 max-w-md">
               <p className="text-red-400">{error}</p>
             </div>
-            <Button onClick={() => fetchVideos(1, sortBy, 'desc')} variant="primary">
+            <Button
+              onClick={() => fetchVideos(1, sortBy, "desc")}
+              variant="primary"
+            >
               Retry
             </Button>
           </div>
         )}
 
-        {!error && <VideoGrid videos={videos} loading={loading} />}
+        {!error && (
+          <VideoGrid
+            videos={videos}
+            loading={loading}
+            emptyMessage={
+              isAuthenticated
+                ? "You haven't uploaded any videos yet. Share your first video!"
+                : "No videos found. Be the first to upload!"
+            }
+            showUpload={isAuthenticated}
+          />
+        )}
 
         {/* Load More */}
         {pagination.hasNextPage && !loading && (

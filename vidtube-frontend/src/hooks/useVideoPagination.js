@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useVideoStore } from '../store/index.js';
-import { getAllVideos } from '../services/videoService.js';
-import toast from 'react-hot-toast';
+import { useState, useCallback, useEffect } from "react";
+import { useVideoStore } from "../store/index.js";
+import { getAllVideos } from "../services/videoService.js";
+import toast from "react-hot-toast";
 
 /**
  * Video Pagination Hook
@@ -13,8 +13,8 @@ export default function useVideoPagination(options = {}) {
   const {
     initialPage = 1,
     initialLimit = 10,
-    sortBy = 'createdAt',
-    sortType = 'desc',
+    sortBy = "createdAt",
+    sortType = "desc",
     autoFetch = true,
   } = options;
 
@@ -56,9 +56,12 @@ export default function useVideoPagination(options = {}) {
         }
       } catch (err) {
         const errorMessage =
-          err.response?.data?.message || 'Failed to fetch videos';
+          err.response?.data?.message || "Failed to fetch videos";
         setError(errorMessage);
-        toast.error(errorMessage);
+        // Only show toast on non-initial page loads (page > 1 or manual refresh)
+        if (pageNum > 1) {
+          toast.error(errorMessage);
+        }
       } finally {
         setLoading(false);
       }
