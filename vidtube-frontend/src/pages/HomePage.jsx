@@ -29,7 +29,8 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchVideos(1, sortBy, 'desc');
-  }, [sortBy]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy]); // fetchVideos is stable from useVideoPagination
 
   return (
     <div className="min-h-screen bg-background text-text">

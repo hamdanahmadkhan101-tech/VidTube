@@ -63,13 +63,14 @@ export default function useVideoPagination(options = {}) {
         setLoading(false);
       }
     },
-    [limit, page, sortBy, sortType, setVideos, setPagination, setLoading, setError]
+    [limit, setVideos, setPagination, setLoading, setError] // Remove page, sortBy, sortType from deps - they're passed as params
   );
 
   useEffect(() => {
     if (autoFetch) {
-      fetchVideos();
+      fetchVideos(initialPage, sortBy, sortType);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFetch]); // Only run once if autoFetch is true
 
   const goToPage = useCallback(

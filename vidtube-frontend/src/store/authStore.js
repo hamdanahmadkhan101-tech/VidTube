@@ -21,6 +21,7 @@ const useAuthStore = create(
       loading: true,
       error: null,
       isAuthenticated: false,
+      _isInitializing: false, // Guard to prevent multiple simultaneous initializations
 
       // Actions
       setLoading: (loading) => set({ loading }),
@@ -36,7 +37,40 @@ const useAuthStore = create(
 
       // Initialize auth state on app load
       initialize: async () => {
-        set({ loading: true, error: null });
+        // Prevent multiple simultaneous initializations
+        if (get()._isInitializing) {
+          return;
+        }
+
+        // If user is already set from persistence, just verify with server
+        const currentUser = get().user;
+        if (currentUser && get().isAuthenticated) {
+          // User exists from persistence, verify with server but don't show loading
+          set({ _isInitializing: true });
+          try {
+            const res = await getCurrentUser();
+            set({
+              user: res.data.data,
+              isAuthenticated: true,
+              loading: false,
+              error: null,
+              _isInitializing: false,
+            });
+          } catch (error) {
+            // Token might be invalid, clear persisted user
+            set({
+              user: null,
+              isAuthenticated: false,
+              loading: false,
+              error: null,
+              _isInitializing: false,
+            });
+          }
+          return;
+        }
+
+        // No persisted user, check if user is logged in
+        set({ loading: true, error: null, _isInitializing: true });
         try {
           const res = await getCurrentUser();
           set({
@@ -44,13 +78,16 @@ const useAuthStore = create(
             isAuthenticated: true,
             loading: false,
             error: null,
+            _isInitializing: false,
           });
         } catch (error) {
+          // 401 is expected if user is not logged in - don't treat as error
           set({
             user: null,
             isAuthenticated: false,
             loading: false,
             error: null, // Don't set error on init - user might not be logged in
+            _isInitializing: false,
           });
         }
       },

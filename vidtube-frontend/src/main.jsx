@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
@@ -14,13 +14,10 @@ function AppWithInitialization() {
       didInitRef.current = true;
       initialize();
     }
-  }, [initialize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   return <App />;
 }
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <AppWithInitialization />
-  </StrictMode>
-);
+createRoot(document.getElementById("root")).render(<AppWithInitialization />);
