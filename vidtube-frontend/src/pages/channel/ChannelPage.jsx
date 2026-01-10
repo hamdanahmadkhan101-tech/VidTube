@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Users, Video, Eye, Calendar } from "lucide-react";
+import { User, Video, Eye, Calendar } from "lucide-react";
 import Header from "../../components/layout/Header.jsx";
 import VideoGrid from "../../components/video/VideoGrid.jsx";
 import SubscribeButton from "../../components/social/SubscribeButton.jsx";
@@ -22,11 +22,8 @@ export default function ChannelPage() {
   const [hasMore, setHasMore] = useState(false);
   const [totalVideos, setTotalVideos] = useState(0);
   const [totalViews, setTotalViews] = useState(0);
-  const [error, setError] = useState(null);
-  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    setError(null);
     fetchChannelData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
@@ -55,7 +52,7 @@ export default function ChannelPage() {
             userData = videoData.docs[0].owner;
             setChannelUser(userData);
           }
-        } catch {
+        } catch (err) {
           // Silently continue - will try username lookup next
         }
       } else {
@@ -67,21 +64,8 @@ export default function ChannelPage() {
           setChannelUser(userData);
           setUserId(targetUserId);
         } catch (err) {
-          // Only show error if not initial mount and it's a real 404
-          const isNotFound = err.response?.status === 404;
-          const isAuthError = err.response?.status === 401;
-
-          if (isAuthError) {
-            // User needs to log in to view this channel
-            setChannelUser(null);
-            setError("Please log in to view this channel");
-          } else if (isNotFound && !isInitialMount.current) {
-            toast.error("Channel not found");
-            setChannelUser(null);
-          } else {
-            setChannelUser(null);
-          }
-          isInitialMount.current = false;
+          toast.error("Channel not found");
+          setChannelUser(null);
           return;
         }
       }
@@ -90,13 +74,10 @@ export default function ChannelPage() {
       if (targetUserId) {
         await fetchVideos(1, targetUserId);
       }
-    } catch {
-      if (!isInitialMount.current) {
-        toast.error("Failed to load channel");
-      }
+    } catch (error) {
+      toast.error("Failed to load channel");
     } finally {
       setLoading(false);
-      isInitialMount.current = false;
     }
   };
 
@@ -132,7 +113,7 @@ export default function ChannelPage() {
 
       setHasMore(data.hasNextPage || false);
       setPage(pageNum);
-    } catch {
+    } catch (error) {
       toast.error("Failed to load videos");
     } finally {
       setVideosLoading(false);
@@ -167,24 +148,10 @@ export default function ChannelPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-xl font-semibold mb-2 text-white">
-            {error || "Channel not found"}
-          </p>
-          <p className="text-textSecondary mb-4">
-            {error
-              ? "You need to be logged in to view this channel."
-              : "The channel you're looking for doesn't exist."}
-          </p>
-          <div className="flex gap-3 justify-center">
-            {error && (
-              <Link to="/login">
-                <Button variant="primary">Log In</Button>
-              </Link>
-            )}
-            <Link to="/">
-              <Button variant="outline">Go Home</Button>
-            </Link>
-          </div>
+          <p className="text-xl font-semibold mb-2">Channel not found</p>
+          <Link to="/">
+            <Button variant="outline">Go Home</Button>
+          </Link>
         </div>
       </div>
     );
@@ -200,35 +167,20 @@ export default function ChannelPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-
-      {/* Cover Image */}
-      <div className="relative w-full h-32 sm:h-48 md:h-64 bg-surface-light z-0">
-        {channelUser.coverUrl ? (
-          <img
-            src={channelUser.coverUrl}
-            alt={`${channelUser.fullName || channelUser.username}'s cover`}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-linear-to-r from-primary/20 to-primary/5" />
-        )}
-      </div>
-
       {/* Channel Header */}
-      <div className="border-b border-border bg-surface relative z-10">
+      <div className="border-b border-border bg-surface">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          {/* Avatar - overlapping cover */}
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 -mt-16 md:-mt-20">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             {/* Avatar */}
-            <div className="shrink-0 relative z-20">
+            <div className="shrink-0">
               {channelUser.avatarUrl ? (
                 <img
                   src={channelUser.avatarUrl}
                   alt={channelUser.fullName || channelUser.username}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-surface shadow-lg"
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-border"
                 />
               ) : (
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-4xl border-4 border-surface shadow-lg">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-4xl border-4 border-border">
                   {(channelUser.fullName || channelUser.username || "U")
                     .charAt(0)
                     .toUpperCase()}
@@ -245,12 +197,6 @@ export default function ChannelPage() {
 
               {/* Stats */}
               <div className="flex flex-wrap gap-6">
-                <div className="flex items-center gap-2 text-textSecondary">
-                  <Users className="h-5 w-5" />
-                  <span className="font-medium">
-                    {channelUser.subscribersCount || 0} subscribers
-                  </span>
-                </div>
                 <div className="flex items-center gap-2 text-textSecondary">
                   <Video className="h-5 w-5" />
                   <span className="font-medium">{totalVideos} videos</span>
@@ -293,7 +239,9 @@ export default function ChannelPage() {
                     channelId={channelUser._id}
                     channelUsername={channelUser.username}
                     initialIsSubscribed={channelUser.isSubscribed || false}
-                    initialSubscribersCount={channelUser.subscribersCount || 0}
+                    initialSubscribersCount={
+                      channelUser.subscribersCount || 0
+                    }
                     onSubscriptionChange={(isSubscribed, count) => {
                       setChannelUser((prev) => ({
                         ...prev,

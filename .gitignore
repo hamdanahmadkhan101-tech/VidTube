@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Vite
+.vite/
+.vite-ssg-temp/
+
+# Backend specific
+vidtube-backend/logs/
+vidtube-backend/uploads/
+vidtube-backend/public/temp/
+
+# Frontend specific
+vidtube-frontend/dist/
+vidtube-frontend/.vite/
+vidtube-frontend/.vercel/
+
+# Vercel CLI
+.vercel/
+
+# ESLint cache
+.eslintcache
+
+# Windows metadata
+desktop.ini
+
+# Production
+.env.production

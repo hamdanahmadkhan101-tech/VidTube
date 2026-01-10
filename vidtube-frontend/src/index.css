@@ -24,49 +24,79 @@
 }
 
 /* Video Player Slider Styles */
-input[type="range"] {
-  -webkit-appearance: none;
+.slider::-webkit-slider-thumb {
   appearance: none;
-  background: transparent;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff0000;
   cursor: pointer;
 }
 
-input[type="range"]::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 4px;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
+.slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: #ef4444;
-  cursor: pointer;
-  margin-top: -4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-input[type="range"]::-moz-range-track {
-  height: 6px;
-  border-radius: 4px;
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #ef4444;
+  background: #ff0000;
   cursor: pointer;
   border: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-input[type="range"]:hover::-webkit-slider-thumb {
-  transform: scale(1.2);
+/* Accessibility: Screen reader only class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
-input[type="range"]:hover::-moz-range-thumb {
-  transform: scale(1.2);
+.sr-only.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Focus visible styles for better keyboard navigation */
+*:focus-visible {
+  outline: 2px solid #ff0000;
+  outline-offset: 2px;
+}
+
+/* Ensure interactive elements have minimum touch target size (44x44px) */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+input[type="range"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  * {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

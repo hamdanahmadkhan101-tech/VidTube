@@ -1,76 +1,35 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { TrendingUp } from "lucide-react";
-import toast from "react-hot-toast";
 import Header from "../components/layout/Header.jsx";
 import VideoGrid from "../components/video/VideoGrid.jsx";
 import Button from "../components/ui/Button.jsx";
-import { getAllVideos } from "../services/videoService.js";
 import useAuth from "../hooks/useAuth.js";
+import useVideoPagination from "../hooks/useVideoPagination.js";
+import { handleApiError } from "../utils/apiErrorHandler.js";
 
 export default function HomePage() {
   const { isAuthenticated } = useAuth();
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
   const [sortBy, setSortBy] = useState("createdAt");
-  const isInitialMount = useRef(true);
-  const hasShownError = useRef(false);
+  
+  const {
+    videos,
+    loading,
+    error,
+    pagination,
+    fetchVideos,
+    nextPage,
+  } = useVideoPagination({
+    initialPage: 1,
+    initialLimit: 20,
+    sortBy,
+    sortType: 'desc',
+    autoFetch: true,
+  });
 
-  // Fetch videos function - no useCallback to avoid stale closures
-  const fetchVideos = async (pageNum = 1, currentSortBy = sortBy) => {
-    try {
-      if (pageNum === 1) {
-        setLoading(true);
-        setError(null);
-      }
-      const response = await getAllVideos({
-        page: pageNum,
-        limit: 20,
-        sortBy: currentSortBy,
-        sortType: "desc",
-      });
-      const data = response.data.data;
-
-      if (pageNum === 1) {
-        setVideos(data.docs || []);
-      } else {
-        setVideos((prev) => [...prev, ...(data.docs || [])]);
-      }
-
-      setHasMore(data.hasNextPage || false);
-      setPage(pageNum);
-      setError(null);
-      hasShownError.current = false;
-    } catch (err) {
-      console.error("Failed to load videos:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        "Failed to load videos. Please try again.";
-      setError(errorMessage);
-      // Only show toast error once, not on initial load if no videos exist
-      if (!isInitialMount.current && !hasShownError.current) {
-        toast.error(errorMessage);
-        hasShownError.current = true;
-      }
-    } finally {
-      setLoading(false);
-      isInitialMount.current = false;
-    }
-  };
-
-  // Initial load and sortBy change
   useEffect(() => {
-    fetchVideos(1, sortBy);
+    fetchVideos(1, sortBy, 'desc');
   }, [sortBy]);
-
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      fetchVideos(page + 1, sortBy);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background text-text">
@@ -139,7 +98,7 @@ export default function HomePage() {
             <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-6 py-4 max-w-md">
               <p className="text-red-400">{error}</p>
             </div>
-            <Button onClick={() => fetchVideos(1, sortBy)} variant="primary">
+            <Button onClick={() => fetchVideos(1, sortBy, 'desc')} variant="primary">
               Retry
             </Button>
           </div>
@@ -148,15 +107,15 @@ export default function HomePage() {
         {!error && <VideoGrid videos={videos} loading={loading} />}
 
         {/* Load More */}
-        {hasMore && !loading && (
+        {pagination.hasNextPage && !loading && (
           <div className="flex justify-center mt-8">
-            <Button variant="outline" onClick={handleLoadMore}>
+            <Button variant="outline" onClick={nextPage}>
               Load More Videos
             </Button>
           </div>
         )}
 
-        {loading && page > 1 && (
+        {loading && pagination.currentPage > 1 && (
           <div className="flex justify-center mt-8">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           </div>

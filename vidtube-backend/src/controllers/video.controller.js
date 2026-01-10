@@ -5,6 +5,10 @@ import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
+import { ValidationError, NotFoundError, ForbiddenError } from '../errors/index.js';
+import { getPaginationParams, getSortParams } from '../utils/pagination.js';
+import { validateObjectId, validateRequired, validateNumericRange, validateStringLength } from '../utils/validation.js';
+import { formatVideo } from '../utils/formatters.js';
 
 // Models
 import Video from '../models/video.model.js';
@@ -17,38 +21,6 @@ import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from '../utils/cloudinary.js';
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-/**
- * Validate and normalize pagination parameters
- * @param {Object} query - Express request query object
- * @returns {{ page: number, limit: number, skip: number }}
- */
-const getPaginationParams = (query) => {
-  const page = Math.max(parseInt(query.page, 10) || 1, 1);
-  let limit = parseInt(query.limit, 10) || 10;
-
-  // Enforce maximum items per page
-  if (limit > 50) limit = 50;
-  if (limit < 1) limit = 1;
-
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-};
-
-/**
- * Validate MongoDB ObjectId
- * @param {string} id - The id string to validate
- * @param {string} fieldName - Field name for error messages
- */
-const validateObjectId = (id, fieldName = 'ID') => {
-  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-    throw new apiError(400, `Invalid ${fieldName}`);
-  }
-};
 
 /**
  * Build common owner lookup pipeline
@@ -90,35 +62,41 @@ const ownerLookupPipeline = [
 const uploadVideo = asyncHandler(async (req, res) => {
   const { title, description = '', videoformat, duration } = req.body;
 
-  if (!title || !videoformat || !duration) {
-    throw new apiError(400, 'title, videoformat and duration are required');
-  }
+  // Validate required fields
+  validateRequired({ title, videoformat, duration }, ['title', 'videoformat', 'duration']);
 
-  const numericDuration = Number(duration);
-  if (Number.isNaN(numericDuration) || numericDuration <= 0) {
-    throw new apiError(400, 'duration must be a positive number');
-  }
+  // Validate string fields
+  const validatedTitle = validateStringLength(title, 1, 200, 'title');
+  const validatedDescription = description ? validateStringLength(description, 0, 5000, 'description') : '';
+  const validatedFormat = validateStringLength(videoformat, 1, 20, 'videoformat');
+
+  // Validate duration
+  const numericDuration = validateNumericRange(duration, 0.01, 86400, 'duration'); // Max 24 hours
 
   const videoPath = req.files?.video?.[0]?.path ?? null;
   const thumbnailPath = req.files?.thumbnail?.[0]?.path ?? null;
 
   if (!videoPath) {
-    throw new apiError(400, 'Video file is required');
+    throw new ValidationError('Video file is required', [
+      { field: 'video', message: 'Video file is required' },
+    ]);
   }
 
-  // Optional: basic mime/type validation could be added at multer level
-
+  // Upload video to Cloudinary
   const videoUploadResult = await uploadOnCloudinary(videoPath);
   if (!videoUploadResult?.url) {
-    throw new apiError(500, 'Video upload failed');
+    throw new apiError(500, 'Video upload to cloud storage failed');
   }
 
-  const thumbnailUploadResult = await uploadOnCloudinary(thumbnailPath);
+  // Upload thumbnail if provided
+  const thumbnailUploadResult = thumbnailPath
+    ? await uploadOnCloudinary(thumbnailPath)
+    : null;
 
   const newVideo = await Video.create({
-    title: title.trim(),
-    description: description.trim(),
-    videoformat: String(videoformat).trim(),
+    title: validatedTitle,
+    description: validatedDescription,
+    videoformat: validatedFormat,
     duration: numericDuration,
     url: videoUploadResult.url,
     thumbnailUrl: thumbnailUploadResult?.url || '',
@@ -131,15 +109,9 @@ const uploadVideo = asyncHandler(async (req, res) => {
     ...ownerLookupPipeline,
   ]);
 
-  res
-    .status(201)
-    .json(
-      new apiResponse(
-        201,
-        'Video uploaded successfully',
-        createdVideo || newVideo
-      )
-    );
+  res.status(201).json(
+    new apiResponse(201, 'Video uploaded successfully', formatVideo(createdVideo || newVideo))
+  );
 });
 
 /**
@@ -148,11 +120,13 @@ const uploadVideo = asyncHandler(async (req, res) => {
  * @access Public
  */
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = getPaginationParams(req.query);
-  const sortBy = req.query.sortBy || 'createdAt';
-  const sortType = req.query.sortType === 'asc' ? 1 : -1;
-
-  const sortStage = { [sortBy]: sortType };
+  const { page, limit } = getPaginationParams(req.query);
+  const allowedSortFields = ['createdAt', 'views', 'title'];
+  const { sortStage } = getSortParams(
+    req.query.sortBy,
+    req.query.sortType,
+    allowedSortFields
+  );
 
   const pipeline = [
     {
@@ -172,9 +146,18 @@ const getAllVideos = asyncHandler(async (req, res) => {
     limit,
   });
 
-  res
-    .status(200)
-    .json(new apiResponse(200, 'Videos fetched successfully', result));
+  // Format videos and use standardized paginated response
+  const formattedVideos = (result.docs || []).map(formatVideo);
+  const response = apiResponse.paginated(
+    200,
+    'Videos fetched successfully',
+    {
+      ...result,
+      docs: formattedVideos,
+    }
+  );
+
+  res.status(200).json(response);
 });
 
 /**
@@ -188,7 +171,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   const video = await Video.findById(videoId);
   if (!video) {
-    throw new apiError(404, 'Video not found');
+    throw new NotFoundError('Video', videoId);
   }
 
   const isOwner =
@@ -197,10 +180,8 @@ const getVideoById = asyncHandler(async (req, res) => {
     video.owner.toString() === req.user._id.toString();
 
   if (!video.isPublished && !isOwner) {
-    throw new apiError(403, 'Video is not published');
+    throw new ForbiddenError('This video is not published and cannot be accessed');
   }
-
-  // Views are now only tracked via the /watch endpoint to prevent inflation
 
   const currentUserId = req.user?._id
     ? new mongoose.Types.ObjectId(req.user._id)
@@ -259,11 +240,13 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   const [detailedVideo] = await Video.aggregate(pipeline);
 
-  res
-    .status(200)
-    .json(
-      new apiResponse(200, 'Video fetched successfully', detailedVideo || video)
-    );
+  if (!detailedVideo) {
+    throw new NotFoundError('Video', videoId);
+  }
+
+  res.status(200).json(
+    new apiResponse(200, 'Video fetched successfully', formatVideo(detailedVideo))
+  );
 });
 
 // ============================================
@@ -284,34 +267,51 @@ const updateVideo = asyncHandler(async (req, res) => {
 
   const video = await Video.findById(videoId);
   if (!video) {
-    throw new apiError(404, 'Video not found');
+    throw new NotFoundError('Video', videoId);
   }
 
   if (video.owner.toString() !== req.user._id.toString()) {
-    throw new apiError(403, 'You are not allowed to update this video');
+    throw new ForbiddenError('You do not have permission to update this video');
   }
 
   const updatePayload = {};
-  if (typeof title === 'string' && title.trim()) {
-    updatePayload.title = title.trim();
+  if (title !== undefined) {
+    if (typeof title !== 'string' || !title.trim()) {
+      throw new ValidationError('Invalid title', [
+        { field: 'title', message: 'Title must be a non-empty string' },
+      ]);
+    }
+    updatePayload.title = validateStringLength(title, 1, 200, 'title');
   }
-  if (typeof description === 'string') {
-    updatePayload.description = description.trim();
+  if (description !== undefined) {
+    updatePayload.description = description
+      ? validateStringLength(description, 0, 5000, 'description')
+      : '';
   }
 
   // Handle optional thumbnail update
   if (thumbnailPath) {
     const newThumb = await uploadOnCloudinary(thumbnailPath);
     if (!newThumb?.url) {
-      throw new apiError(500, 'Thumbnail upload failed');
+      throw new apiError(500, 'Thumbnail upload to cloud storage failed');
     }
 
     // Clean up old thumbnail from Cloudinary
     if (video.thumbnailUrl) {
-      await deleteFromCloudinary(video.thumbnailUrl);
+      await deleteFromCloudinary(video.thumbnailUrl).catch((err) => {
+        // Log but don't fail if deletion fails
+        console.error('Failed to delete old thumbnail:', err);
+      });
     }
 
     updatePayload.thumbnailUrl = newThumb.url;
+  }
+
+  // Only update if there are changes
+  if (Object.keys(updatePayload).length === 0) {
+    return res.status(200).json(
+      new apiResponse(200, 'No changes detected', formatVideo(video))
+    );
   }
 
   const updatedVideo = await Video.findByIdAndUpdate(
@@ -320,9 +320,9 @@ const updateVideo = asyncHandler(async (req, res) => {
     { new: true }
   );
 
-  res
-    .status(200)
-    .json(new apiResponse(200, 'Video updated successfully', updatedVideo));
+  res.status(200).json(
+    new apiResponse(200, 'Video updated successfully', formatVideo(updatedVideo))
+  );
 });
 
 /**
@@ -336,30 +336,47 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
   const video = await Video.findById(videoId);
   if (!video) {
-    throw new apiError(404, 'Video not found');
+    throw new NotFoundError('Video', videoId);
   }
 
   if (video.owner.toString() !== req.user._id.toString()) {
-    throw new apiError(403, 'You are not allowed to delete this video');
+    throw new ForbiddenError('You do not have permission to delete this video');
   }
 
-  // Delete media from Cloudinary
+  // Delete media from Cloudinary (best effort - don't fail if deletion fails)
+  const deletePromises = [];
   if (video.url) {
-    await deleteFromCloudinary(video.url);
+    deletePromises.push(
+      deleteFromCloudinary(video.url).catch((err) => {
+        console.error('Failed to delete video from cloud storage:', err);
+      })
+    );
   }
   if (video.thumbnailUrl) {
-    await deleteFromCloudinary(video.thumbnailUrl);
+    deletePromises.push(
+      deleteFromCloudinary(video.thumbnailUrl).catch((err) => {
+        console.error('Failed to delete thumbnail from cloud storage:', err);
+      })
+    );
   }
 
   // Remove video from all users' watch history
-  await User.updateMany(
-    { watchHistory: video._id },
-    { $pull: { watchHistory: video._id } }
+  deletePromises.push(
+    User.updateMany(
+      { watchHistory: video._id },
+      { $pull: { watchHistory: video._id } }
+    )
   );
 
+  // Wait for all cleanup operations (don't block on failures)
+  await Promise.allSettled(deletePromises);
+
+  // Delete video document
   await Video.deleteOne({ _id: video._id });
 
-  res.status(200).json(new apiResponse(200, 'Video deleted successfully'));
+  res.status(200).json(
+    new apiResponse(200, 'Video deleted successfully', { videoId })
+  );
 });
 
 /**
@@ -373,11 +390,11 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
   const video = await Video.findById(videoId);
   if (!video) {
-    throw new apiError(404, 'Video not found');
+    throw new NotFoundError('Video', videoId);
   }
 
   if (video.owner.toString() !== req.user._id.toString()) {
-    throw new apiError(403, 'You are not allowed to update this video');
+    throw new ForbiddenError('You do not have permission to update this video');
   }
 
   video.isPublished = !video.isPublished;
@@ -402,17 +419,22 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
  */
 const searchVideos = asyncHandler(async (req, res) => {
   const { query } = req.query;
+  
   if (!query || !query.trim()) {
-    throw new apiError(400, 'Search query is required');
+    throw new ValidationError('Search query is required', [
+      { field: 'query', message: 'Search query cannot be empty' },
+    ]);
   }
 
-  const { page, limit, skip } = getPaginationParams(req.query);
+  const { page, limit } = getPaginationParams(req.query);
+  const searchQuery = query.trim();
 
+  // Use regex for case-insensitive search (text index can be used in future optimization)
   const matchStage = {
     isPublished: true,
     $or: [
-      { title: { $regex: query.trim(), $options: 'i' } },
-      { description: { $regex: query.trim(), $options: 'i' } },
+      { title: { $regex: searchQuery, $options: 'i' } },
+      { description: { $regex: searchQuery, $options: 'i' } },
     ],
   };
 
@@ -428,9 +450,18 @@ const searchVideos = asyncHandler(async (req, res) => {
     limit,
   });
 
-  res
-    .status(200)
-    .json(new apiResponse(200, 'Videos searched successfully', result));
+  // Format videos and use standardized paginated response
+  const formattedVideos = (result.docs || []).map(formatVideo);
+  const response = apiResponse.paginated(
+    200,
+    'Videos searched successfully',
+    {
+      ...result,
+      docs: formattedVideos,
+    }
+  );
+
+  res.status(200).json(response);
 });
 
 /**
@@ -442,7 +473,7 @@ const getVideosByOwner = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   validateObjectId(userId, 'userId');
 
-  const { page, limit, skip } = getPaginationParams(req.query);
+  const { page, limit } = getPaginationParams(req.query);
   const isOwner =
     req.user && req.user._id && req.user._id.toString() === userId.toString();
 
@@ -466,9 +497,18 @@ const getVideosByOwner = asyncHandler(async (req, res) => {
     limit,
   });
 
-  res
-    .status(200)
-    .json(new apiResponse(200, 'Owner videos fetched successfully', result));
+  // Format videos and use standardized paginated response
+  const formattedVideos = (result.docs || []).map(formatVideo);
+  const response = apiResponse.paginated(
+    200,
+    'Owner videos fetched successfully',
+    {
+      ...result,
+      docs: formattedVideos,
+    }
+  );
+
+  res.status(200).json(response);
 });
 
 // ============================================
@@ -486,7 +526,11 @@ const addVideoToWatchHistory = asyncHandler(async (req, res) => {
 
   const video = await Video.findById(videoId);
   if (!video) {
-    throw new apiError(404, 'Video not found');
+    throw new NotFoundError('Video', videoId);
+  }
+
+  if (!video.isPublished) {
+    throw new ForbiddenError('Cannot add unpublished video to watch history');
   }
 
   // Check if video is already in watch history to prevent duplicate view counts
@@ -496,7 +540,7 @@ const addVideoToWatchHistory = asyncHandler(async (req, res) => {
 
   // Only increment views if this is the first time user watches
   if (!alreadyInHistory) {
-    // Increment views
+    // Increment views atomically
     await Video.findByIdAndUpdate(
       videoId,
       { $inc: { views: 1 } },
@@ -514,6 +558,7 @@ const addVideoToWatchHistory = asyncHandler(async (req, res) => {
   res.status(200).json(
     new apiResponse(200, 'Video added to watch history successfully', {
       videoId,
+      viewCounted: !alreadyInHistory,
     })
   );
 });

@@ -9,6 +9,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "test": "cross-env NODE_ENV=test jest --coverage",
+    "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "test:verbose": "cross-env NODE_ENV=test jest --verbose",
     "format": "prettier --write \"src/**/*.js\"",
     "format:check": "prettier --check \"src/**/*.js\""
   },
@@ -19,13 +22,27 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.1",
     "mongoose-aggregate-paginate-v2": "^1.1.4",
     "multer": "^2.0.2",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "winston": "^3.19.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
-    "prettier": "^3.7.4"
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "babel-jest": "^30.2.0",
+    "cross-env": "^10.1.0",
+    "jest": "^30.2.0",
+    "mongodb-memory-server": "^11.0.1",
+    "prettier": "^3.7.4",
+    "supertest": "^7.2.2"
   }
 }

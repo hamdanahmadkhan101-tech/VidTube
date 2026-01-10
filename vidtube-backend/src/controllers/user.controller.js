@@ -163,7 +163,11 @@ const loginUser = asyncHandler(async (req, res) => {
  * @access Private
  */
 const logoutUser = asyncHandler(async (req, res) => {
-  const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+  if (!req.user || !req.user._id) {
+    throw new apiError(401, 'User not authenticated');
+  }
+
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
   if (refreshToken) {
     await User.findByIdAndUpdate(

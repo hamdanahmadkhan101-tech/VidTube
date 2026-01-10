@@ -13,9 +13,14 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // You can log error to an error reporting service here
-    if (import.meta.env.DEV) {
-      console.error("ErrorBoundary caught an error:", error, errorInfo);
+    // Log error to console in development
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
+    // In production, you can send to error tracking service
+    // Example: Sentry, LogRocket, etc.
+    if (import.meta.env.PROD) {
+      // TODO: Send to error tracking service
+      // errorTrackingService.logError(error, errorInfo);
     }
   }
 

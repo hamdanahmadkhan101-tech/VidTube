@@ -1,26 +1,28 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import "./index.css";
-import LoginPage from "./pages/auth/LoginPage.jsx";
-import RegisterPage from "./pages/auth/RegisterPage.jsx";
-import HomePage from "./pages/HomePage.jsx";
-import NotFoundPage from "./pages/NotFoundPage.jsx";
-import UploadPage from "./pages/video/UploadPage.jsx";
-import VideoDetailPage from "./pages/video/VideoDetailPage.jsx";
-import VideoEditPage from "./pages/video/VideoEditPage.jsx";
-import SearchPage from "./pages/video/SearchPage.jsx";
-import ChannelPage from "./pages/channel/ChannelPage.jsx";
-import DashboardPage from "./pages/dashboard/DashboardPage.jsx";
-import NotificationsPage from "./pages/notifications/NotificationsPage.jsx";
-import WatchHistoryPage from "./pages/user/WatchHistoryPage.jsx";
-import LikedVideosPage from "./pages/user/LikedVideosPage.jsx";
-import ProfileSettingsPage from "./pages/user/ProfileSettingsPage.jsx";
-import PasswordChangePage from "./pages/settings/PasswordChangePage.jsx";
-import { AuthProvider } from "./context/AuthContext.jsx";
-import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
 import ErrorBoundary from "./components/common/ErrorBoundary.jsx";
+import { VideoGridSkeleton, VideoDetailSkeleton } from "./components/common/LoadingSkeleton.jsx";
+import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
 import AuthLayout from "./components/auth/AuthLayout.jsx";
 import useAuth from "./hooks/useAuth.js";
+
+// Lazy load pages for code splitting and better performance
+const HomePage = lazy(() => import("./pages/HomePage.jsx"));
+const LoginPage = lazy(() => import("./pages/auth/LoginPage.jsx"));
+const RegisterPage = lazy(() => import("./pages/auth/RegisterPage.jsx"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage.jsx"));
+const UploadPage = lazy(() => import("./pages/video/UploadPage.jsx"));
+const VideoDetailPage = lazy(() => import("./pages/video/VideoDetailPage.jsx"));
+const VideoEditPage = lazy(() => import("./pages/video/VideoEditPage.jsx"));
+const SearchPage = lazy(() => import("./pages/video/SearchPage.jsx"));
+const ChannelPage = lazy(() => import("./pages/channel/ChannelPage.jsx"));
+const DashboardPage = lazy(() => import("./pages/dashboard/DashboardPage.jsx"));
+const NotificationsPage = lazy(() => import("./pages/notifications/NotificationsPage.jsx"));
+
+import PageLoader from "./components/common/PageLoader.jsx";
+import SkipToContent from "./components/common/SkipToContent.jsx";
 
 function ProfileRedirect() {
   const { user } = useAuth();
@@ -32,25 +34,55 @@ function ProfileRedirect() {
 
 function App() {
   return (
-    <AuthProvider>
+    <ErrorBoundary>
       <BrowserRouter>
-        <ErrorBoundary>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              style: {
-                background: "#272727",
-                color: "#ffffff",
-                border: "1px solid #404040",
-              },
-            }}
-          />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
+        <SkipToContent />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "#272727",
+              color: "#ffffff",
+              border: "1px solid #404040",
+            },
+            duration: 3000,
+          }}
+        />
+        <main id="main-content" tabIndex={-1}>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+            <Route
+              path="/"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <HomePage />
+                </Suspense>
+              }
+            />
 
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+            <Route
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <AuthLayout />
+                </Suspense>
+              }
+            >
+              <Route
+                path="/login"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LoginPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <RegisterPage />
+                  </Suspense>
+                }
+              />
             </Route>
 
             {/* Video Routes */}
@@ -58,30 +90,57 @@ function App() {
               path="/upload"
               element={
                 <ProtectedRoute>
-                  <UploadPage />
+                  <Suspense fallback={<PageLoader />}>
+                    <UploadPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
-            <Route path="/video/:videoId" element={<VideoDetailPage />} />
+            <Route
+              path="/video/:videoId"
+              element={
+                <Suspense fallback={<VideoDetailSkeleton />}>
+                  <VideoDetailPage />
+                </Suspense>
+              }
+            />
             <Route
               path="/video/:videoId/edit"
               element={
                 <ProtectedRoute>
-                  <VideoEditPage />
+                  <Suspense fallback={<PageLoader />}>
+                    <VideoEditPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
-            <Route path="/search" element={<SearchPage />} />
+            <Route
+              path="/search"
+              element={
+                <Suspense fallback={<VideoGridSkeleton />}>
+                  <SearchPage />
+                </Suspense>
+              }
+            />
 
             {/* Channel Routes */}
-            <Route path="/channel/:username" element={<ChannelPage />} />
+            <Route
+              path="/channel/:username"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <ChannelPage />
+                </Suspense>
+              }
+            />
 
             {/* Dashboard Routes */}
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <DashboardPage />
+                  <Suspense fallback={<PageLoader />}>
+                    <DashboardPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
@@ -91,45 +150,9 @@ function App() {
               path="/notifications"
               element={
                 <ProtectedRoute>
-                  <NotificationsPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Watch History Route */}
-            <Route
-              path="/history"
-              element={
-                <ProtectedRoute>
-                  <WatchHistoryPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Liked Videos Route */}
-            <Route
-              path="/liked"
-              element={
-                <ProtectedRoute>
-                  <LikedVideosPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Settings Routes */}
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <ProfileSettingsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings/password"
-              element={
-                <ProtectedRoute>
-                  <PasswordChangePage />
+                  <Suspense fallback={<PageLoader />}>
+                    <NotificationsPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
@@ -144,11 +167,19 @@ function App() {
               }
             />
 
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </ErrorBoundary>
+            <Route
+              path="*"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <NotFoundPage />
+                </Suspense>
+              }
+            />
+            </Routes>
+          </Suspense>
+        </main>
       </BrowserRouter>
-    </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

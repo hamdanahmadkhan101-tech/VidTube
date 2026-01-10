@@ -10,6 +10,7 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true, // For channel profile lookup
     },
     email: {
       type: String,
@@ -17,6 +18,7 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true, // For login queries
     },
     fullName: { type: String, required: true, trim: true, index: true },
     password: { type: String, required: [true, 'Password is required'] },
@@ -31,9 +33,45 @@ const userSchema = new Schema(
     },
     watchHistory: [{ type: Schema.Types.ObjectId, ref: 'Video' }],
     refreshTokens: [{ type: String }],
+    // Enhanced fields
+    isVerified: {
+      type: Boolean,
+      default: false,
+      index: true, // For filtering verified users
+    },
+    isBanned: {
+      type: Boolean,
+      default: false,
+      index: true, // For filtering banned users
+    },
+    bannedUntil: {
+      type: Date,
+      default: null, // Temporary ban expiration
+    },
+    preferences: {
+      emailNotifications: { type: Boolean, default: true },
+      pushNotifications: { type: Boolean, default: true },
+      privacy: {
+        showEmail: { type: Boolean, default: false },
+        showWatchHistory: { type: Boolean, default: true },
+      },
+      theme: { type: String, enum: ['light', 'dark', 'auto'], default: 'auto' },
+    },
+    statistics: {
+      totalVideos: { type: Number, default: 0 },
+      totalViews: { type: Number, default: 0 },
+      totalLikes: { type: Number, default: 0 },
+      totalSubscribers: { type: Number, default: 0 },
+      lastActive: { type: Date, default: Date.now },
+    },
   },
   { timestamps: true }
 );
+
+// Compound indexes for common query patterns
+// Note: email and username already have unique indexes from schema definition
+// Timestamps index for sorting user lists by creation date
+userSchema.index({ createdAt: -1 });
 
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;

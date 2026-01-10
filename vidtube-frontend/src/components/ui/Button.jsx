@@ -47,6 +47,8 @@ const Button = forwardRef(
           className
         )}
         disabled={!asChild && (isLoading || props.disabled)}
+        aria-busy={isLoading}
+        aria-disabled={!asChild && (isLoading || props.disabled)}
         {...props}
       >
         {isLoading && (

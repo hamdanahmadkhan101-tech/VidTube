@@ -19,10 +19,17 @@ const Input = forwardRef(
             className
           )}
           required={required}
+          aria-invalid={error ? "true" : "false"}
+          aria-describedby={error ? `${props.id || props.name}-error` : undefined}
           {...props}
         />
         {error && (
-          <p className="text-xs text-red-500" role="alert">
+          <p
+            id={`${props.id || props.name || 'input'}-error`}
+            className="text-xs text-red-500"
+            role="alert"
+            aria-live="polite"
+          >
             {error}
           </p>
         )}

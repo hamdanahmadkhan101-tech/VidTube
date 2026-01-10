@@ -1,60 +1,22 @@
 import { Link } from "react-router-dom";
-import { Clock, Eye, HeartOff } from "lucide-react";
+import { Clock, Eye } from "lucide-react";
+import LazyImage from "./LazyImage.jsx";
+import { formatDuration, formatViews, formatRelativeTime } from "../../utils/formatters.js";
 
-export default function VideoCard({ video, showUnlike = false, onUnlike }) {
-  const formatDuration = (seconds) => {
-    if (!seconds || isNaN(seconds)) return "0:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const formatViews = (views) => {
-    if (!views) return "0";
-    if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
-    if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
-    return views.toString();
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-
-    if (diffInSeconds < 60) return "Just now";
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 2592000)
-      return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    if (diffInSeconds < 31536000)
-      return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
-    return `${Math.floor(diffInSeconds / 31536000)}y ago`;
-  };
-
-  const handleUnlike = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onUnlike) {
-      onUnlike(video._id);
-    }
-  };
-
+export default function VideoCard({ video }) {
   return (
     <Link
       to={`/video/${video._id}`}
-      className="group relative flex flex-col cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+      className="group flex flex-col cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+      aria-label={`Watch ${video.title} by ${video.owner?.fullName || video.owner?.username || 'Unknown'}`}
     >
       {/* Thumbnail */}
       <div className="relative w-full aspect-video bg-surface rounded-lg overflow-hidden mb-3">
         {video.thumbnailUrl ? (
-          <img
+          <LazyImage
             src={video.thumbnailUrl}
             alt={video.title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-            loading="lazy"
-            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-surface to-surface-light">
@@ -74,15 +36,15 @@ export default function VideoCard({ video, showUnlike = false, onUnlike }) {
       {/* Video Info */}
       <div className="flex gap-3">
         {/* Avatar */}
-        <div className="shrink-0">
+        <div className="shrink-0" aria-hidden="true">
           {video.owner?.avatarUrl ? (
-            <img
+            <LazyImage
               src={video.owner.avatarUrl}
-              alt={video.owner.fullName || video.owner.username}
+              alt={`${video.owner.fullName || video.owner.username}'s avatar`}
               className="w-10 h-10 rounded-full object-cover"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold" aria-label="User avatar">
               {(video.owner?.fullName || video.owner?.username || "U")
                 .charAt(0)
                 .toUpperCase()}
@@ -104,22 +66,11 @@ export default function VideoCard({ video, showUnlike = false, onUnlike }) {
                 <Eye className="h-3 w-3" />
                 {formatViews(video.views)}
               </span>
-              {video.createdAt && <span>• {formatDate(video.createdAt)}</span>}
+              {video.createdAt && <span>• {formatRelativeTime(video.createdAt)}</span>}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Unlike button */}
-      {showUnlike && onUnlike && (
-        <button
-          onClick={handleUnlike}
-          className="absolute top-2 right-2 p-2 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 cursor-pointer"
-          title="Remove from liked"
-        >
-          <HeartOff className="h-4 w-4" />
-        </button>
-      )}
     </Link>
   );
 }

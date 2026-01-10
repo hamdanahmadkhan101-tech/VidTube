@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import Input from '../ui/Input.jsx';
 import Button from '../ui/Button.jsx';
 import useAuth from '../../hooks/useAuth.js';
+import { loginResolver } from '../../validators/auth.validator.js';
+import { handleApiError, handleApiSuccess } from '../../utils/apiErrorHandler.js';
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -19,6 +21,7 @@ export default function LoginForm() {
     handleSubmit,
     formState: { errors },
   } = useForm({
+    resolver: loginResolver,
     defaultValues: {
       identifier: '',
       password: '',
@@ -36,10 +39,10 @@ export default function LoginForm() {
           : undefined,
         password: values.password,
       });
-      toast.success('Logged in successfully');
+      handleApiSuccess('Logged in successfully');
       navigate(from, { replace: true });
     } catch (error) {
-      toast.error(error.message);
+      handleApiError(error, { defaultMessage: 'Failed to login. Please try again.' });
     } finally {
       setLoading(false);
     }

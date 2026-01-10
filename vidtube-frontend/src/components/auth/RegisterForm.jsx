@@ -1,10 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import Input from '../ui/Input.jsx';
 import Button from '../ui/Button.jsx';
 import useAuth from '../../hooks/useAuth.js';
+import { registerResolver } from '../../validators/auth.validator.js';
+import { handleApiError, handleApiSuccess } from '../../utils/apiErrorHandler.js';
 
 export default function RegisterForm() {
   const { register: registerUser } = useAuth();
@@ -19,20 +20,18 @@ export default function RegisterForm() {
     watch,
     formState: { errors },
   } = useForm({
+    resolver: registerResolver,
     defaultValues: {
       fullName: '',
       username: '',
       email: '',
       password: '',
+      confirmPassword: '',
       terms: false,
     },
   });
 
   const onSubmit = async (values) => {
-    if (!values.terms) {
-      toast.error('You must accept the terms and conditions');
-      return;
-    }
     setLoading(true);
     try {
       const formData = new FormData();
@@ -48,10 +47,10 @@ export default function RegisterForm() {
       }
 
       await registerUser(formData);
-      toast.success('Registered successfully. You can now login.');
+      handleApiSuccess('Registered successfully. You can now login.');
       navigate('/login');
     } catch (error) {
-      toast.error(error.message);
+      handleApiError(error, { defaultMessage: 'Registration failed. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -109,11 +108,15 @@ export default function RegisterForm() {
         <Input
           label="Password"
           type="password"
-          {...register('password', {
-            required: 'Password is required',
-            minLength: { value: 6, message: 'At least 6 characters' },
-          })}
+          {...register('password')}
           error={errors.password?.message}
+        />
+        
+        <Input
+          label="Confirm Password"
+          type="password"
+          {...register('confirmPassword')}
+          error={errors.confirmPassword?.message}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

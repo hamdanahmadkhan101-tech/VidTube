@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Play,
   Pause,
@@ -7,79 +7,65 @@ import {
   Maximize,
   Minimize,
 } from "lucide-react";
+import { useUIStore } from "../../store/index.js";
+import { formatDuration } from "../../utils/formatters.js";
 
-export default function VideoPlayer({
-  videoUrl,
-  poster,
-  autoPlay = false,
-  videoId,
-  onProgress,
-  initialTime = 0,
-}) {
+export default function VideoPlayer({ videoUrl, poster, autoPlay = false, title }) {
   const videoRef = useRef(null);
+  const { playerVolume, playerMuted, setPlayerVolume, setPlayerMuted } = useUIStore((state) => ({
+    playerVolume: state.playerVolume,
+    playerMuted: state.playerMuted,
+    setPlayerVolume: state.setPlayerVolume,
+    setPlayerMuted: state.setPlayerMuted,
+  }));
   const [isPlaying, setIsPlaying] = useState(autoPlay);
-  const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(playerMuted);
+  const [volume, setVolume] = useState(playerVolume);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const controlsTimeoutRef = useRef(null);
-  const progressIntervalRef = useRef(null);
 
-  // Force HTTPS for video URLs (fix mixed content)
-  const secureVideoUrl = videoUrl?.replace(/^http:\/\//i, "https://");
-  const securePoster = poster?.replace(/^http:\/\//i, "https://");
-
-  // Save progress periodically
-  const saveProgress = useCallback(() => {
-    if (onProgress && videoId && videoRef.current) {
-      const video = videoRef.current;
-      if (video.currentTime > 0 && video.duration > 0) {
-        onProgress(videoId, video.currentTime, video.duration);
-      }
+  // Initialize volume from store
+  useEffect(() => {
+    if (videoRef.current && playerVolume !== undefined) {
+      videoRef.current.volume = playerVolume;
+      videoRef.current.muted = playerMuted;
+      setVolume(playerVolume);
+      setIsMuted(playerMuted);
     }
-  }, [onProgress, videoId]);
+  }, [playerVolume, playerMuted]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const updateTime = () => setCurrentTime(video.currentTime);
-    const updateDuration = () => {
-      setDuration(video.duration);
-      // Set initial time if provided
-      if (initialTime > 0 && video.duration > 0) {
-        video.currentTime = initialTime;
-      }
-    };
-    const handlePlay = () => {
-      setIsPlaying(true);
-      // Start progress tracking interval
-      if (onProgress && videoId) {
-        progressIntervalRef.current = setInterval(saveProgress, 10000); // Save every 10 seconds
-      }
-    };
-    const handlePause = () => {
-      setIsPlaying(false);
-      saveProgress(); // Save on pause
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
-    const handleEnded = () => {
-      setIsPlaying(false);
-      saveProgress(); // Save on end
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
+    const updateDuration = () => setDuration(video.duration);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => setIsPlaying(false);
+    const handleLoadStart = () => setIsLoading(true);
+    const handleCanPlay = () => setIsLoading(false);
+    const handleLoadedData = () => setIsLoading(false);
 
     video.addEventListener("timeupdate", updateTime);
     video.addEventListener("loadedmetadata", updateDuration);
     video.addEventListener("play", handlePlay);
     video.addEventListener("pause", handlePause);
     video.addEventListener("ended", handleEnded);
+    video.addEventListener("loadstart", handleLoadStart);
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("loadeddata", handleLoadedData);
+
+    // Handle fullscreen change
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 
     return () => {
       video.removeEventListener("timeupdate", updateTime);
@@ -87,11 +73,13 @@ export default function VideoPlayer({
       video.removeEventListener("play", handlePlay);
       video.removeEventListener("pause", handlePause);
       video.removeEventListener("ended", handleEnded);
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
+      video.removeEventListener("loadstart", handleLoadStart);
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("loadeddata", handleLoadedData);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
     };
-  }, [initialTime, saveProgress, onProgress, videoId]);
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -114,7 +102,72 @@ export default function VideoPlayer({
     if (!video) return;
     video.muted = isMuted;
     video.volume = volume;
-  }, [isMuted, volume]);
+    
+    // Sync with UI store
+    setPlayerMuted(isMuted);
+    setPlayerVolume(volume);
+  }, [isMuted, volume, setPlayerMuted, setPlayerVolume]);
+
+  // Keyboard shortcuts for video controls (only when video is in viewport/focused)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't handle if user is typing in input/textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        return;
+      }
+      
+      const video = videoRef.current;
+      if (!video) return;
+
+      // Check if video is visible/focused
+      const rect = video.getBoundingClientRect();
+      const isVideoVisible = rect.top < window.innerHeight && rect.bottom > 0;
+
+      if (!isVideoVisible) return;
+
+      switch (e.key) {
+        case ' ': // Spacebar - play/pause
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowLeft': // Seek backward 5 seconds
+          e.preventDefault();
+          video.currentTime = Math.max(0, video.currentTime - 5);
+          break;
+        case 'ArrowRight': // Seek forward 5 seconds
+          e.preventDefault();
+          video.currentTime = Math.min(duration, video.currentTime + 5);
+          break;
+        case 'ArrowUp': // Volume up
+          e.preventDefault();
+          const newVolUp = Math.min(1, volume + 0.1);
+          setVolume(newVolUp);
+          setIsMuted(false);
+          break;
+        case 'ArrowDown': // Volume down
+          e.preventDefault();
+          const newVolDown = Math.max(0, volume - 0.1);
+          setVolume(newVolDown);
+          if (newVolDown === 0) setIsMuted(true);
+          break;
+        case 'm':
+        case 'M': // Toggle mute
+          e.preventDefault();
+          toggleMute();
+          break;
+        case 'f':
+        case 'F': // Toggle fullscreen
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [volume, duration, isPlaying]);
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
@@ -163,10 +216,7 @@ export default function VideoPlayer({
   };
 
   const formatTime = (seconds) => {
-    if (!seconds || isNaN(seconds)) return "0:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    return formatDuration(seconds);
   };
 
   const handleMouseMove = () => {
@@ -195,52 +245,49 @@ export default function VideoPlayer({
     >
       <video
         ref={videoRef}
-        src={secureVideoUrl}
-        poster={securePoster}
+        src={videoUrl}
+        poster={poster}
         className="w-full h-full"
         playsInline
         onClick={togglePlay}
+        onLoadStart={() => setIsLoading(true)}
+        onLoadedData={() => setIsLoading(false)}
+        onCanPlay={() => setIsLoading(false)}
+        aria-label={title || "Video player"}
+        tabIndex={0}
       />
 
-      {/* Controls overlay - always visible */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Gradient overlay at bottom for controls visibility */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 to-transparent" />
-
-        {/* Big play button - centered, clickable */}
-        {!isPlaying && (
-          <button
-            onClick={togglePlay}
-            className="absolute inset-0 flex items-center justify-center cursor-pointer pointer-events-auto"
-            aria-label="Play video"
-          >
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center transition-colors shadow-lg">
-              <Play className="h-8 w-8 md:h-10 md:w-10 text-white ml-1" />
-            </div>
-          </button>
-        )}
-
+      {/* Controls overlay */}
+      <div
+        className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent transition-opacity duration-300 ${
+          showControls ? "opacity-100" : "opacity-0"
+        }`}
+      >
         {/* Progress bar */}
-        <div className="absolute bottom-12 left-0 right-0 px-4 pointer-events-auto">
+        <div className="absolute bottom-16 left-0 right-0 px-4">
           <input
             type="range"
             min="0"
-            max={duration || 1}
+            max={duration || 0}
             value={currentTime}
             onChange={handleSeek}
-            className="w-full h-1.5 rounded-full cursor-pointer accent-red-500"
+            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
             style={{
-              background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${
-                (currentTime / (duration || 1)) * 100
-              }%, rgba(255,255,255,0.4) ${
-                (currentTime / (duration || 1)) * 100
-              }%, rgba(255,255,255,0.4) 100%)`,
+              background: `linear-gradient(to right, #ff0000 0%, #ff0000 ${
+                duration ? (currentTime / duration) * 100 : 0
+              }%, rgba(255,255,255,0.2) ${
+                duration ? (currentTime / duration) * 100 : 0
+              }%, rgba(255,255,255,0.2) 100%)`,
             }}
+            aria-label="Video progress"
+            aria-valuemin={0}
+            aria-valuemax={duration || 0}
+            aria-valuenow={currentTime}
           />
         </div>
 
         {/* Control buttons */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 py-2 flex items-center gap-4 pointer-events-auto">
+        <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center gap-4">
           <button
             onClick={togglePlay}
             className="text-white hover:text-primary transition-colors"
@@ -273,11 +320,16 @@ export default function VideoPlayer({
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
               className="w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+              aria-label="Volume"
+              aria-valuemin={0}
+              aria-valuemax={1}
+              aria-valuenow={isMuted ? 0 : volume}
             />
           </div>
 
-          <div className="flex-1 text-white text-sm font-medium">
-            {formatTime(currentTime)} / {formatTime(duration)}
+          <div className="flex-1 text-white text-sm font-medium" aria-live="polite" aria-atomic="true">
+            <span className="sr-only">Current time: {formatTime(currentTime)} of {formatTime(duration)}</span>
+            <span aria-hidden="true">{formatTime(currentTime)} / {formatTime(duration)}</span>
           </div>
 
           <button
