@@ -7,9 +7,23 @@ pnpm-lock.yaml
 # Environment variables
 .env
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.staging
+.env.staging.local
+.env.production
 .env.production.local
+# Ignore env files anywhere in repo
+**/.env*
+!**/.env.example
+
+# Project-specific env files
+vidtube-frontend/.env*
+vidtube-backend/.env*
+!vidtube-frontend/.env.example
+!vidtube-backend/.env.example
 
 # Build outputs
 dist/
