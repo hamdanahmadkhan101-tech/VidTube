@@ -90,28 +90,23 @@ export default function ChannelPage() {
         page: pageNum,
         limit: 20,
       });
-      const data = response.data.data;
+      const docs = response.data.data || [];
+      const pagination = response.data.meta?.pagination || {};
 
       if (pageNum === 1) {
-        setVideos(data.docs || []);
-        setTotalVideos(data.totalDocs || 0);
+        setVideos(docs);
+        setTotalVideos(pagination.total || 0);
         // Calculate total views
-        const views = (data.docs || []).reduce(
-          (sum, v) => sum + (v.views || 0),
-          0
-        );
+        const views = docs.reduce((sum, v) => sum + (v.views || 0), 0);
         setTotalViews(views);
       } else {
-        setVideos((prev) => [...prev, ...(data.docs || [])]);
+        setVideos((prev) => [...prev, ...docs]);
         // Update total views
-        const newViews = (data.docs || []).reduce(
-          (sum, v) => sum + (v.views || 0),
-          0
-        );
+        const newViews = docs.reduce((sum, v) => sum + (v.views || 0), 0);
         setTotalViews((prev) => prev + newViews);
       }
 
-      setHasMore(data.hasNextPage || false);
+      setHasMore(pagination.hasNextPage || false);
       setPage(pageNum);
     } catch (error) {
       toast.error("Failed to load videos");
@@ -239,9 +234,7 @@ export default function ChannelPage() {
                     channelId={channelUser._id}
                     channelUsername={channelUser.username}
                     initialIsSubscribed={channelUser.isSubscribed || false}
-                    initialSubscribersCount={
-                      channelUser.subscribersCount || 0
-                    }
+                    initialSubscribersCount={channelUser.subscribersCount || 0}
                     onSubscriptionChange={(isSubscribed, count) => {
                       setChannelUser((prev) => ({
                         ...prev,

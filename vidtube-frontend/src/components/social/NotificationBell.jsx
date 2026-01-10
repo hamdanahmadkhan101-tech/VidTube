@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Bell } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth.js';
+import { useState, useEffect } from "react";
+import { Bell } from "lucide-react";
+import { Link } from "react-router-dom";
+import useAuth from "../../hooks/useAuth.js";
+import { getUnreadCount } from "../../services/notificationService.js";
 
 export default function NotificationBell() {
   const { isAuthenticated } = useAuth();
@@ -13,9 +14,12 @@ export default function NotificationBell() {
     if (!isAuthenticated) return;
 
     const fetchNotifications = async () => {
-      // TODO: Implement notification service when backend is ready
-      // For now, this is a placeholder
-      setUnreadCount(0);
+      try {
+        const response = await getUnreadCount();
+        setUnreadCount(response.data.data.count || 0);
+      } catch (error) {
+        console.error("Error fetching unread count:", error);
+      }
     };
 
     fetchNotifications();
@@ -37,7 +41,7 @@ export default function NotificationBell() {
         <Bell className="h-5 w-5 text-textSecondary" />
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </Link>
@@ -47,11 +51,10 @@ export default function NotificationBell() {
         <div className="absolute right-0 top-full mt-2 w-80 bg-surface border border-border rounded-lg shadow-lg overflow-hidden z-50">
           <div className="p-4 border-b border-border">
             <h3 className="text-sm font-semibold text-white">
-              {unreadCount} new notification{unreadCount !== 1 ? 's' : ''}
+              {unreadCount} new notification{unreadCount !== 1 ? "s" : ""}
             </h3>
           </div>
           <div className="p-4 text-center text-sm text-textSecondary">
-            <p>Notifications feature coming soon</p>
             <Link
               to="/notifications"
               className="mt-2 inline-block text-primary hover:underline"
@@ -64,4 +67,3 @@ export default function NotificationBell() {
     </div>
   );
 }
-

@@ -9,10 +9,7 @@ import OwnerSection from "../../components/video/OwnerSection.jsx";
 import CommentSection from "../../components/social/CommentSection.jsx";
 import { VideoDetailSkeleton } from "../../components/common/LoadingSkeleton.jsx";
 import { EmptyState } from "../../components/common/EmptyState.jsx";
-import {
-  getVideoById,
-  getAllVideos,
-} from "../../services/videoService.js";
+import { getVideoById, getAllVideos } from "../../services/videoService.js";
 import useAuth from "../../hooks/useAuth.js";
 import { handleApiError } from "../../utils/apiErrorHandler.js";
 import { useVideoStore } from "../../store/index.js";
@@ -33,7 +30,7 @@ export default function VideoDetailPage() {
     const fetchVideo = async () => {
       try {
         setLoading(true);
-        
+
         // Check cache first
         const cached = getCachedVideo(videoId);
         if (cached) {
@@ -47,7 +44,7 @@ export default function VideoDetailPage() {
         const videoData = response.data.data;
         setVideo(videoData);
         setCurrentVideo(videoData);
-        
+
         // Cache the video
         cacheVideo(videoId, videoData);
       } catch (error) {
@@ -64,7 +61,7 @@ export default function VideoDetailPage() {
   useEffect(() => {
     const fetchRelatedVideos = async () => {
       if (!video) return;
-      
+
       try {
         setRelatedLoading(true);
         const response = await getAllVideos({
@@ -72,13 +69,13 @@ export default function VideoDetailPage() {
           sortBy: "createdAt",
           sortType: "desc",
         });
-        const filtered = (response.data.data.docs || []).filter(
+        const filtered = (response.data.data || []).filter(
           (v) => v._id !== videoId
         );
         setRelatedVideos(filtered.slice(0, 8));
       } catch (error) {
         // Silently fail for related videos - not critical
-        console.error('Failed to load related videos:', error);
+        console.error("Failed to load related videos:", error);
       } finally {
         setRelatedLoading(false);
       }
@@ -88,7 +85,7 @@ export default function VideoDetailPage() {
   }, [video, videoId]);
 
   const handleVideoUpdate = (updates) => {
-    setVideo((prev) => prev ? { ...prev, ...updates } : null);
+    setVideo((prev) => (prev ? { ...prev, ...updates } : null));
   };
 
   const isOwner =
@@ -130,9 +127,9 @@ export default function VideoDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Video Player */}
             <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
-              <VideoPlayer 
-                videoUrl={video.url} 
-                poster={video.thumbnailUrl} 
+              <VideoPlayer
+                videoUrl={video.url}
+                poster={video.thumbnailUrl}
                 title={video.title}
                 autoPlay={false}
               />

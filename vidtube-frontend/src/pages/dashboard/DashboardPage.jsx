@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Video,
   Eye,
@@ -8,14 +8,14 @@ import {
   Users,
   TrendingUp,
   BarChart3,
-} from 'lucide-react';
-import Header from '../../components/layout/Header.jsx';
-import AnalyticsCard from '../../components/dashboard/AnalyticsCard.jsx';
-import Button from '../../components/ui/Button.jsx';
-import ProtectedRoute from '../../components/common/ProtectedRoute.jsx';
-import { getAllVideos } from '../../services/videoService.js';
-import { getVideosByUserId } from '../../services/videoService.js';
-import useAuth from '../../hooks/useAuth.js';
+} from "lucide-react";
+import Header from "../../components/layout/Header.jsx";
+import AnalyticsCard from "../../components/dashboard/AnalyticsCard.jsx";
+import Button from "../../components/ui/Button.jsx";
+import ProtectedRoute from "../../components/common/ProtectedRoute.jsx";
+import { getAllVideos } from "../../services/videoService.js";
+import { getVideosByUserId } from "../../services/videoService.js";
+import useAuth from "../../hooks/useAuth.js";
 
 function DashboardContent() {
   const { user } = useAuth();
@@ -36,7 +36,7 @@ function DashboardContent() {
         setLoading(true);
         // Fetch user's videos to calculate stats
         const response = await getVideosByUserId(user._id, { limit: 100 });
-        const videos = response.data.data.docs || [];
+        const videos = response.data.data || [];
 
         const totalVideos = videos.length;
         const totalViews = videos.reduce((sum, v) => sum + (v.views || 0), 0);
@@ -57,7 +57,7 @@ function DashboardContent() {
           totalSubscribers: 0, // Would need separate API call
         });
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        console.error("Failed to fetch stats:", error);
       } finally {
         setLoading(false);
       }
@@ -67,7 +67,7 @@ function DashboardContent() {
   }, [user]);
 
   const formatNumber = (num) => {
-    if (!num) return '0';
+    if (!num) return "0";
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
@@ -190,9 +190,7 @@ function DashboardContent() {
                 <h3 className="text-lg font-semibold text-white mb-1">
                   Analytics
                 </h3>
-                <p className="text-sm text-textSecondary">
-                  Coming soon
-                </p>
+                <p className="text-sm text-textSecondary">Coming soon</p>
               </div>
             </div>
           </div>
@@ -209,4 +207,3 @@ export default function DashboardPage() {
     </ProtectedRoute>
   );
 }
-

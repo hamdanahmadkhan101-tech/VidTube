@@ -43,8 +43,9 @@ export default function useVideoPagination(options = {}) {
         });
 
         if (response.data.success) {
-          const { docs, pagination: paginationData } = response.data.data;
-          setVideos(docs || []);
+          const docs = response.data.data || [];
+          const paginationData = response.data.meta?.pagination || {};
+          setVideos(docs);
           setPagination({
             page: paginationData.page || pageNum,
             limit: paginationData.limit || limit,

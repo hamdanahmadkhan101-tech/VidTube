@@ -30,9 +30,8 @@ export default function WatchHistoryPage() {
       }
 
       const response = await getWatchHistory({ page: pageNum, limit: 20 });
-      const data = response.data.data;
-
-      const historyItems = data.docs || data || [];
+      const historyItems = response.data.data || [];
+      const pagination = response.data.meta?.pagination || {};
 
       if (pageNum === 1 || reset) {
         setHistory(historyItems);
@@ -40,7 +39,7 @@ export default function WatchHistoryPage() {
         setHistory((prev) => [...prev, ...historyItems]);
       }
 
-      setHasMore(data.hasNextPage || false);
+      setHasMore(pagination.hasNextPage || false);
       setPage(pageNum);
     } catch (err) {
       console.error("Failed to load history:", err);

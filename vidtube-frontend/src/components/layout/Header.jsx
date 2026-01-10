@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Upload, User, BarChart3 } from "lucide-react";
+import { Search, Upload, User, BarChart3, ListMusic } from "lucide-react";
 import { useState } from "react";
 import useAuth from "../../hooks/useAuth.js";
 import NotificationBell from "../social/NotificationBell.jsx";
@@ -58,8 +58,8 @@ export default function Header() {
             aria-label="Site search"
           >
             <div className="relative">
-              <Search 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-textSecondary" 
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-textSecondary"
                 aria-hidden="true"
               />
               <input
@@ -92,8 +92,22 @@ export default function Header() {
                     <span className="hidden lg:inline">Upload</span>
                   </Button>
                 </Link>
+                <Link to="/playlists" className="hidden sm:block">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <ListMusic className="h-4 w-4" />
+                    <span className="hidden lg:inline">Playlists</span>
+                  </Button>
+                </Link>
                 <Link to="/dashboard" className="hidden md:block">
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
                     <BarChart3 className="h-4 w-4" />
                     <span className="hidden lg:inline">Dashboard</span>
                   </Button>

@@ -24,12 +24,11 @@ export default function LikedVideosPage() {
       }
 
       const response = await getLikedVideos({ page: pageNum, limit: 20 });
-      const data = response.data.data;
+      const docs = response.data.data || [];
+      const pagination = response.data.meta?.pagination || {};
 
       // Extract videos from liked items
-      const likedVideos = (data.docs || data || []).map(
-        (item) => item.video || item
-      );
+      const likedVideos = docs.map((item) => item.video || item);
 
       if (pageNum === 1 || reset) {
         setVideos(likedVideos);
@@ -37,8 +36,8 @@ export default function LikedVideosPage() {
         setVideos((prev) => [...prev, ...likedVideos]);
       }
 
-      setHasMore(data.hasNextPage || false);
-      setTotalCount(data.totalDocs || likedVideos.length);
+      setHasMore(pagination.hasNextPage || false);
+      setTotalCount(pagination.total || likedVideos.length);
       setPage(pageNum);
     } catch (err) {
       console.error("Failed to load liked videos:", err);

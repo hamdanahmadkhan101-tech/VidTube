@@ -23,7 +23,7 @@ export default function SearchPage() {
   const [hasMore, setHasMore] = useState(false);
   const [sortBy, setSortBy] = useState("createdAt");
   const [showSortMenu, setShowSortMenu] = useState(false);
-  
+
   // Debounce search query for better performance (only search after user stops typing)
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const setSearchQueryStore = useVideoStore((state) => state.setSearchQuery);
@@ -60,18 +60,22 @@ export default function SearchPage() {
 
     try {
       const response = await searchVideos(query, { page: pageNum, limit: 20 });
-      const data = response.data.data;
+      const docs = response.data.data || [];
+      const pagination = response.data.meta?.pagination || {};
 
       if (pageNum === 1) {
-        setVideos(data.docs || []);
+        setVideos(docs);
       } else {
-        setVideos((prev) => [...prev, ...(data.docs || [])]);
+        setVideos((prev) => [...prev, ...docs]);
       }
 
-      setHasMore(data.hasNextPage || false);
+      setHasMore(pagination.hasNextPage || false);
       setPage(pageNum);
     } catch (err) {
-      handleApiError(err, { defaultMessage: "Failed to search videos", showToast: false });
+      handleApiError(err, {
+        defaultMessage: "Failed to search videos",
+        showToast: false,
+      });
       setError(err.response?.data?.message || "Failed to search videos");
       setVideos([]);
     } finally {
@@ -109,10 +113,15 @@ export default function SearchPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         {/* Search Header */}
         <div className="mb-6">
-          <form onSubmit={handleSubmit} className="flex gap-3 mb-4" role="search" aria-label="Search videos">
+          <form
+            onSubmit={handleSubmit}
+            className="flex gap-3 mb-4"
+            role="search"
+            aria-label="Search videos"
+          >
             <div className="flex-1 relative">
-              <Search 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-textSecondary" 
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-textSecondary"
                 aria-hidden="true"
               />
               <input
@@ -128,7 +137,11 @@ export default function SearchPage() {
                 Enter keywords to search for videos by title or description
               </span>
             </div>
-            <Button type="submit" isLoading={loading} aria-label="Submit search">
+            <Button
+              type="submit"
+              isLoading={loading}
+              aria-label="Submit search"
+            >
               Search
             </Button>
           </form>
@@ -221,14 +234,24 @@ export default function SearchPage() {
             )}
 
             {loading && page > 1 && (
-              <div className="flex justify-center mt-8" aria-label="Loading more videos">
+              <div
+                className="flex justify-center mt-8"
+                aria-label="Loading more videos"
+              >
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
               </div>
             )}
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center py-20" role="status" aria-live="polite">
-            <Search className="h-16 w-16 text-textSecondary mb-4" aria-hidden="true" />
+          <div
+            className="flex flex-col items-center justify-center py-20"
+            role="status"
+            aria-live="polite"
+          >
+            <Search
+              className="h-16 w-16 text-textSecondary mb-4"
+              aria-hidden="true"
+            />
             <h2 className="text-2xl font-semibold text-white mb-2">
               Search Videos
             </h2>

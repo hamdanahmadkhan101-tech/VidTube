@@ -1,6 +1,6 @@
 # VidTube API Documentation
 
-Base URL: `http://localhost:5000/api/v1`
+Base URL: `http://localhost:8080/api/v1`
 
 ## Authentication
 
@@ -9,6 +9,7 @@ All protected endpoints require a valid JWT token in cookies (`accessToken`).
 ## Response Format
 
 ### Success Response
+
 ```json
 {
   "success": true,
@@ -20,6 +21,7 @@ All protected endpoints require a valid JWT token in cookies (`accessToken`).
 ```
 
 ### Error Response
+
 ```json
 {
   "success": false,
@@ -42,6 +44,7 @@ All protected endpoints require a valid JWT token in cookies (`accessToken`).
 - **Upload**: 2 uploads per hour per IP
 
 Rate limit headers:
+
 - `RateLimit-Limit`: Maximum requests allowed
 - `RateLimit-Remaining`: Remaining requests
 - `RateLimit-Reset`: Time when limit resets
@@ -51,12 +54,14 @@ Rate limit headers:
 ## User Endpoints
 
 ### Register User
+
 ```http
 POST /users/register
 Content-Type: multipart/form-data
 ```
 
 **Request Body:**
+
 - `fullName` (string, required): User's full name
 - `username` (string, required, 3-20 chars, alphanumeric + underscore)
 - `email` (string, required, valid email)
@@ -65,6 +70,7 @@ Content-Type: multipart/form-data
 - `coverImage` (file, optional): Cover image
 
 **Response:** `201 Created`
+
 ```json
 {
   "success": true,
@@ -80,20 +86,23 @@ Content-Type: multipart/form-data
 ```
 
 ### Login
+
 ```http
 POST /users/login
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
-  "email": "john@example.com",  // or "username": "johndoe"
+  "email": "john@example.com", // or "username": "johndoe"
   "password": "password123"
 }
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "success": true,
@@ -105,6 +114,7 @@ Content-Type: application/json
 ```
 
 ### Get Current User
+
 ```http
 GET /users/current
 Authorization: Bearer {token}
@@ -113,6 +123,7 @@ Authorization: Bearer {token}
 **Response:** `200 OK`
 
 ### Update Profile
+
 ```http
 PATCH /users/profile
 Authorization: Bearer {token}
@@ -120,6 +131,7 @@ Content-Type: multipart/form-data
 ```
 
 **Request Body:**
+
 - `fullName` (string, optional)
 - `bio` (string, optional, max 500 chars)
 - `avatar` (file, optional)
@@ -129,6 +141,7 @@ Content-Type: multipart/form-data
 **Response:** `200 OK`
 
 ### Change Password
+
 ```http
 POST /users/change-password
 Authorization: Bearer {token}
@@ -136,6 +149,7 @@ Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "oldPassword": "oldpass123",
@@ -150,17 +164,20 @@ Content-Type: application/json
 ## Video Endpoints
 
 ### Get All Videos
+
 ```http
 GET /videos?page=1&limit=20&sortBy=createdAt&sortType=desc
 ```
 
 **Query Parameters:**
+
 - `page` (number, default: 1)
 - `limit` (number, default: 10, max: 50)
 - `sortBy` (string: "createdAt" | "views" | "title", default: "createdAt")
 - `sortType` (string: "asc" | "desc", default: "desc")
 
 **Response:** `200 OK`
+
 ```json
 {
   "success": true,
@@ -179,6 +196,7 @@ GET /videos?page=1&limit=20&sortBy=createdAt&sortType=desc
 ```
 
 ### Get Video by ID
+
 ```http
 GET /videos/:videoId
 ```
@@ -186,17 +204,20 @@ GET /videos/:videoId
 **Response:** `200 OK`
 
 ### Search Videos
+
 ```http
 GET /videos/search?q=search+query&page=1&limit=20
 ```
 
 **Query Parameters:**
+
 - `q` (string, required): Search query
 - `page`, `limit` (optional)
 
 **Response:** `200 OK`
 
 ### Upload Video
+
 ```http
 POST /videos/upload
 Authorization: Bearer {token}
@@ -204,6 +225,7 @@ Content-Type: multipart/form-data
 ```
 
 **Request Body:**
+
 - `title` (string, required, max 200 chars)
 - `description` (string, optional, max 5000 chars)
 - `video` (file, required): Video file (max 500MB)
@@ -217,6 +239,7 @@ Content-Type: multipart/form-data
 **Response:** `201 Created`
 
 ### Update Video
+
 ```http
 PATCH /videos/:videoId
 Authorization: Bearer {token}
@@ -224,6 +247,7 @@ Content-Type: application/json
 ```
 
 **Request Body:**
+
 - `title` (string, optional)
 - `description` (string, optional)
 - `privacy` (string, optional)
@@ -233,6 +257,7 @@ Content-Type: application/json
 **Response:** `200 OK`
 
 ### Delete Video
+
 ```http
 DELETE /videos/:videoId
 Authorization: Bearer {token}
@@ -241,6 +266,7 @@ Authorization: Bearer {token}
 **Response:** `200 OK`
 
 ### Get User's Videos
+
 ```http
 GET /videos/user/:userId?page=1&limit=20
 ```
@@ -252,12 +278,14 @@ GET /videos/user/:userId?page=1&limit=20
 ## Like Endpoints
 
 ### Like/Unlike Video
+
 ```http
 POST /likes/video/:videoId
 Authorization: Bearer {token}
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "success": true,
@@ -269,6 +297,7 @@ Authorization: Bearer {token}
 ```
 
 ### Get User's Liked Videos
+
 ```http
 GET /likes/user
 Authorization: Bearer {token}
@@ -281,6 +310,7 @@ Authorization: Bearer {token}
 ## Comment Endpoints
 
 ### Get Video Comments
+
 ```http
 GET /comments/video/:videoId?page=1&limit=20
 ```
@@ -288,6 +318,7 @@ GET /comments/video/:videoId?page=1&limit=20
 **Response:** `200 OK`
 
 ### Create Comment
+
 ```http
 POST /comments/video/:videoId
 Authorization: Bearer {token}
@@ -295,6 +326,7 @@ Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "content": "Great video!"
@@ -304,6 +336,7 @@ Content-Type: application/json
 **Response:** `201 Created`
 
 ### Update Comment
+
 ```http
 PATCH /comments/:commentId
 Authorization: Bearer {token}
@@ -311,6 +344,7 @@ Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "content": "Updated comment"
@@ -318,6 +352,7 @@ Content-Type: application/json
 ```
 
 ### Delete Comment
+
 ```http
 DELETE /comments/:commentId
 Authorization: Bearer {token}
@@ -330,12 +365,14 @@ Authorization: Bearer {token}
 ## Subscription Endpoints
 
 ### Subscribe/Unsubscribe
+
 ```http
 POST /subscriptions/:channelId
 Authorization: Bearer {token}
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "success": true,
@@ -347,6 +384,7 @@ Authorization: Bearer {token}
 ```
 
 ### Get User Subscriptions
+
 ```http
 GET /subscriptions/user
 Authorization: Bearer {token}
@@ -355,6 +393,7 @@ Authorization: Bearer {token}
 **Response:** `200 OK`
 
 ### Get Channel Subscribers
+
 ```http
 GET /subscriptions/channel/:channelId
 ```
@@ -363,19 +402,94 @@ GET /subscriptions/channel/:channelId
 
 ---
 
+## Playlist Endpoints
+
+### Create Playlist
+
+```http
+POST /playlists
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "name": "My Favorites",
+  "description": "Videos I like",
+  "isPublic": true
+}
+```
+
+### Get User Playlists
+
+```http
+GET /playlists/user/:userId
+```
+
+### Get Playlist by ID
+
+```http
+GET /playlists/:playlistId
+```
+
+### Add Video to Playlist
+
+```http
+POST /playlists/:playlistId/videos/:videoId
+Authorization: Bearer {token}
+```
+
+---
+
+## Notification Endpoints
+
+### Get Notifications
+
+```http
+GET /notifications?page=1&limit=15&unreadOnly=false
+Authorization: Bearer {token}
+```
+
+---
+
+## Report Endpoints
+
+### Create Report
+
+```http
+POST /reports
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "type": "video",
+  "reportedItem": "videoId",
+  "reason": "spam",
+  "description": "This is spam"
+}
+```
+
+---
+
 ## Error Codes
 
-| Code | Description |
-|------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request - Validation error |
-| 401 | Unauthorized - Invalid/missing token |
-| 403 | Forbidden - Insufficient permissions |
-| 404 | Not Found - Resource doesn't exist |
-| 409 | Conflict - Resource already exists |
-| 429 | Too Many Requests - Rate limit exceeded |
-| 500 | Internal Server Error |
+| Code | Description                             |
+| ---- | --------------------------------------- |
+| 200  | Success                                 |
+| 201  | Created                                 |
+| 400  | Bad Request - Validation error          |
+| 401  | Unauthorized - Invalid/missing token    |
+| 403  | Forbidden - Insufficient permissions    |
+| 404  | Not Found - Resource doesn't exist      |
+| 409  | Conflict - Resource already exists      |
+| 429  | Too Many Requests - Rate limit exceeded |
+| 500  | Internal Server Error                   |
 
 ---
 
@@ -388,6 +502,7 @@ All list endpoints support pagination:
 ```
 
 Response includes pagination metadata:
+
 ```json
 {
   "pagination": {
@@ -408,19 +523,22 @@ Response includes pagination metadata:
 ## Validation Rules
 
 ### User Registration
+
 - `fullName`: 2-100 characters
 - `username`: 3-20 characters, alphanumeric + underscore only
 - `email`: Valid email format
 - `password`: 8-128 characters
 
 ### Video Upload
+
 - `title`: 1-200 characters
 - `description`: Max 5000 characters
-- `video`: Max 500MB, video/* types
-- `thumbnail`: Max 10MB, image/* types
+- `video`: Max 500MB, video/\* types
+- `thumbnail`: Max 10MB, image/\* types
 - `duration`: Positive number, max 86400 seconds (24 hours)
 
 ### Comments
+
 - `content`: 1-1000 characters
 
 ---
