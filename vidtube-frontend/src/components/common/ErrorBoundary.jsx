@@ -1,5 +1,4 @@
 import { Component } from "react";
-import { Link } from "react-router-dom";
 import Button from "../ui/Button.jsx";
 
 export default class ErrorBoundary extends Component {
@@ -14,8 +13,8 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     // Log error to console in development
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+
     // In production, you can send to error tracking service
     // Example: Sentry, LogRocket, etc.
     if (import.meta.env.PROD) {
@@ -67,9 +66,9 @@ export default class ErrorBoundary extends Component {
               <Button onClick={this.handleReset} variant="primary">
                 Try Again
               </Button>
-              <Link to="/" onClick={this.handleReset}>
+              <a href="/" onClick={this.handleReset}>
                 <Button variant="outline">Go Home</Button>
-              </Link>
+              </a>
             </div>
           </div>
         </div>

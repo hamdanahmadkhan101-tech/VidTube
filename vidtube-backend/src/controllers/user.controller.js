@@ -145,7 +145,12 @@ const loginUser = asyncHandler(async (req, res) => {
     '-password -refreshTokens'
   );
 
-  const options = { httpOnly: true, secure: true, sameSite: 'None' };
+  const isProd = process.env.NODE_ENV === 'production';
+  const options = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'None' : 'Lax',
+  };
   res
     .status(200)
     .cookie('refreshToken', tokens.refreshToken, options)
@@ -177,7 +182,12 @@ const logoutUser = asyncHandler(async (req, res) => {
     );
   }
 
-  const options = { httpOnly: true, secure: true, sameSite: 'None' };
+  const isProd = process.env.NODE_ENV === 'production';
+  const options = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'None' : 'Lax',
+  };
   res
     .status(200)
     .clearCookie('refreshToken', options)
@@ -221,7 +231,12 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken: newRefreshToken } =
     await generateAcessAndRefreshTokens(user._id);
 
-  const options = { httpOnly: true, secure: true, sameSite: 'None' };
+  const isProd = process.env.NODE_ENV === 'production';
+  const options = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'None' : 'Lax',
+  };
 
   return res
     .status(200)
