@@ -22,6 +22,7 @@ export const NotificationsPage: React.FC = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["notifications", page],
     queryFn: () => notificationService.getNotifications({ page, limit: 20 }),
+    refetchInterval: 15000, // Poll every 15 seconds for live updates
   });
 
   const markAsReadMutation = useMutation({

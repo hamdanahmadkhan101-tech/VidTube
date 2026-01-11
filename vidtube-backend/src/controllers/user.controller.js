@@ -538,9 +538,15 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     // User is subscribed - unsubscribe them
     await Subscription.findByIdAndDelete(existingSubscription._id);
 
+    // Get updated subscriber count
+    const subscribersCount = await Subscription.countDocuments({
+      channel: channelId,
+    });
+
     res.status(200).json(
       new apiResponse(200, 'Successfully unsubscribed from channel', {
         isSubscribed: false,
+        subscribersCount,
         action: 'unsubscribed',
       })
     );
@@ -565,9 +571,15 @@ const toggleSubscription = asyncHandler(async (req, res) => {
       console.error('Failed to create subscription notification:', notifError);
     }
 
+    // Get updated subscriber count
+    const subscribersCount = await Subscription.countDocuments({
+      channel: channelId,
+    });
+
     res.status(200).json(
       new apiResponse(200, 'Successfully subscribed to channel', {
         isSubscribed: true,
+        subscribersCount,
         action: 'subscribed',
       })
     );

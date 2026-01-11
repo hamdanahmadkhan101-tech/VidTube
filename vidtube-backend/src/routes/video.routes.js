@@ -22,19 +22,19 @@ import {
   uploadVideo as uploadVideoMiddleware,
   uploadImage,
 } from '../middlewares/multer.middleware.js';
-import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { verifyJWT, optionalJWT } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
 // ============================================
-// PUBLIC ROUTES
+// PUBLIC ROUTES (with optional auth for like/subscribe status)
 // ============================================
 
-router.route('/').get(getAllVideos);
-router.route('/search').get(searchVideos);
+router.route('/').get(optionalJWT, getAllVideos);
+router.route('/search').get(optionalJWT, searchVideos);
 router.route('/suggestions').get(getSearchSuggestions);
-router.route('/user/:userId').get(getVideosByOwner);
-router.route('/:videoId').get(getVideoById);
+router.route('/user/:userId').get(optionalJWT, getVideosByOwner);
+router.route('/:videoId').get(optionalJWT, getVideoById);
 
 // ============================================
 // PROTECTED ROUTES

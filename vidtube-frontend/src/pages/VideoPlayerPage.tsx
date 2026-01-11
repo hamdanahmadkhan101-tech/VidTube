@@ -78,22 +78,68 @@ export const VideoPlayerPage: React.FC = () => {
     enabled: !!videoId,
   });
 
-  // Like video mutation
+  // Like video mutation with optimistic update
   const likeMutation = useMutation({
     mutationFn: () => videoService.toggleLike(videoId!),
+    onMutate: async () => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["video", videoId] });
+
+      // Snapshot previous value
+      const previousVideo = queryClient.getQueryData(["video", videoId]);
+
+      // Optimistically update
+      queryClient.setQueryData(["video", videoId], (old: Video) => ({
+        ...old,
+        isLiked: !old.isLiked,
+        likes: old.isLiked ? (old.likes || 1) - 1 : (old.likes || 0) + 1,
+      }));
+
+      return { previousVideo };
+    },
     onSuccess: (data) => {
+      // Update with actual server response
       queryClient.setQueryData(["video", videoId], (old: Video) => ({
         ...old,
         isLiked: data.isLiked,
         likes: data.likesCount,
       }));
     },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousVideo) {
+        queryClient.setQueryData(["video", videoId], context.previousVideo);
+      }
+      toast.error("Failed to update like");
+    },
   });
 
-  // Subscribe mutation
+  // Subscribe mutation with optimistic update
   const subscribeMutation = useMutation({
     mutationFn: () => subscriptionService.toggleSubscription(video!.owner._id),
+    onMutate: async () => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["video", videoId] });
+
+      // Snapshot previous value
+      const previousVideo = queryClient.getQueryData(["video", videoId]);
+
+      // Optimistically update
+      queryClient.setQueryData(["video", videoId], (old: Video) => ({
+        ...old,
+        owner: {
+          ...old.owner,
+          isSubscribed: !old.owner.isSubscribed,
+          subscribersCount: old.owner.isSubscribed
+            ? (old.owner.subscribersCount || 1) - 1
+            : (old.owner.subscribersCount || 0) + 1,
+        },
+      }));
+
+      return { previousVideo };
+    },
     onSuccess: (data) => {
+      // Update with actual server response
       queryClient.setQueryData(["video", videoId], (old: Video) => ({
         ...old,
         owner: {
@@ -103,10 +149,18 @@ export const VideoPlayerPage: React.FC = () => {
         },
       }));
       toast.success(data.isSubscribed ? "Subscribed!" : "Unsubscribed");
+
+      // Also invalidate channel profile to update subscriber count there
+      queryClient.invalidateQueries({ queryKey: ["channelProfile"] });
     },
-    onError: (error: any) => {
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousVideo) {
+        queryClient.setQueryData(["video", videoId], context.previousVideo);
+      }
       const errorMessage =
-        error?.response?.data?.message || "Failed to update subscription";
+        (err as any)?.response?.data?.message ||
+        "Failed to update subscription";
       toast.error(errorMessage);
     },
   });

@@ -83,17 +83,20 @@ export const videoService = {
       `/videos/search?${params.toString()}`
     );
 
-    const data = response.data.data || {};
+    // Backend returns { data: [...videos], meta: { pagination: {...} } }
+    const videos = response.data.data || [];
+    const pagination = (response.data as any).meta?.pagination || {
+      page: 1,
+      limit: 20,
+      totalDocs: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPrevPage: false,
+    };
+
     return {
-      docs: (data.docs || []).map(mapVideoResponse),
-      pagination: data.pagination || {
-        page: 1,
-        limit: 20,
-        totalDocs: 0,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPrevPage: false,
-      },
+      docs: Array.isArray(videos) ? videos.map(mapVideoResponse) : [],
+      pagination,
     };
   },
 

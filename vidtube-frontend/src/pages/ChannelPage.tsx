@@ -43,9 +43,27 @@ export const ChannelPage: React.FC = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Subscribe mutation
+  // Subscribe mutation with optimistic update
   const subscribeMutation = useMutation({
     mutationFn: () => subscriptionService.toggleSubscription(channelUser!._id),
+    onMutate: async () => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["user", username] });
+
+      // Snapshot previous value
+      const previousUser = queryClient.getQueryData(["user", username]);
+
+      // Optimistically update
+      queryClient.setQueryData(["user", username], (old: any) => ({
+        ...old,
+        isSubscribed: !old.isSubscribed,
+        subscribersCount: old.isSubscribed
+          ? (old.subscribersCount || 1) - 1
+          : (old.subscribersCount || 0) + 1,
+      }));
+
+      return { previousUser };
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(["user", username], (old: any) => ({
         ...old,
@@ -53,8 +71,15 @@ export const ChannelPage: React.FC = () => {
         subscribersCount: data.subscribersCount,
       }));
       toast.success(data.isSubscribed ? "Subscribed!" : "Unsubscribed");
+
+      // Also invalidate video queries to update subscription state there
+      queryClient.invalidateQueries({ queryKey: ["video"] });
     },
-    onError: () => {
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(["user", username], context.previousUser);
+      }
       toast.error("Failed to update subscription");
     },
   });

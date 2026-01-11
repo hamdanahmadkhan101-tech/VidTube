@@ -537,16 +537,17 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
  * @access Public
  */
 const searchVideos = asyncHandler(async (req, res) => {
-  const { query } = req.query;
+  const { q, query } = req.query;
+  const searchTerm = q || query; // Support both 'q' and 'query' parameters
 
-  if (!query || !query.trim()) {
+  if (!searchTerm || !searchTerm.trim()) {
     throw new ValidationError('Search query is required', [
-      { field: 'query', message: 'Search query cannot be empty' },
+      { field: 'q', message: 'Search query cannot be empty' },
     ]);
   }
 
   const { page, limit } = getPaginationParams(req.query);
-  const searchQuery = query.trim();
+  const searchQuery = searchTerm.trim();
 
   // Escape special regex characters for safe search
   const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
