@@ -21,6 +21,7 @@ const PlaylistPage = lazy(() => import("./pages/PlaylistPage"));
 const TrendingPage = lazy(() => import("./pages/TrendingPage"));
 const SubscriptionsPage = lazy(() => import("./pages/SubscriptionsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const PlaylistsPage = lazy(() => import("./pages/PlaylistsPage"));
 const EditVideoPage = lazy(() => import("./pages/EditVideoPage"));
 
 // Create QueryClient with optimized config
@@ -146,6 +147,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <SubscriptionsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/playlists"
+                  element={
+                    <ProtectedRoute>
+                      <PlaylistsPage />
                     </ProtectedRoute>
                   }
                 />

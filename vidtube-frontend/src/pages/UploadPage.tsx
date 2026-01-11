@@ -22,6 +22,7 @@ export const UploadPage: React.FC = () => {
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number>(0);
+  const [uploadController, setUploadController] = useState<AbortController | null>(null);
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
@@ -41,6 +42,9 @@ export const UploadPage: React.FC = () => {
       if (!videoDuration)
         throw new Error("Video duration could not be determined");
 
+      const controller = new AbortController();
+      setUploadController(controller);
+
       const formData = new FormData();
       formData.append("title", title);
       if (description) formData.append("description", description);
@@ -59,28 +63,35 @@ export const UploadPage: React.FC = () => {
           )
         );
       }
-      // Required by backend
       formData.append("videoformat", videoFile.type.split("/")[1] || "mp4");
       formData.append("duration", videoDuration.toString());
 
-      return videoService.uploadVideo(formData, (progress) => {
+      return videoService.uploadVideoWithCancel(formData, (progress) => {
         setUploadProgress(progress);
-      });
+      }, controller.signal);
     },
+    retry: 2, // Retry failed uploads twice
+    retryDelay: 3000, // Wait 3 seconds between retries
     onSuccess: (data) => {
       toast.success("Video uploaded successfully!");
+      setUploadProgress(0);
+      setUploadController(null);
       navigate(`/watch/${data._id}`);
     },
-    onError: (error) => {
-      toast.error(handleApiError(error));
+    onError: (error: any) => {
+      setUploadProgress(0);
+      setUploadController(null);
+      if (error.name !== 'AbortError') {
+        toast.error(handleApiError(error));
+      }
     },
   });
 
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 500 * 1024 * 1024) {
-        toast.error("Video file must be less than 500MB");
+      if (file.size > 1024 * 1024 * 1024) {
+        toast.error("Video file must be less than 1GB");
         return;
       }
       
@@ -117,6 +128,17 @@ export const UploadPage: React.FC = () => {
       }
       setThumbnailFile(file);
       setThumbnailPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleCancel = () => {
+    if (uploadController) {
+      uploadController.abort();
+      setUploadController(null);
+      setUploadProgress(0);
+      toast.success("Upload cancelled");
+    } else {
+      navigate(-1);
     }
   };
 
@@ -162,7 +184,7 @@ export const UploadPage: React.FC = () => {
                     drag and drop
                   </p>
                   <p className="text-xs text-text-muted">
-                    MP4, WebM, or AVI (MAX. 500MB)
+                    MP4, WebM, or AVI (MAX. 1GB)
                   </p>
                 </div>
                 <input
@@ -365,8 +387,8 @@ export const UploadPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate(-1)}
-              disabled={uploadMutation.isPending}
+              onClick={handleCancel}
+              disabled={false}
               className="btn-ghost"
             >
               Cancel
