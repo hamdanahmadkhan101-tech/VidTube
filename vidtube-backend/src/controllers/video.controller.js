@@ -174,6 +174,16 @@ const uploadVideo = asyncHandler(async (req, res) => {
       );
   } catch (error) {
     console.error('Upload error:', error);
+    
+    // Handle specific error types with user-friendly messages
+    if (error.code === 'UPLOAD_TIMEOUT') {
+      throw new apiError(408, error.message);
+    }
+    
+    if (error.code === 'CLOUDINARY_ERROR') {
+      throw new apiError(502, 'Cloud storage service error. Please try again.');
+    }
+    
     throw error;
   }
 });
