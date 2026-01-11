@@ -11,26 +11,32 @@ cloudinary.config({
 
 const uploadOnCloudinary = async (filePath) => {
   try {
-    if (!filePath) return null;
-
-    if (!fs.existsSync(filePath)) {
-      console.warn(`File not found for upload: ${filePath}`);
+    if (!filePath) {
+      console.error('No file path provided to uploadOnCloudinary');
       return null;
     }
 
+    if (!fs.existsSync(filePath)) {
+      console.error(`File not found for upload: ${filePath}`);
+      return null;
+    }
+
+    console.log(`Starting Cloudinary upload for: ${filePath}`);
     const response = await cloudinary.uploader.upload(filePath, {
       resource_type: 'auto',
-      secure: true, // Ensure HTTPS URLs in response
+      secure: true,
+      timeout: 300000, // 5 minutes timeout
     });
 
+    console.log('Cloudinary upload successful:', response.public_id);
     // Always delete temp file after successful upload
     deleteFile(filePath);
     return response;
   } catch (error) {
-    console.error('Cloudinary upload error:', error.message);
+    console.error('Cloudinary upload error:', error);
     // Always try to clean up temp file even on error
     deleteFile(filePath);
-    return null;
+    throw error; // Re-throw to let controller handle it
   }
 };
 

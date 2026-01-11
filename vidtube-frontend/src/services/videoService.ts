@@ -142,31 +142,51 @@ export const videoService = {
     };
   },
 
-  // Upload video with cancellation support
-  uploadVideoWithCancel: async (
-    data: FormData,
-    onProgress?: (progress: number) => void,
-    signal?: AbortSignal
+  // Upload video
+  uploadVideo: async (
+    data: UploadVideoFormData | FormData,
+    onProgress?: (progress: number) => void
   ): Promise<Video> => {
+    let formData: FormData;
+
+    if (data instanceof FormData) {
+      formData = data;
+    } else {
+      formData = new FormData();
+      formData.append("title", data.title);
+      if (data.description) formData.append("description", data.description);
+      formData.append("video", data.video[0]);
+      if (data.thumbnail && data.thumbnail.length > 0) {
+        formData.append("thumbnail", data.thumbnail[0]);
+      }
+      formData.append("videoformat", data.videoformat);
+      formData.append("duration", data.duration.toString());
+      if (data.privacy) formData.append("privacy", data.privacy);
+      if (data.category) formData.append("category", data.category);
+      if (data.tags) formData.append("tags", JSON.stringify(data.tags));
+    }
+
+    console.log('Frontend: Starting upload...');
     const response = await apiClient.post<ApiResponse<any>>(
       "/videos/upload",
-      data,
+      formData,
       {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        signal,
         timeout: 0, // No timeout for large uploads
         onUploadProgress: (progressEvent) => {
           if (onProgress && progressEvent.total) {
             const progress = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
+            console.log('Upload progress:', progress + '%');
             onProgress(progress);
           }
         },
       }
     );
+    console.log('Frontend: Upload completed');
     return mapVideoResponse(response.data.data);
   },
 

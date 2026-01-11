@@ -66,9 +66,9 @@ export const UploadPage: React.FC = () => {
       formData.append("videoformat", videoFile.type.split("/")[1] || "mp4");
       formData.append("duration", videoDuration.toString());
 
-      return videoService.uploadVideoWithCancel(formData, (progress) => {
+      return videoService.uploadVideo(formData, (progress) => {
         setUploadProgress(progress);
-      }, controller.signal);
+      });
     },
     retry: 2, // Retry failed uploads twice
     retryDelay: 3000, // Wait 3 seconds between retries

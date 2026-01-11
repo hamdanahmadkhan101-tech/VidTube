@@ -83,6 +83,11 @@ const ownerLookupPipeline = [
  * @access Private
  */
 const uploadVideo = asyncHandler(async (req, res) => {
+  console.log('Upload started:', {
+    body: req.body,
+    files: req.files ? Object.keys(req.files) : 'no files'
+  });
+
   const { title, description = '', videoformat, duration } = req.body;
 
   // Validate required fields
@@ -110,10 +115,12 @@ const uploadVideo = asyncHandler(async (req, res) => {
     0.01,
     86400,
     'duration'
-  ); // Max 24 hours
+  );
 
   const videoPath = req.files?.video?.[0]?.path ?? null;
   const thumbnailPath = req.files?.thumbnail?.[0]?.path ?? null;
+
+  console.log('File paths:', { videoPath, thumbnailPath });
 
   if (!videoPath) {
     throw new ValidationError('Video file is required', [
@@ -121,42 +128,53 @@ const uploadVideo = asyncHandler(async (req, res) => {
     ]);
   }
 
-  // Upload video to Cloudinary
-  const videoUploadResult = await uploadOnCloudinary(videoPath);
-  if (!videoUploadResult?.url) {
-    throw new apiError(500, 'Video upload to cloud storage failed');
+  try {
+    console.log('Starting Cloudinary upload...');
+    // Upload video to Cloudinary
+    const videoUploadResult = await uploadOnCloudinary(videoPath);
+    console.log('Video upload result:', videoUploadResult ? 'success' : 'failed');
+    
+    if (!videoUploadResult?.url) {
+      throw new apiError(500, 'Video upload to cloud storage failed');
+    }
+
+    // Upload thumbnail if provided
+    const thumbnailUploadResult = thumbnailPath
+      ? await uploadOnCloudinary(thumbnailPath)
+      : null;
+    
+    console.log('Creating video document...');
+    const newVideo = await Video.create({
+      title: validatedTitle,
+      description: validatedDescription,
+      videoformat: validatedFormat,
+      duration: numericDuration,
+      url: videoUploadResult.url,
+      thumbnailUrl: thumbnailUploadResult?.url || '',
+      owner: req.user._id,
+    });
+
+    console.log('Video created, fetching with owner details...');
+    // Return video with populated owner details
+    const [createdVideo] = await Video.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(newVideo._id) } },
+      ...ownerLookupPipeline,
+    ]);
+
+    console.log('Upload completed successfully');
+    res
+      .status(201)
+      .json(
+        new apiResponse(
+          201,
+          'Video uploaded successfully',
+          formatVideo(createdVideo || newVideo)
+        )
+      );
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
   }
-
-  // Upload thumbnail if provided
-  const thumbnailUploadResult = thumbnailPath
-    ? await uploadOnCloudinary(thumbnailPath)
-    : null;
-
-  const newVideo = await Video.create({
-    title: validatedTitle,
-    description: validatedDescription,
-    videoformat: validatedFormat,
-    duration: numericDuration,
-    url: videoUploadResult.url,
-    thumbnailUrl: thumbnailUploadResult?.url || '',
-    owner: req.user._id,
-  });
-
-  // Return video with populated owner details
-  const [createdVideo] = await Video.aggregate([
-    { $match: { _id: new mongoose.Types.ObjectId(newVideo._id) } },
-    ...ownerLookupPipeline,
-  ]);
-
-  res
-    .status(201)
-    .json(
-      new apiResponse(
-        201,
-        'Video uploaded successfully',
-        formatVideo(createdVideo || newVideo)
-      )
-    );
 });
 
 /**
