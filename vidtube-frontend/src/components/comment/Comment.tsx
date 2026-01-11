@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { formatRelativeTime, formatViewCount, cn } from "../../utils/helpers";
 import DOMPurify from "dompurify";
+import { ConfirmModal } from "../ui/ConfirmModal";
 import type { Comment as CommentType } from "../../types";
 
 interface CommentProps {
@@ -17,7 +18,8 @@ interface CommentProps {
   onReply?: (commentId: string, content: string) => void;
   onEdit?: (commentId: string, content: string) => void;
   onDelete?: (commentId: string) => void;
-  isOwner?: boolean;
+  currentUserId?: string;
+  videoOwnerId?: string;
   depth?: number;
 }
 
@@ -27,15 +29,20 @@ export const Comment: React.FC<CommentProps> = ({
   onReply,
   onEdit,
   onDelete,
-  isOwner = false,
+  currentUserId,
+  videoOwnerId,
   depth = 0,
 }) => {
+  const isOwner =
+    currentUserId === comment.owner._id || currentUserId === videoOwnerId;
+  const canEdit = currentUserId === comment.owner._id;
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [editText, setEditText] = useState(comment.content);
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleLike = () => {
     onLike?.(comment._id);
@@ -57,9 +64,8 @@ export const Comment: React.FC<CommentProps> = ({
   };
 
   const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this comment?")) {
-      onDelete?.(comment._id);
-    }
+    onDelete?.(comment._id);
+    setShowDeleteConfirm(false);
   };
 
   // Sanitize comment content
@@ -116,19 +122,21 @@ export const Comment: React.FC<CommentProps> = ({
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="absolute right-0 top-full mt-1 glass-card p-1 min-w-32 z-10"
                   >
+                    {canEdit && (
+                      <button
+                        onClick={() => {
+                          setIsEditing(true);
+                          setShowMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Edit
+                      </button>
+                    )}
                     <button
                       onClick={() => {
-                        setIsEditing(true);
-                        setShowMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleDelete();
+                        setShowDeleteConfirm(true);
                         setShowMenu(false);
                       }}
                       className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-surface-hover rounded-lg transition-colors"
@@ -271,7 +279,8 @@ export const Comment: React.FC<CommentProps> = ({
                 onReply={onReply}
                 onEdit={onEdit}
                 onDelete={onDelete}
-                isOwner={isOwner}
+                currentUserId={currentUserId}
+                videoOwnerId={videoOwnerId}
                 depth={depth + 1}
               />
             ))}
@@ -298,6 +307,18 @@ export const Comment: React.FC<CommentProps> = ({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Delete Comment"
+        message="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </motion.div>
   );
 };

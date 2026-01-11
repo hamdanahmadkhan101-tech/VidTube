@@ -239,6 +239,25 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
         likedBy: req.user._id,
       });
       isLiked = true;
+
+      // Create notification for the comment owner (don't notify self)
+      if (comment.owner.toString() !== req.user._id.toString()) {
+        try {
+          await Notification.create({
+            recipient: comment.owner,
+            type: 'like',
+            title: 'New Like',
+            message: `${req.user.fullName} liked your comment`,
+            relatedVideo: comment.video,
+            relatedUser: req.user._id,
+          });
+        } catch (notifError) {
+          console.error(
+            'Failed to create comment like notification:',
+            notifError
+          );
+        }
+      }
     } catch (error) {
       if (error.code === 11000) {
         isLiked = true;

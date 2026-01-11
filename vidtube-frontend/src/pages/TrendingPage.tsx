@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { videoService } from "../services/videoService.ts";
 import { VideoCard } from "../components/video/VideoCard";
 import { VideoCardSkeleton } from "../components/ui/Skeleton";
+import type { Video } from "../types";
 import { TrendingUp } from "lucide-react";
 
 export const TrendingPage: React.FC = () => {
@@ -18,7 +19,7 @@ export const TrendingPage: React.FC = () => {
       }),
   });
 
-  const videos = data?.videos || [];
+  const videos = data?.docs || [];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -44,7 +45,7 @@ export const TrendingPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {videos.map((video, index) => (
+          {videos.map((video: Video, index: number) => (
             <motion.div
               key={video._id}
               initial={{ opacity: 0, y: 20 }}

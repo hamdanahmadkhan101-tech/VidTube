@@ -61,16 +61,12 @@ export const ChannelPage: React.FC = () => {
 
   // Fetch user's videos
   const { data: videosData, isLoading: isLoadingVideos } = useQuery({
-    queryKey: ["channelVideos", username],
+    queryKey: ["channelVideos", channelUser?._id],
     queryFn: async () => {
-      const response = await videoService.getVideos({
-        page: 1,
-        limit: 20,
-        // If backend supports filtering by username/userId, add it here
-      });
-      return response;
+      if (!channelUser?._id) return { docs: [], pagination: {} };
+      return await videoService.getUserVideos(channelUser._id, 1, 20);
     },
-    enabled: !!username,
+    enabled: !!channelUser?._id,
   });
 
   if (isLoadingUser) {
@@ -100,7 +96,7 @@ export const ChannelPage: React.FC = () => {
   }
 
   const isOwnChannel = currentUser?.username === username;
-  const videos = videosData?.videos || [];
+  const videos = videosData?.docs || [];
 
   return (
     <div className="min-h-screen pb-20">
@@ -302,7 +298,7 @@ export const ChannelPage: React.FC = () => {
                     : "space-y-4"
                 }
               >
-                {videos.map((video) => (
+                {videos.map((video: Video) => (
                   <VideoCard key={video._id} video={video} />
                 ))}
               </div>

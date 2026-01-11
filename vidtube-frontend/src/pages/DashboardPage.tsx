@@ -11,6 +11,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { videoService } from "../services/videoService.ts";
+import type { Video } from "../types";
 import { useAuthStore } from "../store/authStore.ts";
 import { formatViewCount, formatRelativeTime } from "../utils/helpers";
 
@@ -26,10 +27,10 @@ export const DashboardPage: React.FC = () => {
     queryFn: () => videoService.getVideos({ page: 1, limit: 50 }),
   });
 
-  const videos = videosData?.videos || [];
+  const videos = videosData?.docs || [];
   const totalVideos = videos.length;
-  const totalViews = videos.reduce((sum, v) => sum + v.views, 0);
-  const totalLikes = videos.reduce((sum, v) => sum + v.likes, 0);
+  const totalViews = videos.reduce((sum: number, v: Video) => sum + v.views, 0);
+  const totalLikes = videos.reduce((sum: number, v: Video) => sum + v.likes, 0);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -124,7 +125,7 @@ export const DashboardPage: React.FC = () => {
             </div>
           ) : videos.length > 0 ? (
             <div className="space-y-3">
-              {videos.map((video) => (
+              {videos.map((video: Video) => (
                 <Link
                   key={video._id}
                   to={`/watch/${video._id}`}

@@ -6,6 +6,7 @@ import { Search as SearchIcon, Filter, X, Loader2 } from "lucide-react";
 import { videoService } from "../services/videoService.ts";
 import { VideoCard } from "../components/video/VideoCard";
 import { VideoCardSkeleton } from "../components/ui/Skeleton";
+import type { Video } from "../types";
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,7 +27,7 @@ export const SearchPage: React.FC = () => {
     enabled: !!query,
   });
 
-  const videos = data?.videos || [];
+  const videos = data?.docs || [];
 
   const handleSearch = (newQuery: string) => {
     if (newQuery.trim()) {
@@ -115,7 +116,7 @@ export const SearchPage: React.FC = () => {
             </div>
           ) : videos.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {videos.map((video) => (
+              {videos.map((video: Video) => (
                 <VideoCard key={video._id} video={video} />
               ))}
             </div>

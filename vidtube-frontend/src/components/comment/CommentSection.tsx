@@ -9,6 +9,7 @@ import type { Comment as CommentType } from "../../types";
 
 interface CommentSectionProps {
   videoId: string;
+  videoOwnerId: string;
   comments: CommentType[];
   totalComments: number;
   isLoading: boolean;
@@ -23,6 +24,7 @@ interface CommentSectionProps {
 
 export const CommentSection: React.FC<CommentSectionProps> = ({
   videoId: _videoId,
+  videoOwnerId,
   comments,
   totalComments,
   isLoading,
@@ -160,7 +162,8 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                 onReply={onReplyComment}
                 onEdit={onEditComment}
                 onDelete={onDeleteComment}
-                isOwner={user?._id === comment.owner._id}
+                currentUserId={user?._id}
+                videoOwnerId={videoOwnerId}
               />
             ))}
 

@@ -53,6 +53,7 @@ export interface Video {
   title: string;
   description?: string;
   videoUrl: string;
+  url?: string; // Direct download URL
   thumbnailUrl?: string;
   duration: number;
   views: number;
@@ -114,8 +115,12 @@ export interface Playlist {
 export interface Notification {
   _id: string;
   recipient: string;
-  sender: User;
+  sender?: User;
+  relatedUser?: User;
+  relatedVideo?: Video;
   type: "like" | "comment" | "subscription" | "upload";
+  title?: string;
+  message?: string;
   video?: Video;
   comment?: Comment;
   isRead: boolean;

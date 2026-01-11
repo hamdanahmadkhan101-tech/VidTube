@@ -206,12 +206,17 @@ const deleteComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   validateObjectId(commentId, 'commentId');
 
-  const comment = await Comment.findById(commentId);
+  const comment = await Comment.findById(commentId).populate('video');
   if (!comment) {
     throw new apiError(404, 'Comment not found');
   }
 
-  if (comment.owner.toString() !== req.user._id.toString()) {
+  // Allow deletion if user is comment owner OR video owner
+  const isCommentOwner = comment.owner.toString() === req.user._id.toString();
+  const isVideoOwner =
+    comment.video.owner.toString() === req.user._id.toString();
+
+  if (!isCommentOwner && !isVideoOwner) {
     throw new apiError(403, 'You are not allowed to delete this comment');
   }
 
@@ -301,8 +306,20 @@ const getVideoComments = asyncHandler(async (req, res) => {
             },
           },
           {
+            $lookup: {
+              from: 'likes',
+              localField: '_id',
+              foreignField: 'comment',
+              as: 'replyLikes',
+            },
+          },
+          {
             $addFields: {
               owner: { $first: '$owner' },
+              likes: { $size: '$replyLikes' },
+              isLiked: {
+                $in: [req.user?._id, '$replyLikes.likedBy'],
+              },
             },
           },
         ],
@@ -310,9 +327,21 @@ const getVideoComments = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: 'likes',
+        localField: '_id',
+        foreignField: 'comment',
+        as: 'commentLikes',
+      },
+    },
+    {
       $addFields: {
         owner: { $first: '$owner' },
         repliesCount: { $size: '$replies' },
+        likes: { $size: '$commentLikes' },
+        isLiked: {
+          $in: [req.user?._id, '$commentLikes.likedBy'],
+        },
       },
     },
   ];

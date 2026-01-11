@@ -20,6 +20,7 @@ const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const PlaylistPage = lazy(() => import("./pages/PlaylistPage"));
 const TrendingPage = lazy(() => import("./pages/TrendingPage"));
 const SubscriptionsPage = lazy(() => import("./pages/SubscriptionsPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 
 // Create QueryClient with optimized config
 const queryClient = new QueryClient({
@@ -139,6 +140,14 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/notifications"
+                  element={
+                    <ProtectedRoute>
+                      <NotificationsPage />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* 404 Not Found */}
                 <Route
@@ -167,7 +176,7 @@ function App() {
           <Toaster
             position="top-right"
             toastOptions={{
-              duration: 3000,
+              duration: 2000,
               style: {
                 background: "rgba(20, 20, 20, 0.9)",
                 color: "#fff",

@@ -46,7 +46,7 @@ export const commentService = {
     content: string
   ): Promise<Comment> => {
     const response = await apiClient.patch<ApiResponse<{ comment: Comment }>>(
-      `/comments/${commentId}`,
+      `/comments/c/${commentId}`,
       { content }
     );
     return response.data.data!.comment;
@@ -54,7 +54,7 @@ export const commentService = {
 
   // Delete comment
   deleteComment: async (commentId: string): Promise<void> => {
-    await apiClient.delete(`/comments/${commentId}`);
+    await apiClient.delete(`/comments/c/${commentId}`);
   },
 
   // Toggle comment like

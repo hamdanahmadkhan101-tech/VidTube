@@ -27,6 +27,35 @@ export const Header: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const userMenuRef = React.useRef<HTMLDivElement>(null);
+
+  // Close profile dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowUserMenu(false);
+      }
+    };
+
+    if (showUserMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showUserMenu]);
+
+  // Close dropdowns when user logs out
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      setShowUserMenu(false);
+      setShowNotifications(false);
+    }
+  }, [isAuthenticated]);
 
   // Fetch unread notification count
   const { data: unreadCount } = useQuery({
@@ -149,7 +178,7 @@ export const Header: React.FC = () => {
                 </div>
 
                 {/* User Menu */}
-                <div className="relative">
+                <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
@@ -167,7 +196,7 @@ export const Header: React.FC = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute right-0 mt-2 w-56 glass-card p-2"
+                        className="absolute right-0 mt-2 w-56 bg-background-secondary backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 z-50 p-2"
                       >
                         <div className="px-3 py-2 border-b border-white/10 mb-2">
                           <p className="text-text-primary font-semibold">

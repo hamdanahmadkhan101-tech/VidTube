@@ -73,6 +73,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       notification.sender?.fullName ||
       notification.relatedUser?.fullName ||
       "Someone";
+
+    // Use backend message if available, otherwise generate default
+    if (notification.message) {
+      // If message starts with username, return as is, otherwise prepend username
+      if (notification.message.toLowerCase().includes(userName.toLowerCase())) {
+        return notification.message;
+      }
+      return `${userName} ${notification.message}`;
+    }
+
+    // Fallback to type-based messages
     switch (notification.type) {
       case "like":
         return `${userName} liked your video`;
@@ -83,7 +94,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       case "upload":
         return `${userName} uploaded a new video`;
       default:
-        return notification.message || "New notification";
+        return "New notification";
     }
   };
 
