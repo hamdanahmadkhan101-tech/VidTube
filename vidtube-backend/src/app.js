@@ -124,6 +124,18 @@ app.get('/metrics', (req, res) => {
   });
 });
 
+// Test Cloudinary configuration
+app.get('/test-cloudinary', (req, res) => {
+  res.status(200).json({
+    success: true,
+    cloudinary: {
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'NOT SET',
+      api_key: process.env.CLOUDINARY_API_KEY ? 'SET' : 'NOT SET',
+      api_secret: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'NOT SET',
+    }
+  });
+});
+
 // ============================================
 // ROUTES
 // ============================================

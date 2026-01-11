@@ -34,7 +34,7 @@ export const UploadPage: React.FC = () => {
         URL.revokeObjectURL(thumbnailPreview);
       }
     };
-  }, [videoPreview, thumbnailPreview]);
+  }, []);
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -216,6 +216,10 @@ export const UploadPage: React.FC = () => {
                     controls
                     className="w-full rounded-lg mb-2"
                     style={{ maxHeight: "300px" }}
+                    onError={(e) => {
+                      console.error('Video preview error');
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
                 )}
                 <p className="text-sm text-text-secondary">{videoFile.name}</p>
