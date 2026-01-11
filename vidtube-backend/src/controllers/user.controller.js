@@ -10,6 +10,7 @@ import mongoose from 'mongoose';
 // Models
 import { User } from '../models/user.model.js';
 import Subscription from '../models/subscription.model.js';
+import Notification from '../models/notification.model.js';
 // Note: Video collection referenced by name in aggregation pipeline
 
 import Video from '../models/video.model.js';
@@ -535,6 +536,20 @@ const toggleSubscription = asyncHandler(async (req, res) => {
       subscriber: req.user._id,
       channel: channelId,
     });
+
+    // Create notification for the channel owner
+    try {
+      await Notification.create({
+        recipient: channelId,
+        type: 'subscription',
+        title: 'New Subscriber',
+        message: `${req.user.fullName} subscribed to your channel`,
+        relatedUser: req.user._id,
+      });
+    } catch (notifError) {
+      // Log the error but don't fail the subscription
+      console.error('Failed to create subscription notification:', notifError);
+    }
 
     res.status(200).json(
       new apiResponse(200, 'Successfully subscribed to channel', {

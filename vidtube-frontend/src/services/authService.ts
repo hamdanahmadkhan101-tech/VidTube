@@ -121,9 +121,13 @@ export const authService = {
 
   // Get user profile by username
   getUserProfile: async (username: string): Promise<User> => {
-    const response = await apiClient.get<ApiResponse<{ user: User }>>(
-      `/users/${username}`
+    const response = await apiClient.get<ApiResponse<User>>(
+      `/users/c/${username}`
     );
-    return response.data.data!.user;
+    // Backend returns the channel directly in data field
+    if (!response.data.data) {
+      throw new Error("User not found");
+    }
+    return response.data.data;
   },
 };

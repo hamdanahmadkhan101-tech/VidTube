@@ -197,7 +197,7 @@ export const videoService = {
   ): Promise<{ isLiked: boolean; likesCount: number }> => {
     const response = await apiClient.post<
       ApiResponse<{ isLiked: boolean; likesCount: number }>
-    >(`/likes/video/${videoId}`);
+    >(`/likes/toggle/v/${videoId}`);
     return response.data.data!;
   },
 
@@ -206,5 +206,24 @@ export const videoService = {
     const response = await apiClient.get<ApiResponse<any>>("/likes/user");
     const videos = response.data.data?.videos || [];
     return videos.map(mapVideoResponse);
+  },
+
+  // Increment video views
+  incrementViews: async (videoId: string): Promise<void> => {
+    await apiClient.post(`/videos/${videoId}/watch`);
+  },
+
+  // Report video
+  reportVideo: async (
+    videoId: string,
+    reason: string,
+    description?: string
+  ): Promise<void> => {
+    await apiClient.post(`/reports`, {
+      type: "video",
+      reportedItem: videoId,
+      reason,
+      description,
+    });
   },
 };

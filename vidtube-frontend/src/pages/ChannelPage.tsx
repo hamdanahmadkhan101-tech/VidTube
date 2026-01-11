@@ -39,6 +39,8 @@ export const ChannelPage: React.FC = () => {
     queryKey: ["user", username],
     queryFn: () => authService.getUserProfile(username!),
     enabled: !!username,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
   });
 
   // Subscribe mutation

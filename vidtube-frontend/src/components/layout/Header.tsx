@@ -72,7 +72,10 @@ export const Header: React.FC = () => {
       <div className="container mx-auto px-2 sm:px-4">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-1 sm:gap-2 group">
+          <Link
+            to="/"
+            className="flex items-center gap-1 sm:gap-2 group cursor-pointer"
+          >
             <motion.div
               whileHover={{ rotate: 360 }}
               transition={{ duration: 0.5 }}
@@ -110,7 +113,7 @@ export const Header: React.FC = () => {
           {/* Right Section */}
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Mobile Search */}
-            <button className="md:hidden text-text-primary hover:text-primary-500 transition-colors">
+            <button className="md:hidden text-text-primary hover:text-primary-500 transition-colors cursor-pointer">
               <Search className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
@@ -119,7 +122,7 @@ export const Header: React.FC = () => {
                 {/* Upload Button */}
                 <Link
                   to="/upload"
-                  className="hidden sm:flex items-center gap-2 btn-glass"
+                  className="hidden sm:flex items-center gap-2 btn-glass cursor-pointer"
                 >
                   <Upload className="w-5 h-5" />
                   <span className="hidden lg:inline">Upload</span>
@@ -129,7 +132,7 @@ export const Header: React.FC = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative text-text-primary hover:text-primary-500 transition-colors"
+                    className="relative text-text-primary hover:text-primary-500 transition-colors cursor-pointer"
                   >
                     <Bell className="w-6 h-6" />
                     {unreadCount && unreadCount > 0 && (
@@ -149,12 +152,12 @@ export const Header: React.FC = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
                   >
                     <img
                       src={user?.avatarUrl || "/default-avatar.jpg"}
                       alt={user?.username}
-                      className="w-9 h-9 rounded-full ring-2 ring-primary-500/20 hover:ring-primary-500/50 transition-all"
+                      className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-500/20 hover:ring-primary-500/50 transition-all"
                     />
                   </button>
 

@@ -72,7 +72,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSortBy("top")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
               sortBy === "top"
                 ? "bg-primary-500 text-white shadow-glow"
                 : "text-text-secondary hover:text-text-primary hover:bg-surface"
@@ -82,7 +82,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
           </button>
           <button
             onClick={() => setSortBy("newest")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
               sortBy === "newest"
                 ? "bg-primary-500 text-white shadow-glow"
                 : "text-text-secondary hover:text-text-primary hover:bg-surface"
@@ -97,9 +97,9 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
       {isAuthenticated ? (
         <div className="flex gap-3">
           <img
-            src={user?.avatar || "/default-avatar.jpg"}
-            alt={user?.username}
-            className="w-10 h-10 rounded-full flex-shrink-0 ring-2 ring-primary-500/20"
+            src={user?.avatarUrl || user?.avatar || "/default-avatar.jpg"}
+            alt={user?.username || "User"}
+            className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-primary-500/20"
           />
           <div className="flex-1 space-y-3">
             <textarea

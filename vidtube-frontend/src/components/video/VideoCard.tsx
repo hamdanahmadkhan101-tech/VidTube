@@ -28,7 +28,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
-      className={cn("bento-item group", className)}
+      className={cn("bento-item group cursor-pointer", className)}
     >
       <Link to={`/watch/${video._id}`} className="block">
         {/* Thumbnail */}

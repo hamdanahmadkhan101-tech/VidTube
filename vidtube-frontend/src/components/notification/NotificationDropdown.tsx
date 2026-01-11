@@ -69,26 +69,35 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   };
 
   const getNotificationText = (notification: any) => {
+    const userName =
+      notification.sender?.fullName ||
+      notification.relatedUser?.fullName ||
+      "Someone";
     switch (notification.type) {
       case "like":
-        return `${notification.sender.fullName} liked your video`;
+        return `${userName} liked your video`;
       case "comment":
-        return `${notification.sender.fullName} commented on your video`;
+        return `${userName} commented on your video`;
       case "subscription":
-        return `${notification.sender.fullName} subscribed to your channel`;
+        return `${userName} subscribed to your channel`;
       case "upload":
-        return `${notification.sender.fullName} uploaded a new video`;
+        return `${userName} uploaded a new video`;
       default:
-        return "New notification";
+        return notification.message || "New notification";
     }
   };
 
   const getNotificationLink = (notification: any) => {
-    if (notification.video) {
+    if (notification.relatedVideo?._id) {
+      return `/watch/${notification.relatedVideo._id}`;
+    }
+    if (notification.video?._id) {
       return `/watch/${notification.video._id}`;
     }
     if (notification.type === "subscription") {
-      return `/channel/${notification.sender.username}`;
+      const username =
+        notification.sender?.username || notification.relatedUser?.username;
+      if (username) return `/channel/${username}`;
     }
     return "#";
   };
@@ -163,17 +172,25 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         }
                         onClose();
                       }}
-                      className={`flex items-start gap-3 p-4 hover:bg-surface transition-colors ${
+                      className={`flex items-start gap-3 p-4 hover:bg-surface transition-colors cursor-pointer ${
                         !notification.isRead ? "bg-surface/50" : ""
                       }`}
                     >
                       {/* Avatar */}
                       <img
                         src={
-                          notification.sender.avatar || "/default-avatar.jpg"
+                          notification.sender?.avatarUrl ||
+                          notification.sender?.avatar ||
+                          (notification as any).relatedUser?.avatarUrl ||
+                          (notification as any).relatedUser?.avatar ||
+                          "/default-avatar.jpg"
                         }
-                        alt={notification.sender.fullName}
-                        className="w-10 h-10 rounded-full flex-shrink-0"
+                        alt={
+                          notification.sender?.fullName ||
+                          (notification as any).relatedUser?.fullName ||
+                          "User"
+                        }
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                       />
 
                       {/* Content */}
@@ -189,9 +206,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                             <div className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-1" />
                           )}
                         </div>
-                        {notification.video && (
-                          <p className="text-xs text-text-secondary line-clamp-1 mb-1">
-                            {notification.video.title}
+                        {(notification.relatedVideo || notification.video) && (
+                          <p className="text-xs text-text-secondary truncate mt-1">
+                            {notification.relatedVideo?.title ||
+                              notification.video?.title}
                           </p>
                         )}
                         <p className="text-xs text-text-muted">

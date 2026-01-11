@@ -50,8 +50,12 @@ apiClient.interceptors.request.use(
 
 // Response interceptor
 let isRefreshing = false;
+let hasShownNetworkError = false;
+
 apiClient.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
+    // Reset network error flag on successful request
+    hasShownNetworkError = false;
     // Return the data directly from the success response
     return response;
   },
@@ -106,8 +110,13 @@ apiClient.interceptors.response.use(
     }
 
     // Handle network errors
-    if (!error.response) {
+    if (!error.response && !hasShownNetworkError) {
+      hasShownNetworkError = true;
       toast.error("Network error. Please check your connection.");
+      // Reset flag after 5 seconds
+      setTimeout(() => {
+        hasShownNetworkError = false;
+      }, 5000);
     }
 
     return Promise.reject(error);

@@ -24,7 +24,7 @@ import {
 } from '../controllers/user.controller.js';
 import { User } from '../models/user.model.js';
 import { uploadImage } from '../middlewares/multer.middleware.js';
-import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { verifyJWT, optionalJWT } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
@@ -92,8 +92,8 @@ router
 // Account Security
 router.route('/change-password').patch(verifyJWT, changeCurrentUserPassword);
 
-// Channel & Social Features
-router.route('/c/:username').get(verifyJWT, getUserChannelProfile);
+// Channel & Social Features (public with optional auth for isSubscribed)
+router.route('/c/:username').get(optionalJWT, getUserChannelProfile);
 router
   .route('/toggle-subscription/:channelId')
   .post(verifyJWT, toggleSubscription);

@@ -273,6 +273,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore keyboard shortcuts if user is typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
       switch (e.key) {
         case " ":
         case "k":
@@ -326,6 +336,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         "relative w-full aspect-video bg-black rounded-xl overflow-hidden group",
         className
       )}
+      onDoubleClick={toggleFullscreen}
     >
       {/* Video Element */}
       <video

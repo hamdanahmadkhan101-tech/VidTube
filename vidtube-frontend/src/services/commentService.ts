@@ -8,19 +8,20 @@ export const commentService = {
     page = 1,
     limit = 20
   ): Promise<PaginatedResponse<Comment>> => {
-    const response = await apiClient.get<ApiResponse<Comment[]>>(
+    const response = await apiClient.get<ApiResponse<any>>(
       `/comments/${videoId}?page=${page}&limit=${limit}`
     );
-    // Backend returns { data: [...], meta: { pagination: {...} } }
+    // Backend returns aggregatePaginate result: { docs: [...], page, totalDocs, ... }
+    const paginatedData = response.data.data || {};
     return {
-      docs: response.data.data || [],
-      pagination: (response.data as any).meta?.pagination || {
-        page: 1,
-        limit: 20,
-        totalDocs: 0,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPrevPage: false,
+      docs: paginatedData.docs || [],
+      pagination: {
+        page: paginatedData.page || 1,
+        limit: paginatedData.limit || 20,
+        totalDocs: paginatedData.totalDocs || 0,
+        totalPages: paginatedData.totalPages || 0,
+        hasNextPage: paginatedData.hasNextPage || false,
+        hasPrevPage: paginatedData.hasPrevPage || false,
       },
     };
   },
@@ -31,11 +32,12 @@ export const commentService = {
     content: string,
     parentId?: string
   ): Promise<Comment> => {
-    const response = await apiClient.post<ApiResponse<{ comment: Comment }>>(
+    const response = await apiClient.post<ApiResponse<any>>(
       `/comments/${videoId}`,
       { content, parent: parentId }
     );
-    return response.data.data!.comment;
+    // Backend might return { comment: {...} } or just the comment
+    return response.data.data?.comment || response.data.data;
   },
 
   // Update comment

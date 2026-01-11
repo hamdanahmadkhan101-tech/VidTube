@@ -9,6 +9,7 @@ import apiResponse from '../utils/apiResponse.js';
 // Models
 import Video from '../models/video.model.js';
 import Comment from '../models/comment.model.js';
+import Notification from '../models/notification.model.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -79,6 +80,22 @@ const addComment = asyncHandler(async (req, res) => {
     owner: req.user._id,
   });
 
+  // Create notification for the video owner (don't notify self)
+  if (video.owner.toString() !== req.user._id.toString()) {
+    try {
+      await Notification.create({
+        recipient: video.owner,
+        type: 'comment',
+        title: 'New Comment',
+        message: `${req.user.fullName} commented on your video`,
+        relatedVideo: videoId,
+        relatedUser: req.user._id,
+      });
+    } catch (notifError) {
+      console.error('Failed to create comment notification:', notifError);
+    }
+  }
+
   // Return comment with owner details
   const [createdComment] = await Comment.aggregate([
     { $match: { _id: new mongoose.Types.ObjectId(comment._id) } },
@@ -109,7 +126,11 @@ const addComment = asyncHandler(async (req, res) => {
   res
     .status(201)
     .json(
-      new apiResponse(201, 'Comment added successfully', createdComment || comment)
+      new apiResponse(
+        201,
+        'Comment added successfully',
+        createdComment || comment
+      )
     );
 });
 
@@ -162,9 +183,7 @@ const deleteComment = asyncHandler(async (req, res) => {
 
   await Comment.deleteOne({ _id: comment._id });
 
-  res
-    .status(200)
-    .json(new apiResponse(200, 'Comment deleted successfully'));
+  res.status(200).json(new apiResponse(200, 'Comment deleted successfully'));
 });
 
 // ============================================
@@ -231,9 +250,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(
-      new apiResponse(200, 'Comments fetched successfully', result)
-    );
+    .json(new apiResponse(200, 'Comments fetched successfully', result));
 });
 
 // ============================================
@@ -241,5 +258,3 @@ const getVideoComments = asyncHandler(async (req, res) => {
 // ============================================
 
 export { addComment, updateComment, deleteComment, getVideoComments };
-
-

@@ -9,6 +9,7 @@ import apiResponse from '../utils/apiResponse.js';
 // Models
 import Video from '../models/video.model.js';
 import Like from '../models/like.model.js';
+import Notification from '../models/notification.model.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -74,6 +75,22 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         likedBy: req.user._id,
       });
       isLiked = true;
+
+      // Create notification for the video owner (don't notify self)
+      if (video.owner.toString() !== req.user._id.toString()) {
+        try {
+          await Notification.create({
+            recipient: video.owner,
+            type: 'like',
+            title: 'New Like',
+            message: `${req.user.fullName} liked your video`,
+            relatedVideo: videoId,
+            relatedUser: req.user._id,
+          });
+        } catch (notifError) {
+          console.error('Failed to create like notification:', notifError);
+        }
+      }
     } catch (error) {
       // Handle potential duplicate like due to race conditions
       if (error.code === 11000) {
@@ -183,9 +200,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(
-      new apiResponse(200, 'Liked videos fetched successfully', result)
-    );
+    .json(new apiResponse(200, 'Liked videos fetched successfully', result));
 });
 
 // ============================================
@@ -193,5 +208,3 @@ const getLikedVideos = asyncHandler(async (req, res) => {
 // ============================================
 
 export { toggleVideoLike, getLikedVideos };
-
-

@@ -17,6 +17,7 @@ import { VideoPlayer } from "../components/video/VideoPlayer";
 import { VideoCard } from "../components/video/VideoCard";
 import { CommentSection } from "../components/comment/CommentSection";
 import { VideoPageSkeleton } from "../components/ui/Skeleton";
+import { ReportModal } from "../components/ui/ReportModal";
 import { videoService } from "../services/videoService";
 import { commentService } from "../services/commentService";
 import { subscriptionService } from "../services/subscriptionService";
@@ -32,6 +33,7 @@ export const VideoPlayerPage: React.FC = () => {
 
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [commentPage, setCommentPage] = useState(1);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Fetch video data
   const {
@@ -40,7 +42,14 @@ export const VideoPlayerPage: React.FC = () => {
     error: videoError,
   } = useQuery({
     queryKey: ["video", videoId],
-    queryFn: () => videoService.getVideoById(videoId!),
+    queryFn: async () => {
+      const videoData = await videoService.getVideoById(videoId!);
+      // Increment view count
+      videoService.incrementViews(videoId!).catch(() => {
+        // Silently fail - views are not critical
+      });
+      return videoData;
+    },
     enabled: !!videoId,
   });
 
@@ -85,6 +94,33 @@ export const VideoPlayerPage: React.FC = () => {
       }));
       toast.success(data.isSubscribed ? "Subscribed!" : "Unsubscribed");
     },
+  });
+
+  // Report video mutation
+  const reportMutation = useMutation({
+    mutationFn: ({
+      reason,
+      description,
+    }: {
+      reason: string;
+      description?: string;
+    }) => videoService.reportVideo(videoId!, reason, description),
+    onSuccess: () => {
+      toast.success("Video reported. Thank you for your feedback.");
+    },
+    onError: (error: any) => {
+      // Only show error if not a connection error
+      if (
+        error?.code !== "ERR_NETWORK" &&
+        error?.code !== "ERR_CONNECTION_REFUSED"
+      ) {
+        const errorMessage =
+          error?.response?.data?.message || "Failed to report video";
+        toast.error(errorMessage);
+      }
+      console.error("Report error:", error);
+    },
+    retry: false,
   });
 
   // Comment mutations
@@ -137,6 +173,14 @@ export const VideoPlayerPage: React.FC = () => {
       navigator.clipboard.writeText(window.location.href);
       toast.success("Link copied to clipboard!");
     }
+  };
+
+  const handleReport = () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to report videos");
+      return;
+    }
+    setShowReportModal(true);
   };
 
   if (videoLoading || !video) {
@@ -226,10 +270,11 @@ export const VideoPlayerPage: React.FC = () => {
                   onClick={() => likeMutation.mutate()}
                   disabled={!isAuthenticated}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all",
+                    "flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all cursor-pointer",
                     video.isLiked
                       ? "bg-primary-500 text-white shadow-glow"
-                      : "glass-card hover:bg-surface-hover text-text-primary"
+                      : "glass-card hover:bg-surface-hover text-text-primary",
+                    !isAuthenticated && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <ThumbsUp
@@ -241,17 +286,30 @@ export const VideoPlayerPage: React.FC = () => {
 
                 <button
                   onClick={handleShare}
-                  className="glass-card hover:bg-surface-hover px-4 py-2 rounded-xl flex items-center gap-2 text-text-primary font-medium transition-all"
+                  className="glass-card hover:bg-surface-hover px-4 py-2 rounded-xl flex items-center gap-2 text-text-primary font-medium transition-all cursor-pointer"
                 >
                   <Share2 className="w-5 h-5" />
                   Share
                 </button>
 
-                <button className="glass-card hover:bg-surface-hover px-4 py-2 rounded-xl flex items-center gap-2 text-text-primary font-medium transition-all">
+                <a
+                  href={video.url}
+                  download={`${video.title}.mp4`}
+                  className="glass-card hover:bg-surface-hover px-4 py-2 rounded-xl flex items-center gap-2 text-text-primary font-medium transition-all cursor-pointer"
+                  title="Download video"
+                >
                   <Download className="w-5 h-5" />
-                </button>
+                </a>
 
-                <button className="glass-card hover:bg-surface-hover p-2 rounded-xl text-text-primary transition-all">
+                <button
+                  onClick={handleReport}
+                  disabled={!isAuthenticated}
+                  className={cn(
+                    "glass-card hover:bg-surface-hover p-2 rounded-xl text-text-primary transition-all cursor-pointer",
+                    !isAuthenticated && "opacity-50 cursor-not-allowed"
+                  )}
+                  title="Report video"
+                >
                   <Flag className="w-5 h-5" />
                 </button>
               </div>
@@ -293,11 +351,14 @@ export const VideoPlayerPage: React.FC = () => {
               {isAuthenticated && user?._id !== video.owner._id && (
                 <button
                   onClick={() => subscribeMutation.mutate()}
+                  disabled={subscribeMutation.isPending}
                   className={cn(
-                    "px-6 py-2 rounded-xl font-medium transition-all",
+                    "px-6 py-2 rounded-xl font-medium transition-all cursor-pointer",
                     video.owner.isSubscribed
                       ? "glass-card hover:bg-surface-hover text-text-primary"
-                      : "bg-primary-500 hover:bg-primary-600 text-white shadow-glow"
+                      : "bg-primary-500 text-white shadow-glow hover:bg-primary-600",
+                    subscribeMutation.isPending &&
+                      "opacity-50 cursor-not-allowed"
                   )}
                 >
                   {video.owner.isSubscribed ? "Subscribed" : "Subscribe"}
@@ -403,6 +464,16 @@ export const VideoPlayerPage: React.FC = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={(reason, description) =>
+          reportMutation.mutate({ reason, description })
+        }
+        isSubmitting={reportMutation.isPending}
+      />
     </div>
   );
 };
