@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -22,6 +22,18 @@ export const UploadPage: React.FC = () => {
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number>(0);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+      }
+      if (thumbnailPreview) {
+        URL.revokeObjectURL(thumbnailPreview);
+      }
+    };
+  }, [videoPreview, thumbnailPreview]);
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -71,6 +83,12 @@ export const UploadPage: React.FC = () => {
         toast.error("Video file must be less than 500MB");
         return;
       }
+      
+      // Clean up previous preview
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+      }
+      
       setVideoFile(file);
       const url = URL.createObjectURL(file);
       setVideoPreview(url);
@@ -159,8 +177,12 @@ export const UploadPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
+                    if (videoPreview) {
+                      URL.revokeObjectURL(videoPreview);
+                    }
                     setVideoFile(null);
                     setVideoPreview(null);
+                    setVideoDuration(0);
                   }}
                   className="absolute top-2 right-2 p-2 bg-red-500 rounded-full hover:bg-red-600 transition-colors z-10"
                 >
