@@ -16,12 +16,14 @@ import {
   Edit2,
   Trash2,
   FolderOpen,
+  Plus,
 } from "lucide-react";
 import { VideoPlayer } from "../components/video/VideoPlayer";
 import { VideoCard } from "../components/video/VideoCard";
 import { CommentSection } from "../components/comment/CommentSection";
 import { VideoPageSkeleton } from "../components/ui/Skeleton";
 import { ReportModal } from "../components/ui/ReportModal";
+import { AddToPlaylistModal } from "../components/playlist/AddToPlaylistModal";
 import { ConfirmModal } from "../components/ui/ConfirmModal";
 import { videoService } from "../services/videoService";
 import { commentService } from "../services/commentService";
@@ -44,6 +46,7 @@ export const VideoPlayerPage: React.FC = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showVideoMenu, setShowVideoMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // Close video menu when clicking outside
   useEffect(() => {
@@ -534,14 +537,20 @@ export const VideoPlayerPage: React.FC = () => {
                   Share
                 </button>
 
-                <a
-                  href={video.url || video.videoUrl}
-                  download={`${video.title}.mp4`}
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      toast.error("Please sign in to save to playlist");
+                      return;
+                    }
+                    setShowPlaylistModal(true);
+                  }}
                   className="glass-card hover:bg-surface-hover px-4 py-2 rounded-xl flex items-center gap-2 text-text-primary font-medium transition-all cursor-pointer"
-                  title="Download video"
+                  title="Save to playlist"
                 >
-                  <Download className="w-5 h-5" />
-                </a>
+                  <Plus className="w-5 h-5" />
+                  Save
+                </button>
 
                 <button
                   onClick={handleReport}
@@ -712,6 +721,14 @@ export const VideoPlayerPage: React.FC = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Add to Playlist Modal */}
+      <AddToPlaylistModal
+        isOpen={showPlaylistModal}
+        onClose={() => setShowPlaylistModal(false)}
+        videoId={videoId!}
+        userId={user?._id || ""}
+      />
 
       {/* Report Modal */}
       <ReportModal

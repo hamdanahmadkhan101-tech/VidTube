@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Check, Loader2 } from "lucide-react";
 import { playlistService } from "../../services/playlistService.ts";
+import type { Playlist } from "../../types";
 import toast from "react-hot-toast";
 
 interface AddToPlaylistModalProps {
@@ -24,8 +25,8 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
   const [newPlaylistDescription, setNewPlaylistDescription] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["userPlaylists", userId],
-    queryFn: () => playlistService.getUserPlaylists(userId),
+    queryKey: ["userPlaylists"],
+    queryFn: () => playlistService.getUserPlaylists(),
     enabled: isOpen,
   });
 
@@ -67,7 +68,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
     },
   });
 
-  const playlists = data?.docs || [];
+  const playlists = data || [];
 
   return (
     <AnimatePresence>
@@ -111,7 +112,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {playlists.map((playlist) => {
+                    {playlists.map((playlist: Playlist) => {
                       const isInPlaylist = playlist.videos.some(
                         (v: any) => v._id === videoId
                       );
