@@ -30,7 +30,7 @@ const envAllowed =
     .map((s) => s.trim())
     .filter(Boolean) || [];
 const allowedOrigins = [
-  'https://vid-tube-kbfo.vercel.app',
+  'https://coruscating-scone-fe44b6.netlify.app/',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000',
