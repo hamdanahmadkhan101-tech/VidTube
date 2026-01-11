@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { forceHttps, formatVideoUrls } from "../utils/urlHelpers";
 import type {
   ApiResponse,
   PaginatedResponse,
@@ -11,12 +12,14 @@ import type {
 // Helper to map backend response to frontend Video type
 const mapVideoResponse = (video: any): Video => ({
   ...video,
-  videoUrl: video.url || video.videoUrl,
+  videoUrl: forceHttps(video.url || video.videoUrl),
+  thumbnailUrl: forceHttps(video.thumbnailUrl),
   likes: video.likesCount ?? video.likes ?? 0,
   views: video.views ?? 0,
   owner: video.owner
     ? {
         ...video.owner,
+        avatarUrl: forceHttps(video.owner.avatarUrl || video.owner.avatar),
         subscribersCount: video.owner.subscribersCount ?? 0,
       }
     : video.owner,

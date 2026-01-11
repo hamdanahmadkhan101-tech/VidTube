@@ -426,31 +426,46 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 const updateUserCoverImage = asyncHandler(async (req, res) => {
   const coverPath = req.file?.path;
 
+  console.log('Cover image upload request:', { coverPath, userId: req.user._id });
+
   if (!coverPath) {
     throw new apiError(400, 'Cover image file is required');
   }
 
-  // Get old cover URL for cleanup
-  const currentUser = await User.findById(req.user._id);
-  const oldCoverUrl = currentUser?.coverUrl;
+  try {
+    // Get old cover URL for cleanup
+    const currentUser = await User.findById(req.user._id);
+    const oldCoverUrl = currentUser?.coverUrl;
 
-  const coverUploadResult = await uploadOnCloudinary(coverPath);
-  if (!coverUploadResult) {
-    throw new apiError(500, 'Cover image upload failed');
+    console.log('Uploading cover image to Cloudinary...');
+    const coverUploadResult = await uploadOnCloudinary(coverPath);
+    
+    if (!coverUploadResult || !coverUploadResult.url) {
+      throw new apiError(500, 'Cover image upload to cloud storage failed');
+    }
+
+    console.log('Cover image uploaded successfully:', coverUploadResult.url);
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { coverUrl: coverUploadResult.url } },
+      { new: true }
+    ).select('-password -refreshTokens');
+
+    // Delete old image from Cloudinary
+    if (oldCoverUrl) {
+      await deleteFromCloudinary(oldCoverUrl).catch(err => {
+        console.error('Failed to delete old cover:', err);
+      });
+    }
+
+    res
+      .status(200)
+      .json(new apiResponse(200, 'Cover image updated successfully', user));
+  } catch (error) {
+    console.error('Cover image upload error:', error);
+    throw error;
   }
-
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
-    { $set: { coverUrl: coverUploadResult.url } },
-    { new: true }
-  ).select('-password -refreshTokens');
-
-  // Delete old image from Cloudinary
-  if (oldCoverUrl) await deleteFromCloudinary(oldCoverUrl);
-
-  res
-    .status(200)
-    .json(new apiResponse(200, 'Cover image updated successfully', user));
 });
 
 // ============================================
