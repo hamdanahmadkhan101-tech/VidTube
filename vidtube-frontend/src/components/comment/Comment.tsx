@@ -35,6 +35,7 @@ export const Comment: React.FC<CommentProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [editText, setEditText] = useState(comment.content);
+  const [showAllReplies, setShowAllReplies] = useState(false);
 
   const handleLike = () => {
     onLike?.(comment._id);
@@ -255,6 +256,47 @@ export const Comment: React.FC<CommentProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Nested Replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="mt-4 space-y-4">
+            {(showAllReplies
+              ? comment.replies
+              : comment.replies.slice(0, 3)
+            ).map((reply) => (
+              <Comment
+                key={reply._id}
+                comment={reply}
+                onLike={onLike}
+                onReply={onReply}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                isOwner={isOwner}
+                depth={depth + 1}
+              />
+            ))}
+
+            {comment.replies.length > 3 && !showAllReplies && (
+              <button
+                onClick={() => setShowAllReplies(true)}
+                className="ml-12 text-sm text-primary-500 hover:text-primary-400 font-medium flex items-center gap-1"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Show {comment.replies.length - 3} more{" "}
+                {comment.replies.length - 3 === 1 ? "reply" : "replies"}
+              </button>
+            )}
+
+            {showAllReplies && comment.replies.length > 3 && (
+              <button
+                onClick={() => setShowAllReplies(false)}
+                className="ml-12 text-sm text-text-tertiary hover:text-text-primary font-medium"
+              >
+                Show less
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </motion.div>
   );

@@ -76,6 +76,7 @@ export interface Comment {
   likes: number;
   isLiked?: boolean;
   repliesCount?: number;
+  replies?: Comment[];
   createdAt: string;
   updatedAt: string;
 }

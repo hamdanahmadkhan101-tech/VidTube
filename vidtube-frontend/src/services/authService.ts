@@ -45,10 +45,10 @@ export const authService = {
 
   // Get current user
   getCurrentUser: async (): Promise<AuthUser> => {
-    const response = await apiClient.get<ApiResponse<{ user: AuthUser }>>(
-      "/users/current"
+    const response = await apiClient.get<ApiResponse<AuthUser>>(
+      "/users/profile"
     );
-    return response.data.data!.user;
+    return response.data.data!;
   },
 
   // Logout user

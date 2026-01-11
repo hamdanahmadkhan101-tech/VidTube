@@ -64,7 +64,7 @@ const validateCommentContent = (content) => {
  */
 const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { content } = req.body;
+  const { content, parent } = req.body;
 
   validateObjectId(videoId, 'videoId');
   validateCommentContent(content);
@@ -74,20 +74,53 @@ const addComment = asyncHandler(async (req, res) => {
     throw new apiError(404, 'Video not found or not published');
   }
 
+  // If parent is provided, validate it exists
+  let parentComment = null;
+  if (parent) {
+    validateObjectId(parent, 'parent');
+    parentComment = await Comment.findById(parent);
+    if (!parentComment) {
+      throw new apiError(404, 'Parent comment not found');
+    }
+    // Ensure parent comment belongs to the same video
+    if (parentComment.video.toString() !== videoId) {
+      throw new apiError(400, 'Parent comment does not belong to this video');
+    }
+  }
+
   const comment = await Comment.create({
     content: content.trim(),
     video: videoId,
     owner: req.user._id,
+    parent: parent || null,
   });
 
-  // Create notification for the video owner (don't notify self)
-  if (video.owner.toString() !== req.user._id.toString()) {
-    try {
-      await Notification.create({
-        recipient: video.owner,
-        type: 'comment',
-        title: 'New Comment',
-        message: `${req.user.fullName} commented on your video`,
+  // Create notifications
+  if (parentComment) {
+    // Reply to comment - notify the parent comment owner
+    if (parentComment.owner.toString() !== req.user._id.toString()) {
+      try {
+        await Notification.create({
+          recipient: parentComment.owner,
+          type: 'comment',
+          title: 'New Reply',
+          message: `${req.user.fullName} replied to your comment`,
+          relatedVideo: videoId,
+          relatedUser: req.user._id,
+        });
+      } catch (notifError) {
+        console.error('Failed to create reply notification:', notifError);
+      }
+    }
+  } else {
+    // Top-level comment - notify the video owner (don't notify self)
+    if (video.owner.toString() !== req.user._id.toString()) {
+      try {
+        await Notification.create({
+          recipient: video.owner,
+          type: 'comment',
+          title: 'New Comment',
+          message: `${req.user.fullName} commented on your video`,
         relatedVideo: videoId,
         relatedUser: req.user._id,
       });
@@ -211,6 +244,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
     {
       $match: {
         video: new mongoose.Types.ObjectId(videoId),
+        parent: null, // Only get top-level comments
       },
     },
     {
@@ -236,8 +270,48 @@ const getVideoComments = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: 'comments',
+        let: { commentId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$parent', '$$commentId'] },
+            },
+          },
+          {
+            $sort: { createdAt: 1 },
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'owner',
+              foreignField: '_id',
+              as: 'owner',
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    fullName: 1,
+                    avatarUrl: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: { $first: '$owner' },
+            },
+          },
+        ],
+        as: 'replies',
+      },
+    },
+    {
       $addFields: {
         owner: { $first: '$owner' },
+        repliesCount: { $size: '$replies' },
       },
     },
   ];
