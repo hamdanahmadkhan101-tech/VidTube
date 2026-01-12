@@ -6,6 +6,15 @@ import { VideoCardSkeleton } from "../components/ui/Skeleton";
 import { videoService } from "../services/videoService";
 
 export const HomePage: React.FC = () => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery({
       queryKey: ["videos"],
