@@ -4,7 +4,12 @@ import type { ApiResponse, PaginatedResponse, Playlist, Video } from '../types';
 export const playlistService = {
   // Create playlist
   createPlaylist: async (data: { name: string; description?: string; privacy?: "public" | "private" }): Promise<Playlist> => {
-    const response = await apiClient.post<ApiResponse<Playlist>>('/playlists', data);
+    const payload = {
+      name: data.name,
+      description: data.description || '',
+      isPublic: data.privacy !== 'private'
+    };
+    const response = await apiClient.post<ApiResponse<Playlist>>('/playlists', payload);
     return response.data.data!;
   },
 

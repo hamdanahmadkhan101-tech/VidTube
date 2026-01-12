@@ -117,7 +117,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                 </h2>
                 <button
                   onClick={onClose}
-                  className="text-text-muted hover:text-text-primary transition-colors"
+                  className="text-text-muted hover:text-text-primary transition-colors cursor-pointer"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -146,7 +146,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                               addToPlaylistMutation.mutate(playlist._id);
                             }
                           }}
-                          className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-surface transition-colors"
+                          className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-surface transition-colors cursor-pointer"
                         >
                           <div
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
@@ -235,7 +235,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                 ) : (
                   <button
                     onClick={() => setShowCreateForm(true)}
-                    className="w-full flex items-center gap-3 p-3 mt-4 rounded-lg hover:bg-surface transition-colors border border-white/10"
+                    className="w-full flex items-center gap-3 p-3 mt-4 rounded-lg hover:bg-surface transition-colors border border-white/10 cursor-pointer"
                   >
                     <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center">
                       <Plus className="w-5 h-5 text-primary-500" />

@@ -185,7 +185,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
                       setShowMenu(false);
                       setShowPlaylistModal(true);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-surface transition-colors flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-surface transition-colors flex items-center gap-2 cursor-pointer"
                   >
                     <ListPlus className="w-4 h-4" />
                     Save to playlist
@@ -198,7 +198,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
                       navigator.clipboard.writeText(`${window.location.origin}/watch/${video._id}`);
                       toast.success('Link copied to clipboard!');
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-surface transition-colors flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-surface transition-colors flex items-center gap-2 cursor-pointer"
                   >
                     <Share2 className="w-4 h-4" />
                     Share

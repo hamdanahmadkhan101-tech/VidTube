@@ -455,16 +455,16 @@ export const VideoPlayerPage: React.FC = () => {
                 <div className="relative" ref={videoMenuRef}>
                   <button
                     onClick={() => setShowVideoMenu(!showVideoMenu)}
-                    className="glass-card hover:bg-surface-hover p-2 rounded-xl text-text-primary transition-all"
+                    className="glass-card hover:bg-surface-hover p-2 rounded-xl text-text-primary transition-all cursor-pointer"
                   >
                     <MoreVertical className="w-5 h-5" />
                   </button>
 
                   {showVideoMenu && (
-                    <div className="absolute right-0 top-full mt-2 glass-card p-2 min-w-48 z-10">
+                    <div className="absolute right-0 top-full mt-2 glass-card p-2 min-w-48 z-10 rounded-xl shadow-xl">
                       <Link
                         to={`/edit/${videoId}`}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                       >
                         <Edit2 className="w-4 h-4" />
                         Edit Video
@@ -474,7 +474,7 @@ export const VideoPlayerPage: React.FC = () => {
                           setShowVideoMenu(false);
                           setShowDeleteModal(true);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-surface-hover rounded-lg transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete Video
