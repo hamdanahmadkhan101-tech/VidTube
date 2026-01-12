@@ -26,10 +26,10 @@ export interface User {
   username: string;
   email: string;
   fullName: string;
-  avatar?: string; // For backward compatibility
-  avatarUrl?: string; // Primary field from backend
-  coverImage?: string; // For backward compatibility
-  coverUrl?: string; // Primary field from backend
+  avatar?: string;
+  avatarUrl?: string;
+  coverImage?: string;
+  coverUrl?: string;
   bio?: string;
   subscribersCount?: number;
   subscribedToCount?: number;
@@ -54,7 +54,7 @@ export interface Video {
   title: string;
   description?: string;
   videoUrl: string;
-  url?: string; // Direct download URL
+  url?: string;
   thumbnailUrl?: string;
   duration: number;
   views: number;
@@ -116,6 +116,7 @@ export interface Playlist {
   videos: PlaylistVideo[];
   isPublic?: boolean;
   privacy?: "public" | "unlisted" | "private";
+  thumbnailUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
