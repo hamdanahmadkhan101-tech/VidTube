@@ -1,6 +1,5 @@
 import React from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { VideoCard } from "../components/video/VideoCard";
 import { VideoCardSkeleton } from "../components/ui/Skeleton";
@@ -13,7 +12,7 @@ export const HomePage: React.FC = () => {
       queryFn: ({ pageParam = 1 }) =>
         videoService.getVideos({
           page: pageParam,
-          limit: 20,
+          limit: 12, // Reduced from 20 for better mobile performance
           sortBy: "views",
           sortType: "desc",
         }),
@@ -22,6 +21,7 @@ export const HomePage: React.FC = () => {
           ? lastPage.pagination.page + 1
           : undefined,
       initialPageParam: 1,
+      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     });
 
   // Infinite scroll observer
@@ -46,19 +46,15 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-6">
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-4 sm:mb-8"
-      >
+      {/* Hero Section - Simplified for mobile */}
+      <div className="mb-4 sm:mb-8">
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gradient mb-2">
           Trending Now
         </h1>
         <p className="text-text-secondary text-sm sm:text-lg">
           Discover the most popular videos on VidTube
         </p>
-      </motion.div>
+      </div>
 
       {/* Video Grid - Bento Box Layout */}
       {isLoading ? (

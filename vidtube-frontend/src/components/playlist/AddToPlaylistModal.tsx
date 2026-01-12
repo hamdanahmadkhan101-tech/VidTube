@@ -23,6 +23,12 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [newPlaylistDescription, setNewPlaylistDescription] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  React.useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ["userPlaylists"],
@@ -31,11 +37,8 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
   });
 
   const createPlaylistMutation = useMutation({
-    mutationFn: (name: string) =>
-      playlistService.createPlaylist({
-        name,
-        description: newPlaylistDescription,
-      }),
+    mutationFn: (data: { name: string; description: string }) =>
+      playlistService.createPlaylist(data),
     onSuccess: (newPlaylist) => {
       toast.success("Playlist created!");
       queryClient.invalidateQueries({ queryKey: ["userPlaylists"] });
@@ -44,6 +47,9 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
       setNewPlaylistDescription("");
       // Auto-add video to new playlist
       addToPlaylistMutation.mutate(newPlaylist._id);
+    },
+    onError: () => {
+      toast.error("Failed to create playlist");
     },
   });
 
@@ -70,26 +76,39 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
 
   const playlists = data || [];
 
+  // Simplified modal for mobile
+  const ModalWrapper = isMobile ? 'div' : motion.div;
+  const modalProps = isMobile
+    ? { className: "fixed inset-0 z-50 flex items-center justify-center p-4" }
+    : {
+        initial: { opacity: 0, scale: 0.95, y: 20 },
+        animate: { opacity: 1, scale: 1, y: 0 },
+        exit: { opacity: 0, scale: 0.95, y: 20 },
+        className: "fixed inset-0 z-50 flex items-center justify-center p-4",
+      };
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-          />
+          {isMobile ? (
+            <div
+              onClick={onClose}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            />
+          )}
 
           {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          >
+          <ModalWrapper {...modalProps}>
             <div className="glass-card w-full max-w-md max-h-[80vh] flex flex-col">
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-white/10">
@@ -183,7 +202,10 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                       <button
                         onClick={() => {
                           if (newPlaylistName.trim()) {
-                            createPlaylistMutation.mutate(newPlaylistName);
+                            createPlaylistMutation.mutate({
+                              name: newPlaylistName,
+                              description: newPlaylistDescription,
+                            });
                           }
                         }}
                         disabled={
@@ -225,7 +247,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                 )}
               </div>
             </div>
-          </motion.div>
+          </ModalWrapper>
         </>
       )}
     </AnimatePresence>

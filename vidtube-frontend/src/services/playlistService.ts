@@ -33,8 +33,8 @@ export const playlistService = {
 
   // Add video to playlist
   addVideoToPlaylist: async (playlistId: string, videoId: string): Promise<Playlist> => {
-    const response = await apiClient.patch<ApiResponse<{ playlist: Playlist }>>(`/playlists/${playlistId}/videos/${videoId}`);
-    return response.data.data!.playlist;
+    const response = await apiClient.post<ApiResponse<Playlist>>(`/playlists/${playlistId}/videos/${videoId}`);
+    return response.data.data!;
   },
 
   // Remove video from playlist

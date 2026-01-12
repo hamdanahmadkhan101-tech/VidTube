@@ -10,11 +10,20 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['lucide-react', 'framer-motion']
+          ui: ['lucide-react', 'framer-motion'],
+          query: ['@tanstack/react-query'],
+          forms: ['react-hook-form', 'zod']
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
   },
   server: {
     port: 5173,
@@ -23,5 +32,8 @@ export default defineConfig({
   preview: {
     port: 4173,
     host: true
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom']
   }
 })

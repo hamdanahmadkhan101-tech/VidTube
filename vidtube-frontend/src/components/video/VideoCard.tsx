@@ -1,7 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Play, Eye, ThumbsUp, MoreVertical } from "lucide-react";
+import { Play, Eye, ThumbsUp, MoreVertical, ListPlus, Share2 } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   cn,
   formatDuration,
@@ -9,6 +10,8 @@ import {
   formatRelativeTime,
 } from "../../utils/helpers";
 import type { Video } from "../../types";
+import { AddToPlaylistModal } from "../playlist/AddToPlaylistModal";
+import { useAuthStore } from "../../store/authStore";
 
 interface VideoCardProps {
   video: Video;
@@ -22,14 +25,45 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
   showChannel = true,
 }) => {
   const [showMenu, setShowMenu] = React.useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = React.useState(false);
+  const { user } = useAuthStore();
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  // Detect mobile device
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Close menu on outside click
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
+
+  // Conditionally render with or without animations based on device
+  const CardWrapper = isMobile ? 'div' : motion.div;
+  const cardProps = isMobile
+    ? { className: cn("bento-item group cursor-pointer", className) }
+    : {
+        initial: { opacity: 0, y: 20 },
+        animate: { opacity: 1, y: 0 },
+        whileHover: { y: -4 },
+        className: cn("bento-item group cursor-pointer", className),
+      };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
-      className={cn("bento-item group cursor-pointer", className)}
-    >
+    <CardWrapper {...cardProps}>
       <Link to={`/watch/${video._id}`} className="block">
         {/* Thumbnail */}
         <div className="relative aspect-video overflow-hidden rounded-t-2xl">
@@ -45,20 +79,22 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
             {formatDuration(video.duration)}
           </div>
 
-          {/* Play Overlay on Hover */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileHover={{ opacity: 1 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center"
-          >
+          {/* Play Overlay on Hover - Desktop only */}
+          {!isMobile && (
             <motion.div
-              initial={{ scale: 0.8 }}
-              whileHover={{ scale: 1 }}
-              className="w-14 h-14 rounded-full bg-primary-500/90 flex items-center justify-center shadow-glow"
+              initial={{ opacity: 0 }}
+              whileHover={{ opacity: 1 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center"
             >
-              <Play className="w-6 h-6 text-white ml-0.5" fill="currentColor" />
+              <motion.div
+                initial={{ scale: 0.8 }}
+                whileHover={{ scale: 1 }}
+                className="w-14 h-14 rounded-full bg-primary-500/90 flex items-center justify-center shadow-glow"
+              >
+                <Play className="w-6 h-6 text-white ml-0.5" fill="currentColor" />
+              </motion.div>
             </motion.div>
-          </motion.div>
+          )}
         </div>
 
         {/* Content */}
@@ -127,21 +163,65 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
             </div>
 
             {/* More Menu */}
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-              className="text-text-tertiary hover:text-text-primary transition-colors opacity-0 group-hover:opacity-100"
-            >
-              <MoreVertical className="w-5 h-5" />
-            </button>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
+                className="text-text-tertiary hover:text-text-primary transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+
+              {/* Dropdown Menu */}
+              {showMenu && (
+                <div className="absolute right-0 top-8 z-50 w-48 glass-card rounded-lg shadow-xl py-2">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowMenu(false);
+                      setShowPlaylistModal(true);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-surface transition-colors flex items-center gap-2"
+                  >
+                    <ListPlus className="w-4 h-4" />
+                    Save to playlist
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowMenu(false);
+                      navigator.clipboard.writeText(`${window.location.origin}/watch/${video._id}`);
+                      toast.success('Link copied to clipboard!');
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-surface transition-colors flex items-center gap-2"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Link>
-    </motion.div>
+
+      {/* Playlist Modal */}
+      {user && (
+        <AddToPlaylistModal
+          isOpen={showPlaylistModal}
+          onClose={() => setShowPlaylistModal(false)}
+          videoId={video._id}
+          userId={user._id}
+        />
+      )}
+    </CardWrapper>
   );
+};
 };
 
 // Memoize the component to prevent unnecessary re-renders
