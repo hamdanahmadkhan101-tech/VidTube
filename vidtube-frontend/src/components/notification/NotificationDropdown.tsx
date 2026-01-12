@@ -26,12 +26,20 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   onClose,
 }) => {
   const queryClient = useQueryClient();
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ["notifications"],
     queryFn: () => notificationService.getNotifications({ page: 1, limit: 10 }),
     enabled: isOpen,
-    refetchInterval: isOpen ? 10000 : false, // Poll every 10 seconds when dropdown is open
+    refetchInterval: isOpen ? 10000 : false,
   });
 
   const markAsReadMutation = useMutation({
@@ -75,16 +83,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       notification.relatedUser?.fullName ||
       "Someone";
 
-    // Use backend message if available, otherwise generate default
     if (notification.message) {
-      // If message starts with username, return as is, otherwise prepend username
       if (notification.message.toLowerCase().includes(userName.toLowerCase())) {
         return notification.message;
       }
       return `${userName} ${notification.message}`;
     }
 
-    // Fallback to type-based messages
     switch (notification.type) {
       case "like":
         return `${userName} liked your video`;
@@ -114,6 +119,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     return "#";
   };
 
+  const dropdownClass = isMobile
+    ? "fixed bottom-0 left-0 right-0 w-full rounded-t-2xl max-h-[80vh]"
+    : "absolute right-0 top-full mt-2 w-96 rounded-2xl";
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -129,13 +138,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
           {/* Dropdown */}
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className="absolute right-0 top-full mt-2 w-96 bg-background-secondary backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 z-50 max-h-[600px] flex flex-col"
+            initial={{ opacity: 0, y: isMobile ? 100 : -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: isMobile ? 100 : -10 }}
+            className={`${dropdownClass} bg-background-secondary backdrop-blur-xl shadow-2xl border border-white/10 z-50 flex flex-col`}
           >
             {/* Header */}
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Bell className="w-5 h-5 text-primary-500" />
                 <h3 className="font-semibold text-text-primary">
@@ -167,7 +176,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             </div>
 
             {/* Notifications List */}
-            <div className="flex-1 overflow-y-auto scrollbar-hide">
+            <div className="flex-1 overflow-y-auto">
               {isLoading ? (
                 <div className="p-8 flex items-center justify-center">
                   <Loader2 className="w-6 h-6 text-primary-500 animate-spin" />
@@ -188,7 +197,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         !notification.isRead ? "bg-surface/50" : ""
                       }`}
                     >
-                      {/* Avatar */}
                       <img
                         src={
                           notification.sender?.avatarUrl ||
@@ -205,7 +213,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                       />
 
-                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start gap-2 mb-1">
                           <div className="flex-shrink-0 mt-1">
@@ -241,7 +248,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="p-3 border-t border-white/10">
+              <div className="p-3 border-t border-white/10 flex-shrink-0">
                 <Link
                   to="/notifications"
                   onClick={onClose}

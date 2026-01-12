@@ -30,13 +30,12 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
   const { user } = useAuthStore();
   const menuRef = React.useRef<HTMLDivElement>(null);
   const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const [isMobile, setIsMobile] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
 
   React.useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   React.useEffect(() => {
@@ -67,19 +66,14 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
     setShowMenu(!showMenu);
   };
 
-  const CardWrapper = isMobile ? 'div' : motion.div;
-  const cardProps = isMobile
-    ? { className: cn("bento-item group cursor-pointer", className) }
-    : {
-        initial: { opacity: 0, y: 20 },
-        animate: { opacity: 1, y: 0 },
-        whileHover: { y: -4 },
-        className: cn("bento-item group cursor-pointer", className),
-      };
+  const formattedDuration = React.useMemo(() => formatDuration(video.duration), [video.duration]);
+  const formattedViews = React.useMemo(() => formatViewCount(video.views), [video.views]);
+  const formattedTime = React.useMemo(() => formatRelativeTime(video.createdAt), [video.createdAt]);
+  const formattedLikes = React.useMemo(() => formatViewCount(video.likes), [video.likes]);
 
   return (
     <>
-      <CardWrapper {...cardProps}>
+      <div className={cn("bento-item group cursor-pointer", className)}>
         <Link to={`/watch/${video._id}`} className="block">
           <div className="relative aspect-video overflow-hidden rounded-t-2xl">
             <img
@@ -90,7 +84,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
             />
 
             <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded-md text-xs font-semibold text-white">
-              {formatDuration(video.duration)}
+              {formattedDuration}
             </div>
 
             {!isMobile && (
@@ -150,21 +144,21 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
                 <div className="flex items-center gap-2 sm:gap-3 text-text-tertiary text-xs sm:text-sm mt-1">
                   <div className="flex items-center gap-1">
                     <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span>{formatViewCount(video.views)} views</span>
+                    <span>{formattedViews} views</span>
                   </div>
                   <span>•</span>
                   <span className="hidden sm:inline">
-                    {formatRelativeTime(video.createdAt)}
+                    {formattedTime}
                   </span>
                   <span className="sm:hidden">
-                    {formatRelativeTime(video.createdAt).replace(" ago", "")}
+                    {formattedTime.replace(" ago", "")}
                   </span>
                   {video.likes > 0 && (
                     <>
                       <span className="hidden sm:inline">•</span>
                       <div className="hidden sm:flex items-center gap-1">
                         <ThumbsUp className="w-4 h-4" />
-                        <span>{formatViewCount(video.likes)}</span>
+                        <span>{formattedLikes}</span>
                       </div>
                     </>
                   )}
@@ -181,9 +175,8 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
             </div>
           </div>
         </Link>
-      </CardWrapper>
+      </div>
 
-      {/* Dropdown Menu - Rendered in Portal */}
       {showMenu && (
         <div
           ref={menuRef}
