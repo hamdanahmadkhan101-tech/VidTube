@@ -6,7 +6,6 @@ import {
   markAllAsRead,
   deleteNotification,
   deleteAllNotifications,
-  createNotification,
 } from '../controllers/notification.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 
@@ -25,8 +24,5 @@ router.route('/:notificationId/read').patch(verifyJWT, markAsRead);
 router.route('/read-all').patch(verifyJWT, markAllAsRead);
 
 router.route('/:notificationId').delete(verifyJWT, deleteNotification);
-
-// Internal route for creating notifications (should be protected differently in production)
-router.route('/').post(verifyJWT, createNotification);
 
 export default router;

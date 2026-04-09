@@ -1,4 +1,9 @@
-import { logInfo, logError, logWarn } from '../utils/logger.js';
+import {
+  logInfo,
+  logError,
+  logWarn,
+  redactSensitiveData,
+} from '../utils/logger.js';
 
 /**
  * Request Logging Middleware
@@ -61,9 +66,9 @@ export const errorLogger = (err, req, res, next) => {
     method: req.method,
     url: req.url,
     ip: req.ip || req.connection.remoteAddress,
-    body: req.body,
-    query: req.query,
-    params: req.params,
+    body: redactSensitiveData(req.body),
+    query: redactSensitiveData(req.query),
+    params: redactSensitiveData(req.params),
   });
 
   next(err);

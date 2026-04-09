@@ -1,166 +1,94 @@
 # Contributing to VidTube
 
-Thank you for your interest in contributing to VidTube! This document provides guidelines and instructions for contributing.
+Thanks for contributing. This guide defines the expected engineering workflow and quality standards.
 
-## Code of Conduct
+## Workflow
 
-- Be respectful and inclusive
-- Provide constructive feedback
-- Follow the project's coding standards
-- Write clear, maintainable code
+1. Fork and clone the repository
+2. Create a focused branch from `main`
+3. Implement a single coherent change set
+4. Run validation commands locally
+5. Open a pull request with context and verification notes
 
-## Getting Started
+Recommended branch naming:
 
-1. Fork the repository
-2. Clone your fork: `git clone <your-fork-url>`
-3. Create a branch: `git checkout -b feature/your-feature-name`
-4. Make your changes
-5. Test your changes
-6. Commit with clear messages
-7. Push to your fork
-8. Create a Pull Request
+- `feat/<short-description>`
+- `fix/<short-description>`
+- `docs/<short-description>`
+- `chore/<short-description>`
 
-## Development Setup
+## Local Setup
 
-Follow the setup instructions in [README.md](./README.md).
+Follow setup in [README.md](./README.md), then run:
+
+```bash
+cd vidtube-backend && npm install
+cd ../vidtube-frontend && npm install
+```
 
 ## Coding Standards
 
-### JavaScript/React
+- Keep changes small and intentional
+- Preserve existing architecture boundaries (routes/controllers/models/services)
+- Prefer explicit behavior over hidden side effects
+- Validate input and authorization on every mutation path
+- Update docs when public behavior changes
 
-- Use ES6+ features
-- Follow existing code style
-- Use meaningful variable/function names
-- Add comments for complex logic
-- Keep functions small and focused
+## Commit Message Standard
 
-### File Naming
+Use Conventional Commits where possible:
 
-- Components: `PascalCase.jsx` (e.g., `VideoCard.jsx`)
-- Utilities: `camelCase.js` (e.g., `apiErrorHandler.js`)
-- Constants: `camelCase.js` (e.g., `constants.js`)
-
-### Code Organization
-
-```javascript
-// 1. Imports (external first, then internal)
-import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth.js';
-
-// 2. Component/Function definition
-export default function ComponentName() {
-  // 3. Hooks
-  const [state, setState] = useState();
-  
-  // 4. Handlers
-  const handleClick = () => { ... };
-  
-  // 5. Effects
-  useEffect(() => { ... }, []);
-  
-  // 6. Render
-  return <div>...</div>;
-}
+```text
+type(scope): short summary
 ```
-
-## Commit Messages
-
-Follow conventional commits:
-
-```
-type(scope): subject
-
-body (optional)
-
-footer (optional)
-```
-
-Types:
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style (formatting, etc.)
-- `refactor`: Code refactoring
-- `perf`: Performance improvements
-- `test`: Adding/updating tests
-- `chore`: Maintenance tasks
 
 Examples:
-```
-feat(video): add video caching to store
-fix(auth): resolve token refresh issue
-docs(api): update authentication endpoint docs
-```
 
-## Pull Request Process
+- `feat(video): add watch-history dedupe guard`
+- `fix(auth): tighten refresh token rotation`
+- `docs(api): sync reports endpoints`
 
-1. **Update Documentation**: Update relevant docs if needed
-2. **Test Changes**: Ensure all tests pass (when implemented)
-3. **Check Linting**: Run `npm run lint` and fix issues
-4. **Write Clear PR Description**:
-   - What changes were made?
-   - Why were they made?
-   - How to test?
-   - Screenshots (for UI changes)
+## Pull Request Requirements
 
-5. **Keep PRs Focused**: One feature/fix per PR
+Each PR should include:
 
-## Testing Guidelines
+1. Problem statement
+2. Scope of changes
+3. Verification steps executed
+4. Risk and rollback notes (for non-trivial backend changes)
 
-### Backend Testing (Future)
+## Required Local Verification
 
-```javascript
-// Example test structure
-describe('Video Service', () => {
-  it('should create a video', async () => {
-    // Test implementation
-  });
-});
+```bash
+# backend
+cd vidtube-backend
+npm test
+
+# frontend
+cd ../vidtube-frontend
+npm run lint
+npm run build
 ```
 
-### Frontend Testing (Future)
+If your PR touches backend formatting significantly, include `npm run format:check` output context.
 
-```javascript
-// Example component test
-import { render, screen } from '@testing-library/react';
-import VideoCard from './VideoCard';
+## Review Checklist
 
-test('renders video title', () => {
-  render(<VideoCard video={mockVideo} />);
-  expect(screen.getByText('Video Title')).toBeInTheDocument();
-});
-```
+- [ ] Change is scoped and understandable
+- [ ] API behavior remains backward compatible or is documented
+- [ ] Security implications were reviewed
+- [ ] Validation and authorization checks are present where needed
+- [ ] Tests/lint/build results included in PR description
+- [ ] Relevant docs updated
 
-## Code Review Checklist
+## Reporting Bugs and Requesting Features
 
-- [ ] Code follows project standards
-- [ ] Tests pass (when implemented)
-- [ ] No linting errors
-- [ ] Documentation updated
-- [ ] Breaking changes documented
-- [ ] Performance considerations addressed
-- [ ] Security implications reviewed
+Open issues with:
 
-## Reporting Issues
+- concise title
+- expected vs actual behavior
+- reproduction steps
+- environment details
+- logs/screenshots where relevant
 
-Use GitHub Issues with:
-- Clear title and description
-- Steps to reproduce
-- Expected vs actual behavior
-- Environment details (OS, Node version, etc.)
-- Screenshots/logs if applicable
-
-## Feature Requests
-
-- Clearly describe the feature
-- Explain the use case
-- Consider implementation complexity
-- Discuss with maintainers first for large features
-
-## Questions?
-
-Open a GitHub Discussion or contact maintainers.
-
----
-
-Thank you for contributing! 🎉
+For major feature proposals, describe domain impact and migration/backward compatibility considerations.

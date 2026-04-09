@@ -40,6 +40,40 @@ const logger = winston.createLogger({
   ],
 });
 
+const SENSITIVE_KEYS = new Set([
+  'password',
+  'currentpassword',
+  'newpassword',
+  'token',
+  'accesstoken',
+  'refreshtoken',
+  'authorization',
+  'cookie',
+]);
+
+/**
+ * Deep-redacts sensitive fields from log payloads.
+ */
+export const redactSensitiveData = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => redactSensitiveData(item));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, val]) => {
+        const loweredKey = key.toLowerCase();
+        if (SENSITIVE_KEYS.has(loweredKey)) {
+          return [key, '[REDACTED]'];
+        }
+        return [key, redactSensitiveData(val)];
+      })
+    );
+  }
+
+  return value;
+};
+
 // In production, also log to files
 if (process.env.NODE_ENV === 'production') {
   logger.add(

@@ -1,6 +1,6 @@
 import apiError from '../utils/apiError.js';
 import { ValidationError } from '../errors/index.js';
-import { logError } from '../utils/logger.js';
+import { logError, redactSensitiveData } from '../utils/logger.js';
 import { deleteFile } from '../utils/cleanupTemp.js';
 
 /**
@@ -153,8 +153,8 @@ const errorMiddleware = (err, req, res, next) => {
     requestId,
     url: req.url,
     method: req.method,
-    body: req.body,
-    query: req.query,
+    body: redactSensitiveData(req.body),
+    query: redactSensitiveData(req.query),
   });
 
   // Send generic error response for unexpected errors

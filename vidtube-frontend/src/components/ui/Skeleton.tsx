@@ -27,7 +27,7 @@ export const VideoCardSkeleton: React.FC = () => {
       <div className="p-4">
         <div className="flex gap-3">
           {/* Avatar Skeleton */}
-          <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
+          <Skeleton className="w-10 h-10 rounded-full shrink-0" />
 
           {/* Info Skeleton */}
           <div className="flex-1 space-y-2">

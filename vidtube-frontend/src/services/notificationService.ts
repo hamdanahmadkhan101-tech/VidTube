@@ -1,16 +1,24 @@
 import apiClient from "./apiClient";
 import type { ApiResponse, PaginatedResponse, Notification } from "../types";
 
+type NotificationListData = {
+  notifications?: Notification[];
+  pagination?: PaginatedResponse<Notification>["pagination"];
+};
+
 export const notificationService = {
   // Get user notifications
   getNotifications: async (params?: {
     page?: number;
     limit?: number;
-    read?: boolean;
+    unreadOnly?: boolean;
   }): Promise<PaginatedResponse<Notification>> => {
-    const response = await apiClient.get<ApiResponse<any>>("/notifications", {
-      params,
-    });
+    const response = await apiClient.get<ApiResponse<NotificationListData>>(
+      "/notifications",
+      {
+        params,
+      },
+    );
     // Backend returns { data: { notifications: [...], pagination: {...} } }
     const data = response.data.data || {};
     return {
@@ -44,7 +52,7 @@ export const notificationService = {
   // Get unread count
   getUnreadCount: async (): Promise<number> => {
     const response = await apiClient.get<ApiResponse<{ count: number }>>(
-      "/notifications/unread/count"
+      "/notifications/unread/count",
     );
     return response.data.data!.count;
   },

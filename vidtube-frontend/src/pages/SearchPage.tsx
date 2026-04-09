@@ -1,17 +1,17 @@
 import React, { useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Search as SearchIcon, Filter, X, Loader2 } from "lucide-react";
+import { Search as SearchIcon, Filter } from "lucide-react";
 import { videoService } from "../services/videoService.ts";
 import { VideoCard } from "../components/video/VideoCard";
 import { VideoCardSkeleton } from "../components/ui/Skeleton";
-import type { Video } from "../types";
+import type { SearchParams, Video } from "../types";
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
-  const [sortBy, setSortBy] = useState("views");
+  const [sortBy, setSortBy] = useState<SearchParams["sortBy"]>("views");
   const [showFilters, setShowFilters] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -19,7 +19,7 @@ export const SearchPage: React.FC = () => {
     queryFn: () =>
       videoService.searchVideos({
         q: query,
-        sortBy: sortBy as any,
+        sortBy,
         sortType: "desc",
         page: 1,
         limit: 24,
@@ -81,7 +81,9 @@ export const SearchPage: React.FC = () => {
                 </label>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) =>
+                    setSortBy(e.target.value as SearchParams["sortBy"])
+                  }
                   className="glass-input"
                 >
                   <option value="views">Most Views</option>

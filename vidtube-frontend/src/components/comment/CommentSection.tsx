@@ -2,13 +2,13 @@ import React, { useState } from "react";
 // import { FixedSizeList as List } from 'react-window';
 import { motion } from "framer-motion";
 import { MessageSquare, ArrowDown } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Comment } from "./Comment";
 import { Skeleton } from "../ui/Skeleton";
 import { useAuthStore } from "../../store/authStore";
 import type { Comment as CommentType } from "../../types";
 
 interface CommentSectionProps {
-  videoId: string;
   videoOwnerId: string;
   comments: CommentType[];
   totalComments: number;
@@ -25,7 +25,6 @@ interface CommentSectionProps {
 }
 
 export const CommentSection: React.FC<CommentSectionProps> = ({
-  videoId: _videoId,
   videoOwnerId,
   comments,
   totalComments,
@@ -90,7 +89,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
           <img
             src={user?.avatarUrl || user?.avatar || "/default-avatar.jpg"}
             alt={user?.username || "User"}
-            className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-primary-500/20"
+            className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-primary-500/20"
           />
           <div className="flex-1 space-y-3">
             <textarea
@@ -121,9 +120,9 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
       ) : (
         <div className="glass-card p-6 text-center">
           <p className="text-text-secondary mb-3">Sign in to leave a comment</p>
-          <a href="/login" className="btn-primary inline-block">
+          <Link to="/login" className="btn-primary inline-block">
             Sign In
-          </a>
+          </Link>
         </div>
       )}
 

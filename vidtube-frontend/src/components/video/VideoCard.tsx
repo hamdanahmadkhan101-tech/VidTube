@@ -1,7 +1,14 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Play, Eye, ThumbsUp, MoreVertical, ListPlus, Share2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Play,
+  Eye,
+  ThumbsUp,
+  MoreVertical,
+  ListPlus,
+  Share2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import {
   cn,
@@ -24,6 +31,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
   className,
   showChannel = true,
 }) => {
+  const navigate = useNavigate();
   const [showMenu, setShowMenu] = React.useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = React.useState(false);
   const [menuPosition, setMenuPosition] = React.useState({ top: 0, left: 0 });
@@ -34,28 +42,31 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        if (
+          buttonRef.current &&
+          !buttonRef.current.contains(event.target as Node)
+        ) {
           setShowMenu(false);
         }
       }
     };
     if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showMenu]);
 
   const handleMenuClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       setMenuPosition({
@@ -66,10 +77,22 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
     setShowMenu(!showMenu);
   };
 
-  const formattedDuration = React.useMemo(() => formatDuration(video.duration), [video.duration]);
-  const formattedViews = React.useMemo(() => formatViewCount(video.views), [video.views]);
-  const formattedTime = React.useMemo(() => formatRelativeTime(video.createdAt), [video.createdAt]);
-  const formattedLikes = React.useMemo(() => formatViewCount(video.likes), [video.likes]);
+  const formattedDuration = React.useMemo(
+    () => formatDuration(video.duration),
+    [video.duration],
+  );
+  const formattedViews = React.useMemo(
+    () => formatViewCount(video.views),
+    [video.views],
+  );
+  const formattedTime = React.useMemo(
+    () => formatRelativeTime(video.createdAt),
+    [video.createdAt],
+  );
+  const formattedLikes = React.useMemo(
+    () => formatViewCount(video.likes),
+    [video.likes],
+  );
 
   return (
     <>
@@ -98,7 +121,10 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
                   whileHover={{ scale: 1 }}
                   className="w-14 h-14 rounded-full bg-primary-500/90 flex items-center justify-center shadow-glow"
                 >
-                  <Play className="w-6 h-6 text-white ml-0.5" fill="currentColor" />
+                  <Play
+                    className="w-6 h-6 text-white ml-0.5"
+                    fill="currentColor"
+                  />
                 </motion.div>
               </motion.div>
             )}
@@ -111,9 +137,9 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.location.href = `/channel/${video.owner.username}`;
+                    navigate(`/channel/${video.owner.username}`);
                   }}
-                  className="flex-shrink-0 cursor-pointer"
+                  className="shrink-0 cursor-pointer"
                 >
                   <img
                     src={video.owner.avatarUrl || "/default-avatar.jpg"}
@@ -133,7 +159,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      window.location.href = `/channel/${video.owner.username}`;
+                      navigate(`/channel/${video.owner.username}`);
                     }}
                     className="text-text-secondary text-xs sm:text-sm hover:text-text-primary transition-colors cursor-pointer"
                   >
@@ -147,9 +173,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
                     <span>{formattedViews} views</span>
                   </div>
                   <span>•</span>
-                  <span className="hidden sm:inline">
-                    {formattedTime}
-                  </span>
+                  <span className="hidden sm:inline">{formattedTime}</span>
                   <span className="sm:hidden">
                     {formattedTime.replace(" ago", "")}
                   </span>
@@ -168,7 +192,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
               <button
                 ref={buttonRef}
                 onClick={handleMenuClick}
-                className="text-text-tertiary hover:text-text-primary transition-colors opacity-0 group-hover:opacity-100 cursor-pointer flex-shrink-0"
+                className="text-text-tertiary hover:text-text-primary transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
               >
                 <MoreVertical className="w-5 h-5" />
               </button>
@@ -203,8 +227,10 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
               e.preventDefault();
               e.stopPropagation();
               setShowMenu(false);
-              navigator.clipboard.writeText(`${window.location.origin}/watch/${video._id}`);
-              toast.success('Link copied to clipboard!');
+              navigator.clipboard.writeText(
+                `${window.location.origin}/watch/${video._id}`,
+              );
+              toast.success("Link copied to clipboard!");
             }}
             className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-surface transition-colors flex items-center gap-2 cursor-pointer"
           >
@@ -219,7 +245,6 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
           isOpen={showPlaylistModal}
           onClose={() => setShowPlaylistModal(false)}
           videoId={video._id}
-          userId={user._id}
         />
       )}
     </>

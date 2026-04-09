@@ -14,6 +14,7 @@ import { notificationService } from "../services/notificationService.ts";
 import { formatRelativeTime } from "../utils/helpers";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import type { Notification } from "../types";
 
 export const NotificationsPage: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -22,7 +23,8 @@ export const NotificationsPage: React.FC = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["notifications", page],
     queryFn: () => notificationService.getNotifications({ page, limit: 20 }),
-    refetchInterval: 15000, // Poll every 15 seconds for live updates
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
   });
 
   const markAsReadMutation = useMutation({
@@ -55,13 +57,14 @@ export const NotificationsPage: React.FC = () => {
       case "subscription":
         return <UserPlus className="w-5 h-5 text-green-500" />;
       case "upload":
+      case "video_upload":
         return <Video className="w-5 h-5 text-purple-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
   };
 
-  const getNotificationText = (notification: any) => {
+  const getNotificationText = (notification: Notification) => {
     const userName =
       notification.sender?.fullName ||
       notification.relatedUser?.fullName ||
@@ -82,13 +85,14 @@ export const NotificationsPage: React.FC = () => {
       case "subscription":
         return `${userName} subscribed to your channel`;
       case "upload":
+      case "video_upload":
         return `${userName} uploaded a new video`;
       default:
         return "New notification";
     }
   };
 
-  const getNotificationLink = (notification: any) => {
+  const getNotificationLink = (notification: Notification) => {
     if (notification.relatedVideo?._id) {
       return `/watch/${notification.relatedVideo._id}`;
     }
@@ -167,13 +171,13 @@ export const NotificationsPage: React.FC = () => {
                     src={
                       notification.sender?.avatarUrl ||
                       notification.sender?.avatar ||
-                      (notification as any).relatedUser?.avatarUrl ||
-                      (notification as any).relatedUser?.avatar ||
+                      notification.relatedUser?.avatarUrl ||
+                      notification.relatedUser?.avatar ||
                       "/default-avatar.jpg"
                     }
                     alt={
                       notification.sender?.fullName ||
-                      (notification as any).relatedUser?.fullName ||
+                      notification.relatedUser?.fullName ||
                       "User"
                     }
                     className="w-12 h-12 rounded-full object-cover shrink-0"

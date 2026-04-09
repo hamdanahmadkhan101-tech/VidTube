@@ -1,5 +1,5 @@
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { authService } from "../services/authService.ts";
-import { useAuthStore } from "../store/authStore.ts";
 import { handleApiError } from "../services/apiClient.ts";
 import toast from "react-hot-toast";
 import type { RegisterFormData } from "../types/index.ts";
@@ -31,7 +30,7 @@ const registerSchema = z.object({
     .max(20, "Username must be at most 20 characters")
     .regex(
       /^[a-zA-Z0-9_]+$/,
-      "Username can only contain letters, numbers, and underscores"
+      "Username can only contain letters, numbers, and underscores",
     ),
   email: z.string().min(1, "Email is required").email("Invalid email format"),
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -40,22 +39,21 @@ const registerSchema = z.object({
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuthStore();
   const [avatarPreview, setAvatarPreview] = React.useState<string>("");
   const [showPassword, setShowPassword] = React.useState(false);
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
-    watch,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
 
-  const avatarFile = watch("avatar");
-  const passwordValue = watch("password");
-  const emailValue = watch("email");
+  const avatarFile = useWatch({ control, name: "avatar" });
+  const passwordValue = useWatch({ control, name: "password" });
+  const emailValue = useWatch({ control, name: "email" });
 
   // Password validation checks
   const passwordChecks = {
@@ -82,10 +80,9 @@ export const RegisterPage: React.FC = () => {
 
   const registerMutation = useMutation({
     mutationFn: authService.register,
-    onSuccess: (data) => {
-      setUser(data);
-      toast.success("Account created successfully!");
-      navigate("/");
+    onSuccess: () => {
+      toast.success("Account created successfully! Please sign in.");
+      navigate("/login");
     },
     onError: (error) => {
       toast.error(handleApiError(error));
@@ -108,7 +105,7 @@ export const RegisterPage: React.FC = () => {
           <motion.div
             whileHover={{ rotate: 360 }}
             transition={{ duration: 0.5 }}
-            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow mx-auto mb-3"
+            className="w-14 h-14 rounded-2xl bg-linear-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow mx-auto mb-3"
           >
             <Video className="w-7 h-7 text-white" />
           </motion.div>

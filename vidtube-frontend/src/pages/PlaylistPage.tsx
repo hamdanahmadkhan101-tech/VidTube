@@ -1,12 +1,11 @@
 import React from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { Play, Lock, Users, Calendar, Loader2 } from "lucide-react";
 import { playlistService } from "../services/playlistService.ts";
 import { VideoCard } from "../components/video/VideoCard";
 import { formatRelativeTime } from "../utils/helpers";
-import type { Video } from "../types";
+import type { PlaylistVideo, Video } from "../types";
 
 export const PlaylistPage: React.FC = () => {
   const { playlistId } = useParams<{ playlistId: string }>();
@@ -41,12 +40,10 @@ export const PlaylistPage: React.FC = () => {
   }
 
   // Extract video objects from playlist items
-  const videos: Video[] = playlist.videos
-    .map((item: any) => {
-      const video = typeof item.video === 'object' ? item.video : null;
-      return video;
-    })
-    .filter((v: any) => v !== null);
+  const videos: Video[] = playlist.videos.flatMap((item: PlaylistVideo) => {
+    const video = typeof item.video === "object" ? item.video : null;
+    return video ? [video] : [];
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -54,7 +51,7 @@ export const PlaylistPage: React.FC = () => {
         {/* Playlist Info Sidebar */}
         <div className="lg:col-span-1">
           <div className="glass-card p-6 sticky top-24">
-            <div className="aspect-video bg-gradient-to-br from-primary-500 to-accent-blue rounded-xl mb-4 flex items-center justify-center">
+            <div className="aspect-video bg-linear-to-br from-primary-500 to-accent-blue rounded-xl mb-4 flex items-center justify-center">
               <Play className="w-16 h-16 text-white" />
             </div>
 
@@ -93,7 +90,9 @@ export const PlaylistPage: React.FC = () => {
                 ) : (
                   <Users className="w-4 h-4" />
                 )}
-                <span>{playlist.isPublic === false ? "Private" : "Public"}</span>
+                <span>
+                  {playlist.isPublic === false ? "Private" : "Public"}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />

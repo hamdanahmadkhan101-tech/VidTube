@@ -25,6 +25,7 @@ import {
 import { User } from '../models/user.model.js';
 import { uploadImage } from '../middlewares/multer.middleware.js';
 import { verifyJWT, optionalJWT } from '../middlewares/auth.middleware.js';
+import { authLimiter } from '../middlewares/rateLimit.middleware.js';
 
 const router = Router();
 
@@ -34,14 +35,15 @@ const router = Router();
 
 // User Registration & Authentication
 router.route('/register').post(
+  authLimiter,
   uploadImage.fields([
     { name: 'avatar', maxCount: 1 },
     { name: 'coverImage', maxCount: 1 },
   ]),
   registerUser
 );
-router.route('/login').post(loginUser);
-router.route('/refresh-token').post(refreshAccessToken);
+router.route('/login').post(authLimiter, loginUser);
+router.route('/refresh-token').post(authLimiter, refreshAccessToken);
 
 // Availability checks (for frontend validation)
 router.route('/check-username/:username').get(async (req, res) => {

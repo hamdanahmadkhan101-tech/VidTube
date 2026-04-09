@@ -7,9 +7,50 @@ import type {
 import toast from "react-hot-toast";
 import type { ApiResponse } from "../types";
 
+type StoredAuthState = {
+  state?: {
+    user?: {
+      accessToken?: string;
+    };
+  };
+};
+
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:8080/api/v1";
+
+const getStoredAuth = (): StoredAuthState | null => {
+  try {
+    const raw = localStorage.getItem("auth-storage");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const setStoredAccessToken = (accessToken: string) => {
+  const authStorage = getStoredAuth();
+  if (!authStorage?.state?.user) return;
+
+  authStorage.state.user = {
+    ...authStorage.state.user,
+    accessToken,
+  };
+  localStorage.setItem("auth-storage", JSON.stringify(authStorage));
+};
+
+const clearStoredAuth = () => {
+  localStorage.removeItem("auth-storage");
+};
+
 // Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1",
+  baseURL: API_BASE_URL,
   withCredentials: true, // Important for HTTP-only cookies
   headers: {
     "Content-Type": "application/json",
@@ -32,7 +73,7 @@ apiClient.interceptors.request.use(
           config.headers["Authorization"] = `Bearer ${state.user.accessToken}`;
         }
       }
-    } catch (error) {
+    } catch {
       // Ignore parsing errors
     }
 
@@ -45,12 +86,12 @@ apiClient.interceptors.request.use(
   },
   (error: AxiosError) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor
-let isRefreshing = false;
 let hasShownNetworkError = false;
+let refreshPromise: Promise<string | null> | null = null;
 
 apiClient.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
@@ -60,7 +101,7 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError<ApiResponse>) => {
-    const originalRequest = error.config as any;
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
 
     // Handle 401 Unauthorized (Token expired)
     // Don't retry for logout, refresh-token, or login endpoints
@@ -68,30 +109,44 @@ apiClient.interceptors.response.use(
       originalRequest?.url?.includes("/refresh-token") ||
       originalRequest?.url?.includes("/logout") ||
       originalRequest?.url?.includes("/login") ||
-      originalRequest?._retry || // Prevent infinite loop
-      isRefreshing; // Don't retry if already refreshing
+      originalRequest?._retry; // Prevent infinite loop
 
     if (error.response?.status === 401 && originalRequest && !shouldNotRetry) {
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        // Try to refresh the token
-        await axios.post(
-          `${
-            import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1"
-          }/users/refresh-token`,
-          {},
-          { withCredentials: true }
-        );
+        // Share one refresh request across concurrent 401s
+        if (!refreshPromise) {
+          refreshPromise = axios
+            .post<ApiResponse<{ accessToken: string }>>(
+              `${API_BASE_URL}/users/refresh-token`,
+              {},
+              { withCredentials: true },
+            )
+            .then(
+              (refreshResponse) =>
+                refreshResponse.data.data?.accessToken || null,
+            )
+            .finally(() => {
+              refreshPromise = null;
+            });
+        }
 
-        isRefreshing = false;
+        const newAccessToken = await refreshPromise;
+        if (!newAccessToken) {
+          throw new Error("Access token refresh failed");
+        }
+
+        setStoredAccessToken(newAccessToken);
+
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+
         // Retry the original request
         return apiClient(originalRequest);
       } catch (refreshError) {
         // Refresh failed, redirect to login
-        isRefreshing = false;
-        localStorage.removeItem("auth-storage");
+        clearStoredAuth();
         if (window.location.pathname !== "/login") {
           window.location.href = "/login";
         }
@@ -105,7 +160,7 @@ apiClient.interceptors.response.use(
       toast.error(
         `Too many requests. Please try again ${
           retryAfter ? `after ${retryAfter}s` : "later"
-        }`
+        }`,
       );
     }
 
@@ -120,7 +175,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // Helper function to handle API errors

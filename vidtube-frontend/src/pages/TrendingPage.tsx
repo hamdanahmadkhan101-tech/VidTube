@@ -54,7 +54,7 @@ export const TrendingPage: React.FC = () => {
             >
               <div className="relative">
                 {index < 3 && (
-                  <div className="absolute -top-2 -left-2 z-10 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                  <div className="absolute -top-2 -left-2 z-10 w-8 h-8 bg-linear-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
                     {index + 1}
                   </div>
                 )}

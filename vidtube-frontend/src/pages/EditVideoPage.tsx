@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft, Upload, Save, Loader2 } from "lucide-react";
 import { videoService } from "../services/videoService";
+import { handleApiError } from "../services/apiClient";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
 import type { Video } from "../types";
@@ -14,8 +15,8 @@ export const EditVideoPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState<string | undefined>(undefined);
+  const [description, setDescription] = useState<string | undefined>(undefined);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
 
@@ -26,21 +27,20 @@ export const EditVideoPage: React.FC = () => {
     enabled: !!videoId,
   });
 
-  // Initialize form with video data
+  // Redirect if viewer is not the owner
   useEffect(() => {
     if (video) {
-      // Check if user is the owner
       if (video.owner._id !== user?._id) {
         toast.error("You don't have permission to edit this video");
         navigate(`/watch/${videoId}`);
-        return;
       }
-
-      setTitle(video.title);
-      setDescription(video.description || "");
-      setThumbnailPreview(video.thumbnailUrl || "");
     }
   }, [video, user, videoId, navigate]);
+
+  const resolvedTitle = title ?? video?.title ?? "";
+  const resolvedDescription = description ?? video?.description ?? "";
+  const resolvedThumbnailPreview =
+    thumbnailPreview || video?.thumbnailUrl || "";
 
   // Update video mutation
   const updateVideoMutation = useMutation({
@@ -55,10 +55,8 @@ export const EditVideoPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["userVideos"] });
       navigate(`/watch/${videoId}`);
     },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message || "Failed to update video";
-      toast.error(errorMessage);
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
     },
   });
 
@@ -77,14 +75,14 @@ export const EditVideoPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim()) {
+    if (!resolvedTitle.trim()) {
       toast.error("Title is required");
       return;
     }
 
     const formData = new FormData();
-    formData.append("title", title.trim());
-    formData.append("description", description.trim());
+    formData.append("title", resolvedTitle.trim());
+    formData.append("description", resolvedDescription.trim());
 
     if (thumbnailFile) {
       formData.append("thumbnail", thumbnailFile);
@@ -141,9 +139,9 @@ export const EditVideoPage: React.FC = () => {
               Thumbnail
             </label>
             <div className="flex flex-col gap-4">
-              {thumbnailPreview && (
+              {resolvedThumbnailPreview && (
                 <img
-                  src={thumbnailPreview}
+                  src={resolvedThumbnailPreview}
                   alt="Thumbnail preview"
                   className="w-full max-w-md h-48 object-cover rounded-lg"
                 />
@@ -171,7 +169,7 @@ export const EditVideoPage: React.FC = () => {
             </label>
             <input
               type="text"
-              value={title}
+              value={resolvedTitle}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
               className="glass-input w-full"
@@ -179,7 +177,7 @@ export const EditVideoPage: React.FC = () => {
               required
             />
             <p className="text-sm text-text-secondary mt-2">
-              {title.length}/200 characters
+              {resolvedTitle.length}/200 characters
             </p>
           </div>
 
@@ -189,7 +187,7 @@ export const EditVideoPage: React.FC = () => {
               Description
             </label>
             <textarea
-              value={description}
+              value={resolvedDescription}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={5000}
               rows={6}
@@ -197,7 +195,7 @@ export const EditVideoPage: React.FC = () => {
               placeholder="Tell viewers about your video"
             />
             <p className="text-sm text-text-secondary mt-2">
-              {description.length}/5000 characters
+              {resolvedDescription.length}/5000 characters
             </p>
           </div>
 

@@ -95,6 +95,8 @@ const addComment = asyncHandler(async (req, res) => {
     parent: parent || null,
   });
 
+  await Video.updateOne({ _id: videoId }, { $inc: { commentsCount: 1 } });
+
   // Create notifications
   if (parentComment) {
     // Reply to comment - notify the parent comment owner
@@ -220,7 +222,44 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new apiError(403, 'You are not allowed to delete this comment');
   }
 
-  await Comment.deleteOne({ _id: comment._id });
+  const [commentTree] = await Comment.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(comment._id),
+      },
+    },
+    {
+      $graphLookup: {
+        from: 'comments',
+        startWith: '$_id',
+        connectFromField: '_id',
+        connectToField: 'parent',
+        as: 'descendants',
+      },
+    },
+    {
+      $project: {
+        idsToDelete: {
+          $concatArrays: [['$_id'], '$descendants._id'],
+        },
+      },
+    },
+  ]);
+
+  const idsToDelete = commentTree?.idsToDelete || [comment._id];
+  const deleteResult = await Comment.deleteMany({ _id: { $in: idsToDelete } });
+
+  const deletedCount = deleteResult.deletedCount || 0;
+  if (deletedCount > 0) {
+    await Video.updateOne(
+      { _id: comment.video._id },
+      { $inc: { commentsCount: -deletedCount } }
+    );
+    await Video.updateOne(
+      { _id: comment.video._id, commentsCount: { $lt: 0 } },
+      { $set: { commentsCount: 0 } }
+    );
+  }
 
   res.status(200).json(new apiResponse(200, 'Comment deleted successfully'));
 });
@@ -375,8 +414,91 @@ const getVideoComments = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, 'Comments fetched successfully', result));
 });
 
+/**
+ * Get paginated replies for a parent comment
+ * @route GET /api/v1/comments/:commentId/replies
+ * @access Public
+ */
+const getCommentReplies = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  validateObjectId(commentId, 'commentId');
+
+  const parentComment = await Comment.findById(commentId).select('_id video');
+  if (!parentComment) {
+    throw new apiError(404, 'Parent comment not found');
+  }
+
+  const { page, limit } = getPaginationParams(req.query);
+
+  const pipeline = [
+    {
+      $match: {
+        parent: new mongoose.Types.ObjectId(commentId),
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'owner',
+        foreignField: '_id',
+        as: 'owner',
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              avatarUrl: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: 'likes',
+        localField: '_id',
+        foreignField: 'comment',
+        as: 'replyLikes',
+      },
+    },
+    {
+      $addFields: {
+        owner: { $first: '$owner' },
+        likes: { $size: '$replyLikes' },
+        isLiked: {
+          $in: [req.user?._id, '$replyLikes.likedBy'],
+        },
+      },
+    },
+    {
+      $project: {
+        replyLikes: 0,
+      },
+    },
+    {
+      $sort: { createdAt: 1 },
+    },
+  ];
+
+  const aggregate = Comment.aggregate(pipeline);
+  const result = await Comment.aggregatePaginate(aggregate, {
+    page,
+    limit,
+  });
+
+  res
+    .status(200)
+    .json(new apiResponse(200, 'Comment replies fetched successfully', result));
+});
+
 // ============================================
 // EXPORTS
 // ============================================
 
-export { addComment, updateComment, deleteComment, getVideoComments };
+export {
+  addComment,
+  updateComment,
+  deleteComment,
+  getVideoComments,
+  getCommentReplies,
+};

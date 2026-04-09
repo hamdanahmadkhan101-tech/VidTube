@@ -8,6 +8,7 @@ import {
   getMyReports,
 } from '../controllers/report.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { requireRole } from '../middlewares/authorize.middleware.js';
 
 const router = Router();
 
@@ -17,13 +18,15 @@ const router = Router();
 
 router.route('/').post(verifyJWT, createReport);
 
-// Admin routes
-router.route('/').get(verifyJWT, getAllReports); // Should add admin check
-router.route('/:reportId').get(verifyJWT, getReportById); // Should add admin check
-router.route('/:reportId').patch(verifyJWT, updateReportStatus); // Should add admin check
-router.route('/:reportId').delete(verifyJWT, deleteReport); // Should add admin check
-
 // User routes
 router.route('/my-reports').get(verifyJWT, getMyReports);
+
+// Admin routes
+router.route('/').get(verifyJWT, requireRole('admin'), getAllReports);
+router
+  .route('/:reportId')
+  .get(verifyJWT, requireRole('admin'), getReportById)
+  .patch(verifyJWT, requireRole('admin'), updateReportStatus)
+  .delete(verifyJWT, requireRole('admin'), deleteReport);
 
 export default router;

@@ -24,10 +24,16 @@ const verifyJWT = asyncHandler(async (req, res, next) => {
     throw error;
   }
 
-  const user = await User.findById(decoded._id).select(
-    '-password -refreshTokens'
-  );
+  const user = await User.findById(decoded._id)
+    .select('_id username email fullName avatarUrl role isBanned bannedUntil')
+    .lean();
   if (!user) throw new apiError(401, 'Invalid access token');
+
+  const banExpired =
+    user.bannedUntil && new Date(user.bannedUntil) <= new Date();
+  if (user.isBanned && !banExpired) {
+    throw new apiError(403, 'Account is temporarily restricted');
+  }
 
   req.user = user;
   next();
@@ -45,9 +51,9 @@ const optionalJWT = asyncHandler(async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const user = await User.findById(decoded._id).select(
-      '-password -refreshTokens'
-    );
+    const user = await User.findById(decoded._id)
+      .select('_id username email fullName avatarUrl role isBanned bannedUntil')
+      .lean();
     req.user = user || null;
   } catch (error) {
     req.user = null;

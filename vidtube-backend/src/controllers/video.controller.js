@@ -124,7 +124,7 @@ const uploadVideo = asyncHandler(async (req, res) => {
   try {
     // Upload video to Cloudinary
     const videoUploadResult = await uploadOnCloudinary(videoPath);
-    
+
     if (!videoUploadResult?.url) {
       throw new apiError(500, 'Video upload to cloud storage failed');
     }
@@ -133,7 +133,7 @@ const uploadVideo = asyncHandler(async (req, res) => {
     const thumbnailUploadResult = thumbnailPath
       ? await uploadOnCloudinary(thumbnailPath)
       : null;
-    
+
     const newVideo = await Video.create({
       title: validatedTitle,
       description: validatedDescription,
@@ -163,11 +163,11 @@ const uploadVideo = asyncHandler(async (req, res) => {
     if (error.code === 'UPLOAD_TIMEOUT') {
       throw new apiError(408, error.message);
     }
-    
+
     if (error.code === 'CLOUDINARY_ERROR') {
       throw new apiError(502, 'Cloud storage service error. Please try again.');
     }
-    
+
     throw error;
   }
 });
@@ -204,7 +204,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         trendingScore: {
           $add: [
             { $multiply: ['$views', 0.5] },
-            { $multiply: ['$likes', 2] },
+            { $multiply: ['$likesCount', 2] },
             { $multiply: ['$commentsCount', 3] },
             // Recency boost: videos from last 7 days get bonus points
             {
@@ -291,23 +291,6 @@ const getVideoById = asyncHandler(async (req, res) => {
     ...ownerLookupPipeline,
     {
       $lookup: {
-        from: 'likes',
-        localField: '_id',
-        foreignField: 'video',
-        as: 'likes',
-      },
-    },
-    {
-      $lookup: {
-        from: 'comments',
-        localField: '_id',
-        foreignField: 'video',
-        as: 'comments',
-      },
-    },
-    // Lookup subscriptions for checking if current user is subscribed
-    {
-      $lookup: {
         from: 'subscriptions',
         let: { ownerId: '$owner._id' },
         pipeline: [
@@ -331,20 +314,12 @@ const getVideoById = asyncHandler(async (req, res) => {
   if (currentUserId) {
     pipeline.push({
       $addFields: {
-        likesCount: { $size: '$likes' },
-        commentsCount: { $size: '$comments' },
-        isLiked: {
-          $in: [currentUserId, '$likes.likedBy'],
-        },
         'owner.isSubscribed': { $gt: [{ $size: '$subscriptionCheck' }, 0] },
       },
     });
   } else {
     pipeline.push({
       $addFields: {
-        likesCount: { $size: '$likes' },
-        commentsCount: { $size: '$comments' },
-        isLiked: false,
         'owner.isSubscribed': false,
       },
     });
@@ -352,17 +327,31 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   pipeline.push({
     $project: {
-      likes: 0,
-      comments: 0,
       subscriptionCheck: 0,
     },
   });
 
-  const [detailedVideo] = await Video.aggregate(pipeline);
+  const [detailedVideoData] = await Video.aggregate(pipeline);
 
-  if (!detailedVideo) {
+  if (!detailedVideoData) {
     throw new NotFoundError('Video', videoId);
   }
+
+  let isLiked = false;
+  if (currentUserId) {
+    const likeExists = await Like.exists({
+      video: new mongoose.Types.ObjectId(videoId),
+      likedBy: currentUserId,
+    });
+    isLiked = Boolean(likeExists);
+  }
+
+  const detailedVideo = {
+    ...detailedVideoData,
+    likesCount: detailedVideoData?.likesCount || 0,
+    commentsCount: detailedVideoData?.commentsCount || 0,
+    isLiked,
+  };
 
   res
     .status(200)
@@ -610,7 +599,7 @@ const searchVideos = asyncHandler(async (req, res) => {
             },
             // Boost recent and popular videos
             { $multiply: ['$views', 0.001] },
-            { $multiply: ['$likes', 0.01] },
+            { $multiply: ['$likesCount', 0.01] },
           ],
         },
       },
@@ -709,21 +698,9 @@ const getVideosByOwner = asyncHandler(async (req, res) => {
     { $match: matchStage },
     ...ownerLookupPipeline,
     {
-      $lookup: {
-        from: 'likes',
-        localField: '_id',
-        foreignField: 'video',
-        as: 'videoLikes',
-      },
-    },
-    {
       $addFields: {
-        likesCount: { $size: '$videoLikes' },
-      },
-    },
-    {
-      $project: {
-        videoLikes: 0, // Remove the array after counting
+        likesCount: { $ifNull: ['$likesCount', 0] },
+        commentsCount: { $ifNull: ['$commentsCount', 0] },
       },
     },
     { $sort: { createdAt: -1 } },
@@ -771,32 +748,22 @@ const addVideoToWatchHistory = asyncHandler(async (req, res) => {
     throw new ForbiddenError('Cannot add unpublished video to watch history');
   }
 
-  // Check if video is already in watch history to prevent duplicate view counts
-  const alreadyInHistory = req.user.watchHistory?.some(
-    (v) => v.toString() === videoId.toString()
+  // Atomically avoid duplicate watch-history insertions under concurrent requests.
+  const historyUpdateResult = await User.updateOne(
+    { _id: req.user._id, watchHistory: { $ne: video._id } },
+    { $push: { watchHistory: video._id } }
   );
 
-  // Only increment views if this is the first time user watches
-  if (!alreadyInHistory) {
-    // Increment views atomically
-    await Video.findByIdAndUpdate(
-      videoId,
-      { $inc: { views: 1 } },
-      { new: false }
-    );
+  const shouldCountView = historyUpdateResult.modifiedCount > 0;
 
-    // Add to watch history
-    await User.findByIdAndUpdate(
-      req.user._id,
-      { $push: { watchHistory: videoId } },
-      { new: true }
-    );
+  if (shouldCountView) {
+    await Video.updateOne({ _id: video._id }, { $inc: { views: 1 } });
   }
 
   res.status(200).json(
     new apiResponse(200, 'Video added to watch history successfully', {
       videoId,
-      viewCounted: !alreadyInHistory,
+      viewCounted: shouldCountView,
     })
   );
 });

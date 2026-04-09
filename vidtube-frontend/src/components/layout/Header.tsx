@@ -31,18 +31,10 @@ export const Header: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -74,13 +66,6 @@ export const Header: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showUserMenu, showSuggestions, showNotifications]);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setShowUserMenu(false);
-      setShowNotifications(false);
-    }
-  }, [isAuthenticated]);
 
   const fetchSuggestions = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -117,19 +102,14 @@ export const Header: React.FC = () => {
     };
   }, []);
 
-  const { data: unreadCount, refetch: refetchNotifications } = useQuery({
+  const { data: unreadCount } = useQuery({
     queryKey: ["unreadCount"],
     queryFn: notificationService.getUnreadCount,
     enabled: isAuthenticated,
-    refetchInterval: 10000,
-    refetchIntervalInBackground: true,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      refetchNotifications();
-    }
-  }, [isAuthenticated, refetchNotifications]);
 
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
@@ -138,7 +118,7 @@ export const Header: React.FC = () => {
       toast.success("Logged out successfully");
       navigate("/");
     },
-    onError: (error) => {
+    onError: () => {
       logout();
       toast.error("Logged out (session expired)");
       navigate("/");
@@ -173,7 +153,7 @@ export const Header: React.FC = () => {
     setShowMobileSearch(!showMobileSearch);
     if (!showMobileSearch) {
       setTimeout(() => {
-        const input = document.getElementById('mobile-search-input');
+        const input = document.getElementById("mobile-search-input");
         if (input) (input as HTMLInputElement).focus();
       }, 0);
     }
@@ -186,11 +166,9 @@ export const Header: React.FC = () => {
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center gap-1 sm:gap-2 group cursor-pointer flex-shrink-0"
+            className="flex items-center gap-1 sm:gap-2 group cursor-pointer shrink-0"
           >
-            <div
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow"
-            >
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-linear-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow">
               <Video className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
             </div>
             <span className="text-lg sm:text-2xl font-bold text-gradient hidden sm:block">
@@ -236,7 +214,7 @@ export const Header: React.FC = () => {
                       onClick={() => handleSuggestionClick(suggestion)}
                       className="w-full text-left px-4 py-3 text-text-primary hover:bg-surface-hover transition-colors flex items-center gap-3 cursor-pointer"
                     >
-                      <Search className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+                      <Search className="w-4 h-4 text-text-tertiary shrink-0" />
                       <span className="truncate">{suggestion}</span>
                     </button>
                   ))}
@@ -248,9 +226,9 @@ export const Header: React.FC = () => {
           {/* Right Section */}
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Mobile Search */}
-            <button 
+            <button
               onClick={handleMobileSearchClick}
-              className="md:hidden text-text-primary hover:text-primary-500 transition-colors cursor-pointer flex-shrink-0"
+              className="md:hidden text-text-primary hover:text-primary-500 transition-colors cursor-pointer shrink-0"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -260,14 +238,14 @@ export const Header: React.FC = () => {
                 {/* Upload Button */}
                 <Link
                   to="/upload"
-                  className="hidden sm:flex items-center gap-2 btn-glass cursor-pointer flex-shrink-0"
+                  className="hidden sm:flex items-center gap-2 btn-glass cursor-pointer shrink-0"
                 >
                   <Upload className="w-5 h-5" />
                   <span className="hidden lg:inline">Upload</span>
                 </Link>
 
                 {/* Notifications */}
-                <div className="relative flex-shrink-0" ref={notificationRef}>
+                <div className="relative shrink-0" ref={notificationRef}>
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="relative text-text-primary hover:text-primary-500 transition-colors cursor-pointer"
@@ -287,7 +265,7 @@ export const Header: React.FC = () => {
                 </div>
 
                 {/* User Menu */}
-                <div className="relative flex-shrink-0" ref={userMenuRef}>
+                <div className="relative shrink-0" ref={userMenuRef}>
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
@@ -366,11 +344,17 @@ export const Header: React.FC = () => {
                 </div>
               </>
             ) : (
-              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                <Link to="/login" className="btn-ghost hidden sm:block text-sm sm:text-base">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                <Link
+                  to="/login"
+                  className="btn-ghost hidden sm:block text-sm sm:text-base"
+                >
                   Sign In
                 </Link>
-                <Link to="/register" className="btn-primary text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2">
+                <Link
+                  to="/register"
+                  className="btn-primary text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2"
+                >
                   Sign Up
                 </Link>
               </div>
@@ -379,7 +363,7 @@ export const Header: React.FC = () => {
             {/* Mobile Menu */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden text-text-primary flex-shrink-0"
+              className="md:hidden text-text-primary shrink-0"
             >
               {showMobileMenu ? (
                 <X className="w-6 h-6" />
@@ -421,7 +405,7 @@ export const Header: React.FC = () => {
                     onClick={() => handleSuggestionClick(suggestion)}
                     className="w-full text-left px-4 py-3 text-text-primary hover:bg-surface-hover transition-colors flex items-center gap-3 cursor-pointer"
                   >
-                    <Search className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+                    <Search className="w-4 h-4 text-text-tertiary shrink-0" />
                     <span className="truncate">{suggestion}</span>
                   </button>
                 ))}

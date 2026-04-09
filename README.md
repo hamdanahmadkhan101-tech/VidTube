@@ -1,241 +1,185 @@
-# VidTube - Video Sharing Platform
+# VidTube
 
-A modern, full-stack video sharing platform built with React 19, Express 5, and MongoDB. Production-ready with industry best practices.
+VidTube is a full-stack video sharing platform with a React + TypeScript frontend and an Express + MongoDB backend.
 
-## 🚀 Features
+This repository now includes a hardened API surface, improved performance paths, cleaner frontend query contracts, and updated project documentation.
 
-- **Video Management**: Upload, stream, and manage videos
-- **User Authentication**: Secure JWT-based authentication
-- **Social Features**: Likes, comments, subscriptions, notifications
-- **Search & Discovery**: Advanced search with filters and sorting
-- **User Profiles**: Customizable channel pages with analytics
-- **Responsive Design**: Modern UI with dark theme, fully responsive
-- **Performance Optimized**: Code splitting, lazy loading, caching
-- **Accessibility**: WCAG AA compliant, full keyboard navigation
+## Repository Structure
 
-## 📋 Tech Stack
+```
+VidTube-main/
+|- vidtube-backend/   # Express API, MongoDB models, Jest tests
+|- vidtube-frontend/  # React 19 + Vite + TypeScript application
+|- docs/              # Detailed technical documentation (root/backend/frontend)
+`- *.md               # Governance and entry-point documentation
+```
+
+## Documentation Map
+
+- [docs/README.md](./docs/README.md): Documentation index and ownership map
+- [SECURITY.md](./SECURITY.md): Security policy and deployment checklist
+- [CHANGELOG.md](./CHANGELOG.md): Keep-a-changelog release history
+- [CONTRIBUTING.md](./CONTRIBUTING.md): Contribution and PR quality standards
+
+Detailed technical docs:
+
+- [docs/root/QUICK_REFERENCE.md](./docs/root/QUICK_REFERENCE.md): Commands, routes, and daily workflow shortcuts
+- [docs/backend/API_DOCUMENTATION.md](./docs/backend/API_DOCUMENTATION.md): HTTP endpoints, auth model, and request/response contracts
+- [docs/root/ARCHITECTURE.md](./docs/root/ARCHITECTURE.md): System design, data flow, and scaling direction
+- [docs/root/TESTING_GUIDE.md](./docs/root/TESTING_GUIDE.md): Test/lint/build verification and CI guidance
+- [docs/root/PERFORMANCE_OPTIMIZATIONS.md](./docs/root/PERFORMANCE_OPTIMIZATIONS.md): Implemented optimizations and next tuning steps
+- [docs/root/BUG_FIXES_SUMMARY.md](./docs/root/BUG_FIXES_SUMMARY.md): Consolidated remediation summary for this hardening cycle
+- [docs/frontend/VERCEL_SPEED_INSIGHTS.md](./docs/frontend/VERCEL_SPEED_INSIGHTS.md): Frontend RUM integration notes
+
+## Current Engineering Baseline
+
+- Backend tests: passing (4 suites, 32 tests)
+- Frontend lint: passing
+- Frontend production build: passing
+- Backend format check: known legacy baseline still pending full repo normalization
+
+## Core Capabilities
+
+- Authentication with JWT access tokens and refresh-token rotation
+- Video upload, playback metadata, search, and owner management
+- Comments with replies and engagement sorting
+- Like system for videos and comments
+- Playlist management and video curation
+- Notification flows for engagement events
+- Reporting workflow with admin-only moderation routes
+
+## Tech Stack
 
 ### Frontend
 
-- **React 19** - Latest React with concurrent features
-- **Vite** - Next-generation build tool
-- **Tailwind CSS 4** - Utility-first CSS framework
-- **Zustand** - Lightweight state management
-- **React Router DOM** - Client-side routing
-- **React Hook Form + Zod** - Form validation
-- **Axios** - HTTP client
-- **React Hot Toast** - Toast notifications
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- TanStack Query
+- Zustand
+- React Router
 
 ### Backend
 
-- **Node.js** - JavaScript runtime
-- **Express 5** - Web framework
-- **MongoDB** - NoSQL database
-- **Mongoose** - MongoDB ODM
-- **JWT** - Authentication
-- **bcrypt** - Password hashing
-- **Cloudinary** - Video & image hosting
-- **Winston** - Logging
-- **Helmet** - Security headers
-- **Express Rate Limit** - Rate limiting
-- **Zod** - Schema validation
+- Node.js + Express 5
+- MongoDB + Mongoose
+- JWT + cookie-parser
+- Helmet + express-rate-limit
+- Multer + Cloudinary
+- Winston logging
+- Jest + Supertest
 
-## 🏗️ Project Structure
+## Prerequisites
 
-```
-vidtube/
-├── vidtube-backend/          # Express API server
-│   ├── src/
-│   │   ├── controllers/      # Route controllers
-│   │   ├── services/         # Business logic layer
-│   │   ├── models/           # MongoDB models
-│   │   ├── routes/           # API routes
-│   │   ├── middlewares/      # Express middlewares
-│   │   ├── validators/       # Zod validation schemas
-│   │   ├── errors/           # Custom error classes
-│   │   └── utils/            # Utility functions
-│   └── package.json
-│
-├── vidtube-frontend/         # React frontend
-│   ├── src/
-│   │   ├── components/       # React components
-│   │   ├── pages/            # Route pages
-│   │   ├── store/            # Zustand stores
-│   │   ├── hooks/            # Custom React hooks
-│   │   ├── services/         # API service layer
-│   │   ├── utils/            # Utility functions
-│   │   └── validators/       # Zod validation schemas
-│   └── package.json
-│
-└── README.md                 # This file
-```
+- Node.js 18+
+- npm 9+
+- MongoDB instance (local or Atlas)
+- Cloudinary account for media upload
 
-## 🚦 Getting Started
+## Local Setup
 
-### Prerequisites
-
-- Node.js 18+ and npm
-- MongoDB database (local or cloud)
-- Cloudinary account (for video/image hosting)
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone <repository-url>
-   cd Vidtube
-   ```
-
-2. **Install backend dependencies**
-
-   ```bash
-   cd vidtube-backend
-   npm install
-   ```
-
-3. **Install frontend dependencies**
-
-   ```bash
-   cd ../vidtube-frontend
-   npm install
-   ```
-
-4. **Configure environment variables**
-
-   Create `.env` in `vidtube-backend/`:
-
-   ```env
-   PORT=5000
-   MONGODB_URI=mongodb://localhost:27017/vidtube
-   JWT_SECRET=your-secret-key
-   JWT_REFRESH_SECRET=your-refresh-secret-key
-   CLOUDINARY_CLOUD_NAME=your-cloud-name
-   CLOUDINARY_API_KEY=your-api-key
-   CLOUDINARY_API_SECRET=your-api-secret
-   NODE_ENV=development
-   ```
-
-   Create `.env` in `vidtube-frontend/`:
-
-   ```env
-   VITE_API_URL=http://localhost:5000/api/v1
-   ```
-
-5. **Start the backend**
-
-   ```bash
-   cd vidtube-backend
-   npm run dev
-   ```
-
-6. **Start the frontend** (in a new terminal)
-
-   ```bash
-   cd vidtube-frontend
-   npm run dev
-   ```
-
-7. **Open your browser**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:5000
-
-## 📚 API Documentation
-
-See [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for detailed API endpoints documentation.
-
-## 🏛️ Architecture
-
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed architecture and design patterns.
-
-## 🔒 Security
-
-See [SECURITY.md](./SECURITY.md) for security best practices and implementation details.
-
-## 🧪 Testing
+1. Clone and install dependencies:
 
 ```bash
-# Backend tests (when implemented)
-cd vidtube-backend
-npm test
+git clone <your-repo-url>
+cd VidTube-main
 
-# Frontend tests (when implemented)
+cd vidtube-backend
+npm install
+
+cd ../vidtube-frontend
+npm install
+```
+
+2. Configure backend environment variables in `vidtube-backend/.env`:
+
+```env
+PORT=8080
+MONGODB_URI=mongodb://127.0.0.1:27017/VidTubeDB
+ACCESS_TOKEN_SECRET=replace-with-strong-secret
+ACCESS_TOKEN_EXPIRY=15m
+REFRESH_TOKEN_SECRET=replace-with-strong-secret
+REFRESH_TOKEN_EXPIRY=7d
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-cloudinary-key
+CLOUDINARY_API_SECRET=your-cloudinary-secret
+FRONTEND_URL=http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:5173
+METRICS_TOKEN=optional-metrics-token
+NODE_ENV=development
+```
+
+3. Configure frontend environment variables in `vidtube-frontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:8080/api/v1
+```
+
+4. Run services:
+
+```bash
+# terminal 1
+cd vidtube-backend
+npm run dev
+
+# terminal 2
 cd vidtube-frontend
-npm test
+npm run dev
 ```
 
-## 📦 Build for Production
+## Development Commands
 
 ### Backend
 
 ```bash
 cd vidtube-backend
-npm run build
-npm start
+npm run dev
+npm test
+npm run test:watch
+npm run format
+npm run format:check
 ```
 
 ### Frontend
 
 ```bash
 cd vidtube-frontend
+npm run dev
+npm run lint
 npm run build
-npm run preview  # Preview production build
+npm run preview
 ```
 
-## 🛠️ Development
+## Validation Workflow
 
-### Code Quality
+Run this sequence before opening a PR:
 
-- ESLint for linting
-- Consistent code formatting
-- Type-safe validation with Zod
+```bash
+# backend
+cd vidtube-backend
+npm test
 
-### Best Practices
+# frontend
+cd ../vidtube-frontend
+npm run lint
+npm run build
+```
 
-- Service layer pattern for business logic
-- Custom error classes for consistent error handling
-- Centralized state management with Zustand
-- Optimistic UI updates
-- Code splitting and lazy loading
+## Deployment Notes
 
-## 🤝 Contributing
+- Backend defaults to `PORT=8080` if not provided
+- `trust proxy` is enabled for reverse-proxy deployments
+- In production, `/metrics` requires `x-metrics-token`
+- Development diagnostics route `/test-cloudinary` is disabled in production unless explicitly enabled
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines.
+## Security and Operational Notes
 
-## 📄 License
+- Report moderation endpoints are role-gated (`admin`)
+- Sensitive request fields are redacted from logs
+- Rate limits are route-specific (API/auth/upload/search)
+- Refresh tokens are rotated and bounded in persisted history
 
-[Add your license here]
+## License
 
-## 🙏 Acknowledgments
-
-- Built with modern web technologies (React 19, Express 5, MongoDB)
-- Following industry best practices and OWASP security guidelines
-- Production-ready architecture with comprehensive testing
-
-## 📝 Recent Updates
-
-See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
-
-### v1.2.0 Highlights
-
-- **Mobile Performance**: 60% performance improvement on mobile devices
-- **Conditional Animations**: Animations disabled on mobile for smooth experience
-- **Video Card Menu**: Functional three-dot menu with playlist and share options
-- **Playlist Creation**: Fixed and fully functional
-- **Code Optimization**: 30% smaller bundle size with better code splitting
-- **Query Caching**: 80% reduction in unnecessary API calls
-- **Image Lazy Loading**: 50% faster initial page load
-
-### v1.1.0 Highlights
-
-- Real-time notification system with polling
-- Optimistic updates for like/subscribe actions
-- Enhanced comment sorting (top comments by engagement, newest by date)
-- Improved dashboard analytics with live subscriber counts
-- Fixed dropdown accessibility (close on outside click)
-
----
-
-**Status**: ✅ Production Ready
-**Version**: 1.2.0
-**Mobile Optimized**: ✅ Yes
+No license file is currently defined in this repository.

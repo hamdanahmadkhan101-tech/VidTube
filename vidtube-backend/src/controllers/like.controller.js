@@ -9,6 +9,7 @@ import apiResponse from '../utils/apiResponse.js';
 // Models
 import Video from '../models/video.model.js';
 import Like from '../models/like.model.js';
+import Comment from '../models/comment.model.js';
 import Notification from '../models/notification.model.js';
 
 // ============================================
@@ -67,6 +68,10 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
   if (existingLike) {
     await Like.deleteOne({ _id: existingLike._id });
+    await Video.updateOne(
+      { _id: videoId, likesCount: { $gt: 0 } },
+      { $inc: { likesCount: -1 } }
+    );
     isLiked = false;
   } else {
     try {
@@ -74,6 +79,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         video: videoId,
         likedBy: req.user._id,
       });
+      await Video.updateOne({ _id: videoId }, { $inc: { likesCount: 1 } });
       isLiked = true;
 
       // Create notification for the video owner (don't notify self)
@@ -101,19 +107,10 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     }
   }
 
-  // Get total likes count using aggregation
-  const likesCountResult = await Like.aggregate([
-    {
-      $match: {
-        video: new mongoose.Types.ObjectId(videoId),
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
-
-  const likesCount = likesCountResult[0]?.count || 0;
+  const updatedVideo = await Video.findById(videoId)
+    .select('likesCount')
+    .lean();
+  const likesCount = updatedVideo?.likesCount || 0;
 
   res.status(200).json(
     new apiResponse(200, 'Video like status updated', {
@@ -216,7 +213,6 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   validateObjectId(commentId, 'commentId');
 
-  const Comment = (await import('../models/comment.model.js')).default;
   const comment = await Comment.findById(commentId);
   if (!comment) {
     throw new apiError(404, 'Comment not found');

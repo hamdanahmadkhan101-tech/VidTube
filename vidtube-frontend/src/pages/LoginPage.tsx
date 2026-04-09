@@ -58,7 +58,7 @@ export const LoginPage: React.FC = () => {
           <motion.div
             whileHover={{ rotate: 360 }}
             transition={{ duration: 0.5 }}
-            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow mx-auto mb-4"
+            className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow mx-auto mb-4"
           >
             <Video className="w-8 h-8 text-white" />
           </motion.div>

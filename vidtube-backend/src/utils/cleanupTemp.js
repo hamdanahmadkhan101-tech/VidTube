@@ -1,11 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const TEMP_DIR = path.join(__dirname, '../../public/temp');
+const TEMP_DIR = path.join(process.cwd(), 'public', 'temp');
 const MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
 
 /**

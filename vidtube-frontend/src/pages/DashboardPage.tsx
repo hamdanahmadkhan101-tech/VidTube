@@ -6,7 +6,6 @@ import {
   Video as VideoIcon,
   Eye,
   ThumbsUp,
-  Clock,
   BarChart3,
   TrendingUp,
   Edit2,
@@ -20,7 +19,7 @@ import { formatViewCount, formatRelativeTime } from "../utils/helpers";
 export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
   const [timeRange, setTimeRange] = useState<"week" | "month" | "year">(
-    "month"
+    "month",
   );
 
   // Fetch current user profile with fresh subscriber count
@@ -39,9 +38,7 @@ export const DashboardPage: React.FC = () => {
   } = useQuery({
     queryKey: ["myVideos", user?._id],
     queryFn: async () => {
-      console.log("Fetching videos for user:", user?._id);
       if (!user?._id) {
-        console.log("No user ID, returning empty");
         return {
           docs: [],
           pagination: {
@@ -54,18 +51,11 @@ export const DashboardPage: React.FC = () => {
           },
         };
       }
-      try {
-        const result = await videoService.getUserVideos(user._id, 1, 50);
-        console.log("Got videos:", result);
-        return result;
-      } catch (err) {
-        console.error("Error fetching videos:", err);
-        throw err;
-      }
+      return videoService.getUserVideos(user._id, 1, 50);
     },
     enabled: !!user?._id,
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
   });
 
   const videos = videosData?.docs || [];
@@ -75,19 +65,6 @@ export const DashboardPage: React.FC = () => {
   // Use fresh subscriber count from profile query, fallback to auth store
   const subscribersCount =
     currentUserProfile?.subscribersCount ?? user?.subscribersCount ?? 0;
-
-  // Debug logging
-  console.log("Videos Data:", videosData);
-  console.log("Videos Array:", videos);
-  if (videos.length > 0) {
-    console.log("First video:", videos[0]);
-    console.log("First video likes field:", videos[0].likes);
-    console.log("First video likesCount field:", (videos[0] as any).likesCount);
-  }
-  console.log("Total Videos:", totalVideos);
-  console.log("Total Views:", totalViews);
-  console.log("Total Likes:", totalLikes);
-  console.log("Query Error:", error);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -172,7 +149,9 @@ export const DashboardPage: React.FC = () => {
             </h2>
             <select
               value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value as any)}
+              onChange={(e) =>
+                setTimeRange(e.target.value as "week" | "month" | "year")
+              }
               className="glass-input"
             >
               <option value="week">Last 7 days</option>
@@ -194,7 +173,7 @@ export const DashboardPage: React.FC = () => {
                   key={video._id}
                   className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface transition-colors group"
                 >
-                  <Link to={`/watch/${video._id}`} className="flex-shrink-0">
+                  <Link to={`/watch/${video._id}`} className="shrink-0">
                     <img
                       src={video.thumbnailUrl || "/default-thumbnail.jpg"}
                       alt={video.title}

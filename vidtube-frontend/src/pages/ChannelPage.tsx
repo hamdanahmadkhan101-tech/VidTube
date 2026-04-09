@@ -3,14 +3,11 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
-  Play,
   Users,
   Video as VideoIcon,
   Grid3x3,
   List,
   Calendar,
-  Eye,
-  ThumbsUp,
   Loader2,
 } from "lucide-react";
 import { authService } from "../services/authService.ts";
@@ -54,22 +51,28 @@ export const ChannelPage: React.FC = () => {
       const previousUser = queryClient.getQueryData(["user", username]);
 
       // Optimistically update
-      queryClient.setQueryData(["user", username], (old: any) => ({
-        ...old,
-        isSubscribed: !old.isSubscribed,
-        subscribersCount: old.isSubscribed
-          ? (old.subscribersCount || 1) - 1
-          : (old.subscribersCount || 0) + 1,
-      }));
+      queryClient.setQueryData<User | undefined>(["user", username], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isSubscribed: !old.isSubscribed,
+          subscribersCount: old.isSubscribed
+            ? (old.subscribersCount || 1) - 1
+            : (old.subscribersCount || 0) + 1,
+        };
+      });
 
       return { previousUser };
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["user", username], (old: any) => ({
-        ...old,
-        isSubscribed: data.isSubscribed,
-        subscribersCount: data.subscribersCount,
-      }));
+      queryClient.setQueryData<User | undefined>(["user", username], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isSubscribed: data.isSubscribed,
+          subscribersCount: data.subscribersCount,
+        };
+      });
       toast.success(data.isSubscribed ? "Subscribed!" : "Unsubscribed");
 
       // Also invalidate video queries to update subscription state there
@@ -128,7 +131,7 @@ export const ChannelPage: React.FC = () => {
       {/* Channel Header */}
       <div className="relative">
         {/* Cover Image */}
-        <div className="h-48 md:h-64 bg-gradient-to-r from-primary-900 to-accent-blue overflow-hidden">
+        <div className="h-48 md:h-64 bg-linear-to-r from-primary-900 to-accent-blue overflow-hidden">
           {channelUser.coverUrl || channelUser.coverImage ? (
             <img
               src={channelUser.coverUrl || channelUser.coverImage}
@@ -136,7 +139,7 @@ export const ChannelPage: React.FC = () => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-r from-primary-500/20 to-accent-blue/20 backdrop-blur-sm flex items-center justify-center">
+            <div className="w-full h-full bg-linear-to-r from-primary-500/20 to-accent-blue/20 backdrop-blur-sm flex items-center justify-center">
               <div className="text-center">
                 <VideoIcon className="w-16 h-16 text-white/20 mx-auto mb-2" />
                 <p className="text-white/40 text-sm">No cover image</p>
@@ -199,7 +202,7 @@ export const ChannelPage: React.FC = () => {
                       Joined{" "}
                       {new Date(channelUser.createdAt).toLocaleDateString(
                         "en-US",
-                        { month: "short", year: "numeric" }
+                        { month: "short", year: "numeric" },
                       )}
                     </span>
                   </div>
@@ -394,7 +397,7 @@ export const ChannelPage: React.FC = () => {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
-                        }
+                        },
                       )}
                     </p>
                   </div>
@@ -419,7 +422,7 @@ export const ChannelPage: React.FC = () => {
                           >
                             {platform}
                           </a>
-                        )
+                        ),
                       )}
                     </div>
                   </div>

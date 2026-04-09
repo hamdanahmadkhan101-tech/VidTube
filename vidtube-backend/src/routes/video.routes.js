@@ -23,6 +23,10 @@ import {
   uploadImage,
 } from '../middlewares/multer.middleware.js';
 import { verifyJWT, optionalJWT } from '../middlewares/auth.middleware.js';
+import {
+  uploadLimiter,
+  searchLimiter,
+} from '../middlewares/rateLimit.middleware.js';
 
 const router = Router();
 
@@ -31,8 +35,8 @@ const router = Router();
 // ============================================
 
 router.route('/').get(optionalJWT, getAllVideos);
-router.route('/search').get(optionalJWT, searchVideos);
-router.route('/suggestions').get(getSearchSuggestions);
+router.route('/search').get(searchLimiter, optionalJWT, searchVideos);
+router.route('/suggestions').get(searchLimiter, getSearchSuggestions);
 router.route('/user/:userId').get(optionalJWT, getVideosByOwner);
 router.route('/:videoId').get(optionalJWT, getVideoById);
 
@@ -41,6 +45,7 @@ router.route('/:videoId').get(optionalJWT, getVideoById);
 // ============================================
 
 router.route('/upload').post(
+  uploadLimiter,
   verifyJWT,
   uploadVideoMiddleware.fields([
     { name: 'video', maxCount: 1 },

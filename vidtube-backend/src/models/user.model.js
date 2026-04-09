@@ -44,6 +44,12 @@ const userSchema = new Schema(
       default: false,
       index: true, // For filtering banned users
     },
+    role: {
+      type: String,
+      enum: ['user', 'moderator', 'admin'],
+      default: 'user',
+      index: true,
+    },
     bannedUntil: {
       type: Date,
       default: null, // Temporary ban expiration

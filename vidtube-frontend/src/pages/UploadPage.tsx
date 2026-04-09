@@ -14,7 +14,7 @@ export const UploadPage: React.FC = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [privacy, setPrivacy] = useState<"public" | "unlisted" | "private">(
-    "public"
+    "public",
   );
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState("");
@@ -22,7 +22,8 @@ export const UploadPage: React.FC = () => {
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number>(0);
-  const [uploadController, setUploadController] = useState<AbortController | null>(null);
+  const [uploadController, setUploadController] =
+    useState<AbortController | null>(null);
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
@@ -34,7 +35,7 @@ export const UploadPage: React.FC = () => {
         URL.revokeObjectURL(thumbnailPreview);
       }
     };
-  }, []);
+  }, [videoPreview, thumbnailPreview]);
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -59,8 +60,8 @@ export const UploadPage: React.FC = () => {
             tags
               .split(",")
               .map((t) => t.trim())
-              .filter(Boolean)
-          )
+              .filter(Boolean),
+          ),
         );
       }
       formData.append("videoformat", videoFile.type.split("/")[1] || "mp4");
@@ -78,10 +79,10 @@ export const UploadPage: React.FC = () => {
       setUploadController(null);
       navigate(`/watch/${data._id}`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       setUploadProgress(0);
       setUploadController(null);
-      if (error.name !== 'AbortError') {
+      if (!(error instanceof Error && error.name === "AbortError")) {
         toast.error(handleApiError(error));
       }
     },
@@ -94,12 +95,12 @@ export const UploadPage: React.FC = () => {
         toast.error("Video file must be less than 1GB");
         return;
       }
-      
+
       // Clean up previous preview
       if (videoPreview) {
         URL.revokeObjectURL(videoPreview);
       }
-      
+
       setVideoFile(file);
       const url = URL.createObjectURL(file);
       setVideoPreview(url);
@@ -217,7 +218,7 @@ export const UploadPage: React.FC = () => {
                     className="w-full rounded-lg mb-2"
                     style={{ maxHeight: "300px" }}
                     onError={(e) => {
-                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.style.display = "none";
                     }}
                   />
                 )}
@@ -313,7 +314,9 @@ export const UploadPage: React.FC = () => {
             </label>
             <select
               value={privacy}
-              onChange={(e) => setPrivacy(e.target.value as any)}
+              onChange={(e) =>
+                setPrivacy(e.target.value as "public" | "unlisted" | "private")
+              }
               className="glass-input w-full"
             >
               <option value="public">Public</option>
@@ -363,7 +366,7 @@ export const UploadPage: React.FC = () => {
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${uploadProgress}%` }}
-                  className="h-full bg-gradient-to-r from-primary-500 to-accent-blue"
+                  className="h-full bg-linear-to-r from-primary-500 to-accent-blue"
                 />
               </div>
             </div>

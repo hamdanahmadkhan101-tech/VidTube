@@ -1,12 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { User, Mail, Lock, Camera, Save, Loader2 } from "lucide-react";
+import { Lock, Camera, Save, Loader2 } from "lucide-react";
 import { authService } from "../services/authService.ts";
 import { useAuthStore } from "../store/authStore.ts";
 import { handleApiError } from "../services/apiClient.ts";
 import toast from "react-hot-toast";
+
+const toSingleFileList = (file: File): FileList => {
+  const dataTransfer = new DataTransfer();
+  dataTransfer.items.add(file);
+  return dataTransfer.files;
+};
 
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -35,8 +41,8 @@ export const SettingsPage: React.FC = () => {
       return authService.updateProfile({
         fullName,
         bio,
-        avatar: avatarFile ? ([avatarFile] as any) : undefined,
-        coverImage: coverFile ? ([coverFile] as any) : undefined,
+        avatar: avatarFile ? toSingleFileList(avatarFile) : undefined,
+        coverImage: coverFile ? toSingleFileList(coverFile) : undefined,
       });
     },
     onSuccess: (data) => {

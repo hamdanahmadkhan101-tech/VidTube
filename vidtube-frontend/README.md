@@ -1,148 +1,67 @@
 # VidTube Frontend
 
-A modern, high-performance video sharing platform built with React 19, featuring glassmorphism design, adaptive video streaming, and optimized user experience.
+React 19 + TypeScript single-page application for VidTube.
 
-## 🚀 Features
+## Quick Start
 
-### Core Features
+```bash
+npm install
+npm run dev
+```
 
-- ✅ **Video Playback**: Professional video player with HLS.js support for adaptive bitrate streaming
-- ✅ **Authentication**: Secure JWT-based authentication with HTTP-only cookies
-- ✅ **Video Feed**: Infinite scroll home feed with trending videos
-- ✅ **Comments System**: Real-time comments with nested replies and likes
-- ✅ **Subscriptions**: Channel subscription management
-- ✅ **Search**: Debounced search with filters and sorting
+Default Vite local URL: `http://localhost:5173`
 
-### Technical Features
+## Environment Variables
 
-- 🎨 **Modern Design**: Glassmorphism/Liquid Lux aesthetic with OLED black theme
-- ⚡ **Performance Optimized**:
-  - Route-based code splitting with React.lazy
-  - TanStack Query for server state caching
-  - Virtualized lists for comments
-  - Image lazy loading
-- 🔒 **Security First**:
-  - XSS protection with DOMPurify
-  - HTTP-only cookie authentication
-  - Protected routes
-  - Input validation with Zod
-- 📱 **Responsive**: Mobile-first design with adaptive layouts
-- 🎭 **Smooth Animations**: Framer Motion for fluid UI transitions
+Create `vidtube-frontend/.env`.
 
-## 📦 Tech Stack
+Use one of these API variables (first one has priority if both are set):
 
-- **React 19** - Latest React with concurrent features
-- **TypeScript** - Type-safe development
-- **Vite** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first styling
-- **TanStack Query** - Server state management
-- **Zustand** - Lightweight client state
-- **React Router DOM** - Client-side routing
-- **Framer Motion** - Animation library
-- **React Hook Form + Zod** - Form validation
-- **Axios** - HTTP client
-- **HLS.js** - Adaptive video streaming
-- **DOMPurify** - XSS sanitization
+```env
+VITE_API_BASE_URL=http://localhost:8080/api/v1
+# or
+VITE_API_URL=http://localhost:8080/api/v1
+```
 
-## 🚦 Getting Started
+## Scripts
 
-### Prerequisites
+- `npm run dev`: start Vite development server
+- `npm run lint`: run ESLint
+- `npm run build`: run TypeScript build and Vite production build
+- `npm run preview`: preview production build
+- `npm start`: preview on host/port for deployment environments
 
-- Node.js 18+ and npm
-- Backend API running (see vidtube-backend)
+## Tech Stack
 
-### Installation
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- TanStack Query
+- Zustand
+- React Router
+- Framer Motion
+- React Hook Form + Zod
 
-1. **Install dependencies**
+## Runtime Highlights
 
-   ```bash
-   npm install
-   ```
+- API client with automatic access-token refresh flow
+- Query cache and invalidation strategies for server-state consistency
+- Modular service layer for API contract stability
+- Video playback with HLS support path
+- Speed Insights instrumentation for production telemetry
 
-2. **Configure environment variables**
+## Validation
 
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+npm run lint
+npm run build
+```
 
-   Edit `.env`:
+## Related Docs
 
-   ```env
-   VITE_API_BASE_URL=http://localhost:8080/api/v1
-   ```
-
-3. **Start development server**
-
-   ```bash
-   npm run dev
-   ```
-
-   The app will be available at `http://localhost:5173`
-
-4. **Build for production**
-   ```bash
-   npm run build
-   ```
-
-## 🎨 Design System
-
-### Glassmorphism Theme
-
-- **Background**: Pure OLED black (#000000)
-- **Primary**: Purple (#8b5cf6)
-- **Accent**: Blue (#3b82f6)
-- **Glass Effects**: backdrop-blur with transparent backgrounds
-
-## 📞 Support
-
-For issues and questions, please open an issue on GitHub.
-
----
-
-**Built with ❤️ using modern web technologies**
-
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-
-},
-])
-
-````
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-````
+- [../README.md](../README.md)
+- [../docs/backend/API_DOCUMENTATION.md](../docs/backend/API_DOCUMENTATION.md)
+- [../docs/root/ARCHITECTURE.md](../docs/root/ARCHITECTURE.md)
+- [../docs/root/TESTING_GUIDE.md](../docs/root/TESTING_GUIDE.md)
+- [../docs/frontend/VERCEL_SPEED_INSIGHTS.md](../docs/frontend/VERCEL_SPEED_INSIGHTS.md)

@@ -1,7 +1,6 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "react-hot-toast";
 import { Loader2 } from "lucide-react";
 import { Header } from "./components/layout/Header";
@@ -23,6 +22,13 @@ const SubscriptionsPage = lazy(() => import("./pages/SubscriptionsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const PlaylistsPage = lazy(() => import("./pages/PlaylistsPage"));
 const EditVideoPage = lazy(() => import("./pages/EditVideoPage"));
+const Devtools = import.meta.env.DEV
+  ? lazy(() =>
+      import("@tanstack/react-query-devtools").then((module) => ({
+        default: module.ReactQueryDevtools,
+      })),
+    )
+  : null;
 
 // Create QueryClient with optimized config
 const queryClient = new QueryClient({
@@ -179,9 +185,9 @@ function App() {
                         <p className="text-text-secondary text-xl mb-6">
                           Page not found
                         </p>
-                        <a href="/" className="btn-primary">
+                        <Link to="/" className="btn-primary">
                           Go Home
-                        </a>
+                        </Link>
                       </div>
                     </div>
                   }
@@ -221,7 +227,11 @@ function App() {
       </BrowserRouter>
 
       {/* React Query Devtools (only in development) */}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && Devtools ? (
+        <Suspense fallback={null}>
+          <Devtools initialIsOpen={false} />
+        </Suspense>
+      ) : null}
     </QueryClientProvider>
   );
 }

@@ -1,19 +1,19 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Plus, Play, Lock, Users, Trash2, Edit, Loader2 } from "lucide-react";
+import { Plus, Play, Lock, Users, Trash2, Loader2 } from "lucide-react";
 import { playlistService } from "../services/playlistService";
-import { useAuthStore } from "../store/authStore";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
 export const PlaylistsPage: React.FC = () => {
-  const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [newPlaylistDescription, setNewPlaylistDescription] = useState("");
-  const [newPlaylistPrivacy, setNewPlaylistPrivacy] = useState<"public" | "private">("public");
+  const [newPlaylistPrivacy, setNewPlaylistPrivacy] = useState<
+    "public" | "private"
+  >("public");
 
   const { data: playlists, isLoading } = useQuery({
     queryKey: ["userPlaylists"],
@@ -21,11 +21,13 @@ export const PlaylistsPage: React.FC = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; description?: string; privacy: "public" | "private" }) =>
-      playlistService.createPlaylist(data),
+    mutationFn: (data: {
+      name: string;
+      description?: string;
+      privacy: "public" | "private";
+    }) => playlistService.createPlaylist(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userPlaylists"] });
-      queryClient.invalidateQueries({ queryKey: ["user-playlists"] });
       setShowCreateModal(false);
       setNewPlaylistName("");
       setNewPlaylistDescription("");
@@ -37,10 +39,10 @@ export const PlaylistsPage: React.FC = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (playlistId: string) => playlistService.deletePlaylist(playlistId),
+    mutationFn: (playlistId: string) =>
+      playlistService.deletePlaylist(playlistId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userPlaylists"] });
-      queryClient.invalidateQueries({ queryKey: ["user-playlists"] });
       toast.success("Playlist deleted successfully!");
     },
     onError: () => {
@@ -90,7 +92,7 @@ export const PlaylistsPage: React.FC = () => {
               className="glass-card p-6 hover:shadow-glow transition-all"
             >
               <Link to={`/playlist/${playlist._id}`}>
-                <div className="aspect-video bg-gradient-to-br from-primary-500 to-accent-blue rounded-xl mb-4 flex items-center justify-center overflow-hidden">
+                <div className="aspect-video bg-linear-to-br from-primary-500 to-accent-blue rounded-xl mb-4 flex items-center justify-center overflow-hidden">
                   {playlist.thumbnailUrl ? (
                     <img
                       src={playlist.thumbnailUrl}
@@ -120,7 +122,9 @@ export const PlaylistsPage: React.FC = () => {
                   ) : (
                     <Users className="w-4 h-4" />
                   )}
-                  <span>{playlist.isPublic === false ? "Private" : "Public"}</span>
+                  <span>
+                    {playlist.isPublic === false ? "Private" : "Public"}
+                  </span>
                 </div>
                 <span>{playlist.videos?.length || 0} videos</span>
               </div>
@@ -206,7 +210,11 @@ export const PlaylistsPage: React.FC = () => {
                 </label>
                 <select
                   value={newPlaylistPrivacy}
-                  onChange={(e) => setNewPlaylistPrivacy(e.target.value as "public" | "private")}
+                  onChange={(e) =>
+                    setNewPlaylistPrivacy(
+                      e.target.value as "public" | "private",
+                    )
+                  }
                   className="glass-input w-full"
                 >
                   <option value="public">Public</option>

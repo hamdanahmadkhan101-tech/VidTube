@@ -61,9 +61,3 @@ export const paginationSchema = z.object({
   sortBy: z.enum(['createdAt', 'views', 'title']).optional(),
   sortType: z.enum(['asc', 'desc']).optional(),
 });
-
-// Type inference exports for TypeScript (if used)
-export type VideoUploadInput = z.infer<typeof videoUploadSchema>;
-export type VideoUpdateInput = z.infer<typeof videoUpdateSchema>;
-export type VideoSearchInput = z.infer<typeof videoSearchSchema>;
-export type PaginationInput = z.infer<typeof paginationSchema>;

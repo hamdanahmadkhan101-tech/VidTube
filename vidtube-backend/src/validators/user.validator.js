@@ -20,7 +20,11 @@ export const registerSchema = z.object({
       /^[a-zA-Z0-9_]+$/,
       'Username can only contain letters, numbers, and underscores'
     ),
-  email: z.string().email('Please provide a valid email address').trim().toLowerCase(),
+  email: z
+    .string()
+    .email('Please provide a valid email address')
+    .trim()
+    .toLowerCase(),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -28,7 +32,11 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().min(1, 'Email or username is required'),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(1, 'Email or username is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
@@ -66,9 +74,3 @@ export const changePasswordSchema = z
     message: 'New password must be different from current password',
     path: ['newPassword'],
   });
-
-// Type inference exports
-export type RegisterInput = z.infer<typeof registerSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;
-export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   ThumbsUp,
   Share2,
-  Download,
   Flag,
   Eye,
   Calendar,
@@ -28,10 +27,11 @@ import { ConfirmModal } from "../components/ui/ConfirmModal";
 import { videoService } from "../services/videoService";
 import { commentService } from "../services/commentService";
 import { subscriptionService } from "../services/subscriptionService";
+import { handleApiError } from "../services/apiClient";
 import { useAuthStore } from "../store/authStore";
 import { formatViewCount, formatRelativeTime, cn } from "../utils/helpers";
 import toast from "react-hot-toast";
-import type { Video } from "../types";
+import type { Comment, PaginatedResponse, Video } from "../types";
 
 export const VideoPlayerPage: React.FC = () => {
   const { videoId } = useParams<{ videoId: string }>();
@@ -47,6 +47,13 @@ export const VideoPlayerPage: React.FC = () => {
   const [showVideoMenu, setShowVideoMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const commentsQueryKey = [
+    "comments",
+    videoId,
+    commentPage,
+    commentSortBy,
+  ] as const;
+  type CommentTree = Comment & { replies?: CommentTree[] };
 
   // Close video menu when clicking outside
   useEffect(() => {
@@ -96,7 +103,7 @@ export const VideoPlayerPage: React.FC = () => {
 
   // Fetch comments
   const { data: commentsData, isLoading: commentsLoading } = useQuery({
-    queryKey: ["comments", videoId, commentPage, commentSortBy],
+    queryKey: commentsQueryKey,
     queryFn: () =>
       commentService.getVideoComments(videoId!, commentPage, 20, commentSortBy),
     enabled: !!videoId,
@@ -129,7 +136,7 @@ export const VideoPlayerPage: React.FC = () => {
         likes: data.likesCount,
       }));
     },
-    onError: (err, variables, context) => {
+    onError: (_error, _variables, context) => {
       // Rollback on error
       if (context?.previousVideo) {
         queryClient.setQueryData(["video", videoId], context.previousVideo);
@@ -174,18 +181,23 @@ export const VideoPlayerPage: React.FC = () => {
       }));
       toast.success(data.isSubscribed ? "Subscribed!" : "Unsubscribed");
 
-      // Also invalidate channel profile to update subscriber count there
-      queryClient.invalidateQueries({ queryKey: ["channelProfile"] });
+      if (video?.owner?.username) {
+        queryClient.invalidateQueries({
+          queryKey: ["user", video.owner.username],
+        });
+      }
+      if (video?.owner?._id) {
+        queryClient.invalidateQueries({
+          queryKey: ["channelVideos", video.owner._id],
+        });
+      }
     },
-    onError: (err, variables, context) => {
+    onError: (error, _variables, context) => {
       // Rollback on error
       if (context?.previousVideo) {
         queryClient.setQueryData(["video", videoId], context.previousVideo);
       }
-      const errorMessage =
-        (err as any)?.response?.data?.message ||
-        "Failed to update subscription";
-      toast.error(errorMessage);
+      toast.error(handleApiError(error));
     },
   });
 
@@ -201,16 +213,8 @@ export const VideoPlayerPage: React.FC = () => {
     onSuccess: () => {
       toast.success("Video reported. Thank you for your feedback.");
     },
-    onError: (error: any) => {
-      // Only show error if not a connection error
-      if (
-        error?.code !== "ERR_NETWORK" &&
-        error?.code !== "ERR_CONNECTION_REFUSED"
-      ) {
-        const errorMessage =
-          error?.response?.data?.message || "Failed to report video";
-        toast.error(errorMessage);
-      }
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
       console.error("Report error:", error);
     },
     retry: false,
@@ -224,10 +228,8 @@ export const VideoPlayerPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["comments", videoId] });
       toast.success("Comment added!");
     },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message || "Failed to add comment";
-      toast.error(errorMessage);
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
     },
   });
 
@@ -235,47 +237,47 @@ export const VideoPlayerPage: React.FC = () => {
     mutationFn: (commentId: string) => commentService.toggleLike(commentId),
     onMutate: async (commentId) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["comments", videoId] });
+      await queryClient.cancelQueries({ queryKey: commentsQueryKey });
 
       // Snapshot previous value
-      const previousComments = queryClient.getQueryData(["comments", videoId]);
+      const previousComments = queryClient.getQueryData(commentsQueryKey);
 
       // Optimistically update
-      queryClient.setQueryData(["comments", videoId], (old: any) => {
-        if (!old) return old;
+      queryClient.setQueryData<PaginatedResponse<CommentTree> | undefined>(
+        commentsQueryKey,
+        (old) => {
+          if (!old) return old;
 
-        const updateComment = (comment: any): any => {
-          if (comment._id === commentId) {
-            return {
-              ...comment,
-              isLiked: !comment.isLiked,
-              likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
-            };
-          }
-          if (comment.replies && comment.replies.length > 0) {
-            return {
-              ...comment,
-              replies: comment.replies.map(updateComment),
-            };
-          }
-          return comment;
-        };
+          const updateComment = (comment: CommentTree): CommentTree => {
+            if (comment._id === commentId) {
+              return {
+                ...comment,
+                isLiked: !comment.isLiked,
+                likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
+              };
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: comment.replies.map(updateComment),
+              };
+            }
+            return comment;
+          };
 
-        return {
-          ...old,
-          docs: old.docs.map(updateComment),
-        };
-      });
+          return {
+            ...old,
+            docs: old.docs.map(updateComment),
+          };
+        },
+      );
 
       return { previousComments };
     },
-    onError: (err, commentId, context) => {
+    onError: (_error, _commentId, context) => {
       // Rollback on error
       if (context?.previousComments) {
-        queryClient.setQueryData(
-          ["comments", videoId],
-          context.previousComments
-        );
+        queryClient.setQueryData(commentsQueryKey, context.previousComments);
       }
       toast.error("Failed to update like");
     },
@@ -297,10 +299,8 @@ export const VideoPlayerPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["comments", videoId] });
       toast.success("Reply added!");
     },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message || "Failed to add reply";
-      toast.error(errorMessage);
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
     },
   });
 
@@ -316,10 +316,8 @@ export const VideoPlayerPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["comments", videoId] });
       toast.success("Comment updated!");
     },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message || "Failed to update comment";
-      toast.error(errorMessage);
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
     },
   });
 
@@ -329,10 +327,8 @@ export const VideoPlayerPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["comments", videoId] });
       toast.success("Comment deleted!");
     },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message || "Failed to delete comment";
-      toast.error(errorMessage);
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
     },
   });
 
@@ -345,13 +341,20 @@ export const VideoPlayerPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["videos"] });
       queryClient.invalidateQueries({ queryKey: ["myVideos"] });
       queryClient.invalidateQueries({ queryKey: ["userVideos"] });
-      queryClient.invalidateQueries({ queryKey: ["channelProfile"] });
+      if (video?.owner?.username) {
+        queryClient.invalidateQueries({
+          queryKey: ["user", video.owner.username],
+        });
+      }
+      if (video?.owner?._id) {
+        queryClient.invalidateQueries({
+          queryKey: ["channelVideos", video.owner._id],
+        });
+      }
       navigate("/");
     },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.message || "Failed to delete video";
-      toast.error(errorMessage);
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
     },
   });
 
@@ -361,7 +364,7 @@ export const VideoPlayerPage: React.FC = () => {
         title: video?.title,
         url: window.location.href,
       });
-    } catch (error) {
+    } catch {
       // Fallback: Copy to clipboard
       navigator.clipboard.writeText(window.location.href);
       toast.success("Link copied to clipboard!");
@@ -519,7 +522,7 @@ export const VideoPlayerPage: React.FC = () => {
                     video.isLiked
                       ? "bg-primary-500 text-white shadow-glow"
                       : "glass-card hover:bg-surface-hover text-text-primary",
-                    !isAuthenticated && "opacity-50 cursor-not-allowed"
+                    !isAuthenticated && "opacity-50 cursor-not-allowed",
                   )}
                 >
                   <ThumbsUp
@@ -557,7 +560,7 @@ export const VideoPlayerPage: React.FC = () => {
                   disabled={!isAuthenticated}
                   className={cn(
                     "glass-card hover:bg-surface-hover p-2 rounded-xl text-text-primary transition-all cursor-pointer",
-                    !isAuthenticated && "opacity-50 cursor-not-allowed"
+                    !isAuthenticated && "opacity-50 cursor-not-allowed",
                   )}
                   title="Report video"
                 >
@@ -609,7 +612,7 @@ export const VideoPlayerPage: React.FC = () => {
                       ? "glass-card hover:bg-surface-hover text-text-primary"
                       : "bg-primary-500 text-white shadow-glow hover:bg-primary-600",
                     subscribeMutation.isPending &&
-                      "opacity-50 cursor-not-allowed"
+                      "opacity-50 cursor-not-allowed",
                   )}
                 >
                   {video.owner.isSubscribed ? "Subscribed" : "Subscribe"}
@@ -623,7 +626,7 @@ export const VideoPlayerPage: React.FC = () => {
                 <div
                   className={cn(
                     "text-text-secondary text-sm whitespace-pre-wrap",
-                    !showFullDescription && "line-clamp-3"
+                    !showFullDescription && "line-clamp-3",
                   )}
                 >
                   {video.description}
@@ -670,7 +673,6 @@ export const VideoPlayerPage: React.FC = () => {
             transition={{ delay: 0.3 }}
           >
             <CommentSection
-              videoId={videoId!}
               videoOwnerId={video.owner._id}
               comments={commentsData?.docs || []}
               totalComments={commentsData?.pagination.totalDocs || 0}
@@ -727,7 +729,6 @@ export const VideoPlayerPage: React.FC = () => {
         isOpen={showPlaylistModal}
         onClose={() => setShowPlaylistModal(false)}
         videoId={videoId!}
-        userId={user?._id || ""}
       />
 
       {/* Report Modal */}

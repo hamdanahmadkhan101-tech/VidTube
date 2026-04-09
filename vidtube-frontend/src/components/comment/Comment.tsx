@@ -88,7 +88,7 @@ export const Comment: React.FC<CommentProps> = ({
           "/default-avatar.jpg"
         }
         alt={comment.owner.username}
-        className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-primary-500/20"
+        className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-primary-500/20"
       />
 
       {/* Content */}
@@ -180,7 +180,7 @@ export const Comment: React.FC<CommentProps> = ({
           </div>
         ) : (
           <p
-            className="text-text-secondary text-sm mb-2 whitespace-pre-wrap break-words"
+            className="text-text-secondary text-sm mb-2 whitespace-pre-wrap wrap-break-word"
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         )}

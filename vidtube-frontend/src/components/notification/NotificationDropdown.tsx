@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   X,
-  Check,
   Loader2,
   Heart,
   MessageCircle,
@@ -15,6 +14,7 @@ import { notificationService } from "../../services/notificationService.ts";
 import { formatRelativeTime } from "../../utils/helpers";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import type { Notification } from "../../types";
 
 interface NotificationDropdownProps {
   isOpen: boolean;
@@ -31,8 +31,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const { data, isLoading } = useQuery({
@@ -71,13 +71,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       case "subscription":
         return <UserPlus className="w-5 h-5 text-green-500" />;
       case "upload":
+      case "video_upload":
         return <Video className="w-5 h-5 text-purple-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
   };
 
-  const getNotificationText = (notification: any) => {
+  const getNotificationText = (notification: Notification) => {
     const userName =
       notification.sender?.fullName ||
       notification.relatedUser?.fullName ||
@@ -98,13 +99,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       case "subscription":
         return `${userName} subscribed to your channel`;
       case "upload":
+      case "video_upload":
         return `${userName} uploaded a new video`;
       default:
         return "New notification";
     }
   };
 
-  const getNotificationLink = (notification: any) => {
+  const getNotificationLink = (notification: Notification) => {
     if (notification.relatedVideo?._id) {
       return `/watch/${notification.relatedVideo._id}`;
     }
@@ -144,7 +146,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             className={`${dropdownClass} bg-background-secondary backdrop-blur-xl shadow-2xl border border-white/10 z-50 flex flex-col`}
           >
             {/* Header */}
-            <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Bell className="w-5 h-5 text-primary-500" />
                 <h3 className="font-semibold text-text-primary">
@@ -201,28 +203,28 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         src={
                           notification.sender?.avatarUrl ||
                           notification.sender?.avatar ||
-                          (notification as any).relatedUser?.avatarUrl ||
-                          (notification as any).relatedUser?.avatar ||
+                          notification.relatedUser?.avatarUrl ||
+                          notification.relatedUser?.avatar ||
                           "/default-avatar.jpg"
                         }
                         alt={
                           notification.sender?.fullName ||
-                          (notification as any).relatedUser?.fullName ||
+                          notification.relatedUser?.fullName ||
                           "User"
                         }
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        className="w-10 h-10 rounded-full object-cover shrink-0"
                       />
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start gap-2 mb-1">
-                          <div className="flex-shrink-0 mt-1">
+                          <div className="shrink-0 mt-1">
                             {getNotificationIcon(notification.type)}
                           </div>
                           <p className="text-sm text-text-primary flex-1">
                             {getNotificationText(notification)}
                           </p>
                           {!notification.isRead && (
-                            <div className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-1" />
+                            <div className="w-2 h-2 bg-primary-500 rounded-full shrink-0 mt-1" />
                           )}
                         </div>
                         {(notification.relatedVideo || notification.video) && (
@@ -248,7 +250,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="p-3 border-t border-white/10 flex-shrink-0">
+              <div className="p-3 border-t border-white/10 shrink-0">
                 <Link
                   to="/notifications"
                   onClick={onClose}

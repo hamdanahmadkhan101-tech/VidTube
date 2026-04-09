@@ -38,13 +38,30 @@ const generateAcessAndRefreshTokens = async (userId) => {
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
-    user.refreshTokens.push(refreshToken);
-    await user.save({ validateBeforeSave: false });
+    await User.findByIdAndUpdate(user._id, {
+      $push: {
+        refreshTokens: {
+          $each: [refreshToken],
+          $slice: -5,
+        },
+      },
+    });
 
     return { accessToken, refreshToken };
   } catch (error) {
     throw new apiError(500, 'Token generation failed');
   }
+};
+
+const getRefreshCookieOptions = () => {
+  const isProd = process.env.NODE_ENV === 'production';
+
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'None' : 'Lax',
+    path: '/',
+  };
 };
 
 // ============================================
@@ -64,7 +81,12 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new apiError(400, 'All fields are required');
   }
 
-  const checkUser = await User.findOne({ $or: [{ email }, { username }] });
+  const normalizedEmail = String(email).toLowerCase().trim();
+  const normalizedUsername = String(username).toLowerCase().trim();
+
+  const checkUser = await User.findOne({
+    $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
+  });
   if (checkUser) {
     const field = checkUser.email === email ? 'email' : 'username';
     throw new apiError(409, `User with this ${field} already exists`);
@@ -84,11 +106,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const newUser = await User.create({
     fullName,
-    username: username.toLowerCase(),
-    email,
+    username: normalizedUsername,
+    email: normalizedEmail,
     password,
-    avatarUrl: avatarUploadResult?.url || null,
-    coverUrl: coverUploadResult?.url || null,
+    avatarUrl: avatarUploadResult?.url || '',
+    coverUrl: coverUploadResult?.url || '',
   });
 
   const createdUser = await User.findById(newUser._id).select(
@@ -125,8 +147,16 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new apiError(400, 'Password is required');
   }
 
+  const normalizedEmail =
+    typeof email === 'string' ? email.toLowerCase().trim() : undefined;
+  const normalizedUsername =
+    typeof username === 'string' ? username.toLowerCase().trim() : undefined;
+
   const user = await User.findOne({
-    $or: [{ email: email }, { username: username }],
+    $or: [
+      ...(normalizedEmail ? [{ email: normalizedEmail }] : []),
+      ...(normalizedUsername ? [{ username: normalizedUsername }] : []),
+    ],
   });
 
   if (!user) {
@@ -143,12 +173,7 @@ const loginUser = asyncHandler(async (req, res) => {
     '-password -refreshTokens'
   );
 
-  const isProd = process.env.NODE_ENV === 'production';
-  const options = {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'None' : 'Lax',
-  };
+  const options = getRefreshCookieOptions();
   res
     .status(200)
     .cookie('refreshToken', tokens.refreshToken, options)
@@ -170,7 +195,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     throw new apiError(401, 'User not authenticated');
   }
 
-  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+  const refreshToken = req.cookies?.refreshToken;
 
   if (refreshToken) {
     await User.findByIdAndUpdate(
@@ -180,12 +205,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     );
   }
 
-  const isProd = process.env.NODE_ENV === 'production';
-  const options = {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'None' : 'Lax',
-  };
+  const options = getRefreshCookieOptions();
   res
     .status(200)
     .clearCookie('refreshToken', options)
@@ -198,8 +218,7 @@ const logoutUser = asyncHandler(async (req, res) => {
  * @access Public
  */
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+  const incomingRefreshToken = req.cookies?.refreshToken;
 
   if (!incomingRefreshToken) {
     throw new apiError(401, 'Unauthorized request');
@@ -229,12 +248,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken: newRefreshToken } =
     await generateAcessAndRefreshTokens(user._id);
 
-  const isProd = process.env.NODE_ENV === 'production';
-  const options = {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'None' : 'Lax',
-  };
+  const options = getRefreshCookieOptions();
 
   return res
     .status(200)
@@ -242,7 +256,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     .json(
       new apiResponse(200, 'Access token refreshed', {
         accessToken,
-        refreshToken: newRefreshToken,
       })
     );
 });
@@ -350,7 +363,9 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 
   // If username is being changed, check if new username is taken
   if (username && username !== req.user.username) {
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({
+      username: username.toLowerCase(),
+    });
     if (existingUser) {
       throw new apiError(409, 'Username is already taken');
     }
@@ -358,7 +373,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 
   // If email is being changed, check if new email is taken
   if (email && email !== req.user.email) {
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       throw new apiError(409, 'Email is already taken');
     }
@@ -370,7 +385,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     {
       $set: {
         ...(fullName && { fullName }),
-        ...(email && { email }),
+        ...(email && { email: email.toLowerCase() }),
         ...(username && { username: username.toLowerCase() }),
         ...(bio !== undefined && { bio }), // Allow empty string for bio
       },
@@ -436,7 +451,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     const oldCoverUrl = currentUser?.coverUrl;
 
     const coverUploadResult = await uploadOnCloudinary(coverPath);
-    
+
     if (!coverUploadResult || !coverUploadResult.url) {
       throw new apiError(500, 'Cover image upload to cloud storage failed');
     }
@@ -449,7 +464,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
     // Delete old image from Cloudinary
     if (oldCoverUrl) {
-      await deleteFromCloudinary(oldCoverUrl).catch(err => {
+      await deleteFromCloudinary(oldCoverUrl).catch((err) => {
         console.error('Failed to delete old cover:', err);
       });
     }
@@ -528,7 +543,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         username: 1,
         avatarUrl: 1,
         coverUrl: 1,
-        email: 1,
         bio: 1,
         createdAt: 1,
         subscribersCount: 1,
@@ -652,30 +666,45 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
     );
   }
 
-  // Aggregate pipeline to fetch watch history with video and owner details
-  const watchHistory = await User.aggregate([
+  const skip = (page - 1) * limit;
+
+  // Fetch paginated watch history directly from DB to avoid in-memory slicing for large histories
+  const [watchHistoryResult] = await User.aggregate([
     {
-      // Match the current user
       $match: {
-        _id: req.user._id,
+        _id: new mongoose.Types.ObjectId(req.user._id),
       },
     },
     {
-      // Lookup videos from watchHistory array
+      $project: {
+        watchHistory: 1,
+      },
+    },
+    {
+      $unwind: {
+        path: '$watchHistory',
+        includeArrayIndex: 'watchIndex',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $sort: {
+        watchIndex: -1,
+      },
+    },
+    {
       $lookup: {
         from: 'videos',
         localField: 'watchHistory',
         foreignField: '_id',
-        as: 'watchHistory',
+        as: 'video',
         pipeline: [
           {
-            // Only include published videos
             $match: {
               isPublished: true,
             },
           },
           {
-            // Lookup video owner details
             $lookup: {
               from: 'users',
               localField: 'owner',
@@ -683,7 +712,6 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
               as: 'owner',
               pipeline: [
                 {
-                  // Select only necessary owner fields
                   $project: {
                     username: 1,
                     fullName: 1,
@@ -694,7 +722,6 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
             },
           },
           {
-            // Convert owner array to object
             $addFields: {
               owner: {
                 $first: '$owner',
@@ -702,7 +729,6 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
             },
           },
           {
-            // Select video fields to return
             $project: {
               title: 1,
               description: 1,
@@ -718,38 +744,26 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
       },
     },
     {
-      // Project only the watchHistory field
-      $project: {
-        watchHistory: 1,
+      $unwind: {
+        path: '$video',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $replaceRoot: {
+        newRoot: '$video',
+      },
+    },
+    {
+      $facet: {
+        videos: [{ $skip: skip }, { $limit: limit }],
+        totalCount: [{ $count: 'count' }],
       },
     },
   ]);
 
-  // Check if user exists and has watch history
-  if (!watchHistory.length) {
-    return res.status(200).json(
-      new apiResponse(200, 'Watch history retrieved successfully', {
-        videos: [],
-        pagination: {
-          currentPage: page,
-          totalPages: 0,
-          totalVideos: 0,
-          hasNextPage: false,
-          hasPrevPage: false,
-        },
-      })
-    );
-  }
-
-  const videos = watchHistory[0].watchHistory || [];
-
-  // Apply pagination
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedVideos = videos.slice(startIndex, endIndex);
-
-  // Calculate pagination metadata
-  const totalVideos = videos.length;
+  const paginatedVideos = watchHistoryResult?.videos || [];
+  const totalVideos = watchHistoryResult?.totalCount?.[0]?.count || 0;
   const totalPages = Math.ceil(totalVideos / limit);
 
   res.status(200).json(

@@ -25,11 +25,11 @@ export const authService = {
       formData.append("coverImage", data.coverImage[0]);
     }
 
-    const response = await apiClient.post<ApiResponse<{ user: AuthUser }>>(
+    const response = await apiClient.post<ApiResponse<AuthUser>>(
       "/users/register",
-      formData
+      formData,
     );
-    return response.data.data!.user;
+    return response.data.data!;
   },
 
   // Login user
@@ -45,9 +45,8 @@ export const authService = {
 
   // Get current user
   getCurrentUser: async (): Promise<AuthUser> => {
-    const response = await apiClient.get<ApiResponse<AuthUser>>(
-      "/users/profile"
-    );
+    const response =
+      await apiClient.get<ApiResponse<AuthUser>>("/users/profile");
     return response.data.data!;
   },
 
@@ -64,9 +63,11 @@ export const authService = {
   // Update profile
   updateProfile: async (data: UpdateProfileFormData): Promise<User> => {
     // Update basic profile info
-    const profileData: any = {};
-    if (data.fullName) profileData.fullName = data.fullName;
-    if (data.bio) profileData.bio = data.bio;
+    const profileData: Partial<
+      Pick<UpdateProfileFormData, "fullName" | "bio">
+    > = {};
+    if (data.fullName !== undefined) profileData.fullName = data.fullName;
+    if (data.bio !== undefined) profileData.bio = data.bio;
 
     let updatedUser: User | null = null;
 
@@ -74,7 +75,7 @@ export const authService = {
     if (Object.keys(profileData).length > 0) {
       const response = await apiClient.patch<ApiResponse<User>>(
         "/users/update-profile",
-        profileData
+        profileData,
       );
       updatedUser = response.data.data!;
     }
@@ -85,7 +86,7 @@ export const authService = {
       avatarFormData.append("avatar", data.avatar[0]);
       const avatarResponse = await apiClient.patch<ApiResponse<User>>(
         "/users/avatar",
-        avatarFormData
+        avatarFormData,
       );
       updatedUser = avatarResponse.data.data!;
     }
@@ -96,7 +97,7 @@ export const authService = {
       coverFormData.append("coverImage", data.coverImage[0]);
       const coverResponse = await apiClient.patch<ApiResponse<User>>(
         "/users/cover-image",
-        coverFormData
+        coverFormData,
       );
       updatedUser = coverResponse.data.data!;
     }
@@ -111,7 +112,7 @@ export const authService = {
   // Change password
   changePassword: async (
     oldPassword: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<void> => {
     await apiClient.patch("/users/change-password", {
       currentPassword: oldPassword,
@@ -122,7 +123,7 @@ export const authService = {
   // Get user profile by username
   getUserProfile: async (username: string): Promise<User> => {
     const response = await apiClient.get<ApiResponse<User>>(
-      `/users/c/${username}`
+      `/users/c/${username}`,
     );
     // Backend returns the channel directly in data field
     if (!response.data.data) {

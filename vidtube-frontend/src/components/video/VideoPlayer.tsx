@@ -91,11 +91,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       // Native HLS support (Safari)
       video.src = videoUrl;
-      setIsLoading(false);
     } else {
       // Standard video
       video.src = videoUrl;
-      setIsLoading(false);
     }
   }, [videoUrl, autoPlay]);
 
@@ -118,7 +116,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (!video) return;
 
     const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePause = () => {
+      setIsPlaying(false);
+      setShowControls(true);
+    };
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
       onTimeUpdate?.(video.currentTime);
@@ -209,7 +210,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     video.currentTime = Math.max(
       0,
-      Math.min(video.duration, video.currentTime + seconds)
+      Math.min(video.duration, video.currentTime + seconds),
     );
   }, []);
 
@@ -243,7 +244,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // Auto-hide controls
   useEffect(() => {
     if (!isPlaying) {
-      setShowControls(true);
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
       return;
     }
 
@@ -260,6 +263,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
 
     const container = containerRef.current;
+    handleMouseMove();
     container?.addEventListener("mousemove", handleMouseMove);
 
     return () => {
@@ -334,7 +338,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       ref={containerRef}
       className={cn(
         "relative w-full aspect-video bg-black rounded-xl overflow-hidden group",
-        className
+        className,
       )}
       onDoubleClick={toggleFullscreen}
     >
@@ -389,7 +393,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4"
+            className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/90 via-black/60 to-transparent p-4"
           >
             {/* Progress Bar */}
             <div
@@ -515,7 +519,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                               "w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-surface-hover transition-colors",
                               playbackRate === rate
                                 ? "text-primary-500"
-                                : "text-text-primary"
+                                : "text-text-primary",
                             )}
                           >
                             {rate === 1 ? "Normal" : `${rate}x`}

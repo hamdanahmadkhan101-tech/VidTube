@@ -79,8 +79,9 @@ app.use('/api/v1/videos/upload', (req, res, next) => {
 app.use(requestLogger);
 
 // Body parsing middleware
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(express.json({ limit: '50mb' }));
+const bodySizeLimit = process.env.BODY_SIZE_LIMIT || '1mb';
+app.use(express.urlencoded({ extended: true, limit: bodySizeLimit }));
+app.use(express.json({ limit: bodySizeLimit }));
 app.use(express.static('public'));
 app.use(cookieParser());
 
@@ -104,6 +105,21 @@ app.get('/health', (req, res) => {
 
 // Basic metrics endpoint (expand in Phase 1.5)
 app.get('/metrics', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    const metricsToken = process.env.METRICS_TOKEN;
+    const providedToken = req.get('x-metrics-token');
+
+    if (!metricsToken || !providedToken || providedToken !== metricsToken) {
+      return res.status(403).json({
+        success: false,
+        statusCode: 403,
+        message: 'Forbidden',
+        data: null,
+        requestId: req.requestId,
+      });
+    }
+  }
+
   const memoryUsage = process.memoryUsage();
   res.status(200).json({
     success: true,
@@ -124,17 +140,25 @@ app.get('/metrics', (req, res) => {
   });
 });
 
-// Test Cloudinary configuration
-app.get('/test-cloudinary', (req, res) => {
-  res.status(200).json({
-    success: true,
-    cloudinary: {
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'NOT SET',
-      api_key: process.env.CLOUDINARY_API_KEY ? 'SET' : 'NOT SET',
-      api_secret: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'NOT SET',
-    }
+// Development-only diagnostic route for integration checks
+if (
+  process.env.NODE_ENV !== 'production' ||
+  process.env.ENABLE_DEBUG_ROUTES === 'true'
+) {
+  app.get('/test-cloudinary', (req, res) => {
+    res.status(200).json({
+      success: true,
+      statusCode: 200,
+      message: 'Cloudinary configuration status',
+      data: {
+        cloudNameConfigured: Boolean(process.env.CLOUDINARY_CLOUD_NAME),
+        apiKeyConfigured: Boolean(process.env.CLOUDINARY_API_KEY),
+        apiSecretConfigured: Boolean(process.env.CLOUDINARY_API_SECRET),
+      },
+      requestId: req.requestId,
+    });
   });
-});
+}
 
 // ============================================
 // ROUTES

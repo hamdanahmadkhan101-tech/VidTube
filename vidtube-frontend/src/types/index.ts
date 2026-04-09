@@ -1,11 +1,22 @@
 // API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   statusCode: number;
   message: string;
   data?: T;
   error?: Array<{ field?: string; message: string }>;
   requestId?: string;
+  meta?: {
+    pagination?: {
+      page?: number;
+      limit?: number;
+      total?: number;
+      totalDocs?: number;
+      totalPages?: number;
+      hasNextPage?: boolean;
+      hasPrevPage?: boolean;
+    };
+  };
 }
 
 export interface PaginatedResponse<T> {
@@ -128,12 +139,20 @@ export interface Notification {
   sender?: User;
   relatedUser?: User;
   relatedVideo?: Video;
-  type: "like" | "comment" | "subscription" | "upload";
+  type:
+    | "like"
+    | "comment"
+    | "subscription"
+    | "upload"
+    | "video_upload"
+    | "mention"
+    | "system";
   title?: string;
   message?: string;
   video?: Video;
   comment?: Comment;
   isRead: boolean;
+  readAt?: string;
   createdAt: string;
 }
 

@@ -1,276 +1,115 @@
 # VidTube Security Documentation
 
-## Security Overview
+This document summarizes the currently implemented security controls and recommended production hardening steps.
 
-VidTube implements multiple layers of security following industry best practices and OWASP Top 10 guidelines.
+## Security Principles
 
-## Authentication & Authorization
+- Deny by default for protected resources
+- Validate input at API boundaries
+- Minimize sensitive data exposure in logs/responses
+- Apply layered defenses (auth, rate limiting, headers, ownership checks)
 
-### JWT Authentication
-- **Access Tokens**: Short-lived (15 minutes recommended)
-- **Refresh Tokens**: Long-lived, stored securely in database
-- **Token Storage**: HTTP-only cookies (prevents XSS)
-- **Token Revocation**: Refresh token blacklist on logout
+## Authentication
 
-### Password Security
-- **Hashing**: bcrypt with salt rounds (10+)
-- **Requirements**: Minimum 8 characters
-- **Validation**: Zod schema validation on both frontend and backend
+- Access tokens: JWT, verified on protected routes
+- Refresh tokens: HTTP-only cookie, validated against persisted token list
+- Refresh token rotation: old token removed on use, new token issued
+- Refresh token history is bounded to prevent unbounded growth
 
-### Session Management
-- Stateless authentication (JWT)
-- Automatic token refresh mechanism
-- Secure cookie configuration:
-  ```javascript
-  {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/'
-  }
-  ```
+## Authorization
 
-## Input Validation & Sanitization
+- Protected endpoints require `verifyJWT`
+- Resource-level ownership checks are enforced in controllers
+- Role-based checks are implemented via `requireRole(...)`
+- Admin-only moderation routes are enforced on report management endpoints
 
-### Backend Validation
-- **Zod Schemas**: Type-safe validation on all endpoints
-- **Middleware**: Automatic validation before controllers
-- **Sanitization**: Automatic stripping of unknown fields
-- **Error Messages**: Specific field-level errors
+## Session and Cookie Security
 
-### Frontend Validation
-- **Zod Schemas**: Client-side validation matching backend
-- **React Hook Form**: Real-time validation
-- **User Feedback**: Clear error messages
+Refresh token cookie options are environment-sensitive:
 
-### Common Validations
-- Email format validation
-- Username format (alphanumeric + underscore)
-- File type validation (video/image)
-- File size limits (500MB videos, 10MB images)
-- String length limits
+- `httpOnly: true`
+- `secure: true` in production
+- `sameSite: None` in production, `Lax` in development
+- explicit root `path`
+
+## Request Validation and Input Safety
+
+- Zod-based validation is used in validators and endpoint-level checks
+- ObjectId and payload constraints are validated in controller paths
+- File uploads are constrained by multer route handlers and server-side checks
+- Invalid or malformed input returns structured API errors
 
 ## Rate Limiting
 
-### Implementation
-- `express-rate-limit` middleware
-- IP-based limiting
-- Different limits per endpoint type
+Route classes are independently throttled:
 
-### Limits
-- **General API**: 100 requests / 15 minutes
-- **Authentication**: 5 requests / hour
-- **Video Upload**: 2 uploads / hour
+- General API traffic
+- Authentication routes
+- Upload routes
+- Search routes
 
-### Headers
-- `RateLimit-*` headers in responses
-- 429 status code when exceeded
-- Clear error messages
+This reduces brute-force, abuse, and accidental overuse risks.
 
-## Security Headers
+## HTTP Header Hardening
 
-Implemented via Helmet.js:
+Security middleware applies:
 
-```javascript
-{
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-      connectSrc: ["'self'", "https://api.cloudinary.com"]
-    }
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  },
-  noSniff: true,
-  xssFilter: true,
-  frameguard: { action: 'deny' }
-}
-```
+- Helmet baseline protections
+- Content security policy directives
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection`
+- `Referrer-Policy`
+- HSTS in production
 
-### Headers Set
-- `Strict-Transport-Security`: Force HTTPS
-- `X-Content-Type-Options`: Prevent MIME sniffing
-- `X-Frame-Options`: Prevent clickjacking
-- `X-XSS-Protection`: XSS protection
-- `Content-Security-Policy`: Control resource loading
+## CORS Controls
 
-## CORS Configuration
+- Explicit allowlist model with environment-driven extensions
+- Credentials are enabled for cookie-based refresh flow
+- Required headers and methods are explicitly configured
 
-```javascript
-{
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['X-Request-Id']
-}
-```
+## Logging and Secrets Hygiene
 
-## Database Security
+- Structured logging via Winston
+- Request IDs for traceability
+- Redaction of sensitive keys before logging (`password`, token fields, authorization headers, cookies)
+- Avoid storing secrets in source control
 
-### MongoDB Security
-- Connection string secured in environment variables
-- NoSQL injection prevention via Mongoose
-- Input validation before database operations
-- Indexes for performance and query safety
+## Endpoint Exposure Controls
 
-### Data Protection
-- Passwords never stored in plain text
-- Sensitive fields excluded from API responses
-- `.select()` used to limit returned fields
+- `/metrics` is token-gated in production using `x-metrics-token`
+- `/test-cloudinary` is disabled in production unless explicitly enabled
 
-## File Upload Security
+## Dependency and Supply Chain Hygiene
 
-### Validation
-- File type checking (MIME type + extension)
-- File size limits enforced
-- Virus scanning (recommended for production)
-- Secure file storage (Cloudinary)
+Recommended routine:
 
-### Cloudinary Configuration
-- Signed uploads
-- Transformation presets
-- Access control policies
-
-## Error Handling
-
-### Security Best Practices
-- Generic error messages for users
-- Detailed errors only in development
-- No stack traces in production responses
-- Request ID for tracking (not exposing internals)
-
-### Logging
-- Security events logged (failed logins, etc.)
-- No sensitive data in logs
-- Structured logging with Winston
-
-## Environment Variables
-
-### Required Variables
-- `JWT_SECRET`: Strong random string (min 32 chars)
-- `JWT_REFRESH_SECRET`: Different from JWT_SECRET
-- `MONGODB_URI`: Database connection string
-- `CLOUDINARY_API_SECRET`: Cloudinary secret
-
-### Best Practices
-- Never commit `.env` files
-- Use different secrets per environment
-- Rotate secrets regularly
-- Use secret management service in production
-
-## API Security
-
-### Endpoint Protection
-- Protected routes require valid JWT
-- Ownership verification for resource modification
-- Role-based access (future: admin, moderator)
-
-### Request Validation
-- All requests validated before processing
-- Content-Type checking
-- Body size limits
-
-## Frontend Security
-
-### XSS Prevention
-- React's built-in XSS protection
-- No `dangerouslySetInnerHTML` (unless sanitized)
-- Content Security Policy headers
-
-### CSRF Protection
-- SameSite cookies
-- CORS configuration
-- Token-based authentication
-
-### Secure Storage
-- Tokens in HTTP-only cookies (not localStorage)
-- Sensitive data not stored in client
-- Clear sensitive data on logout
-
-## Dependency Security
-
-### Regular Updates
-- Keep dependencies up to date
-- Use `npm audit` regularly
-- Use `npm audit fix` for vulnerabilities
-- Monitor security advisories
-
-### Known Vulnerabilities
 ```bash
 npm audit
 npm audit fix
 ```
 
-## Security Monitoring
+Run per package (`vidtube-backend`, `vidtube-frontend`) and review major upgrades manually.
 
-### Logging
-- Failed authentication attempts
-- Rate limit violations
-- Unusual request patterns
-- Error occurrences
+## Production Security Checklist
 
-### Recommendations for Production
-- Implement WAF (Web Application Firewall)
-- Set up intrusion detection
-- Monitor for suspicious activity
-- Regular security audits
-- Penetration testing
+- [ ] Set strong and unique `ACCESS_TOKEN_SECRET` and `REFRESH_TOKEN_SECRET`
+- [ ] Serve backend and frontend over HTTPS only
+- [ ] Configure production CORS allowlist (no wildcards)
+- [ ] Configure `METRICS_TOKEN` and restrict metrics access
+- [ ] Confirm rate limiting is enabled in deployed environment
+- [ ] Verify log retention and access controls
+- [ ] Rotate secrets on a defined cadence
+- [ ] Run periodic dependency vulnerability scans
+- [ ] Perform regular access review for admin accounts
 
-## OWASP Top 10 Compliance
+## Incident Reporting
 
-### ✅ Addressed
+Do not open public issues for security vulnerabilities.
 
-1. **Injection**: Parameterized queries, input validation
-2. **Broken Authentication**: Secure JWT, password hashing
-3. **Sensitive Data Exposure**: Encrypted transmission, secure storage
-4. **XXE**: Not applicable (JSON API)
-5. **Broken Access Control**: Authorization checks, ownership verification
-6. **Security Misconfiguration**: Security headers, secure defaults
-7. **XSS**: React protection, CSP headers
-8. **Insecure Deserialization**: JSON parsing with validation
-9. **Using Components with Known Vulnerabilities**: Regular updates
-10. **Insufficient Logging**: Winston logging, request tracking
+Report privately with:
 
-## Reporting Security Issues
-
-If you discover a security vulnerability:
-
-1. **DO NOT** open a public issue
-2. Email security concerns to: **hamdanahmadkhan101@gmail.com**
-3. Include:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Suggested fix (if any)
-
-### What to Expect
-- **Acknowledgment**: Within 48 hours
-- **Updates**: Regular progress updates
-- **Resolution**: Critical issues within 7 days
-- **Credit**: With permission, credit in release notes
-
-## Security Checklist for Deployment
-
-- [ ] Environment variables set correctly
-- [ ] HTTPS enabled in production
-- [ ] Security headers configured
-- [ ] Rate limiting active
-- [ ] Database credentials secure
-- [ ] JWT secrets strong and unique
-- [ ] CORS configured for production domain
-- [ ] File upload limits enforced
-- [ ] Error messages don't expose internals
-- [ ] Logging configured (no sensitive data)
-- [ ] Dependencies up to date
-- [ ] Security monitoring enabled
-
----
-
-**Last Updated**: 2024
-**Security Version**: 1.0
+1. Description and impact
+2. Reproduction steps
+3. Affected endpoints/components
+4. Optional remediation proposal

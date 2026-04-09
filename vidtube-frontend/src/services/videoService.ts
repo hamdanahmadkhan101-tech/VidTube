@@ -1,5 +1,5 @@
 import apiClient from "./apiClient";
-import { forceHttps, formatVideoUrls } from "../utils/urlHelpers";
+import { forceHttps } from "../utils/urlHelpers";
 import type {
   ApiResponse,
   PaginatedResponse,
@@ -9,26 +9,61 @@ import type {
   UploadVideoFormData,
 } from "../types";
 
+type VideoOwnerPayload = Partial<Video["owner"]> & {
+  avatar?: string;
+  avatarUrl?: string;
+  subscribersCount?: number;
+};
+
+type VideoPayload = Partial<Video> & {
+  url?: string;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  likesCount?: number;
+  likes?: number;
+  views?: number;
+  owner?: VideoOwnerPayload;
+};
+
+type LikedVideoEntry = {
+  video?: VideoPayload;
+};
+
+type PaginationMeta = NonNullable<
+  NonNullable<ApiResponse<unknown>["meta"]>["pagination"]
+>;
+
+const toPagination = (
+  pagination?: PaginationMeta,
+): PaginatedResponse<Video>["pagination"] => ({
+  page: pagination?.page ?? 1,
+  limit: pagination?.limit ?? 20,
+  totalDocs: pagination?.totalDocs ?? pagination?.total ?? 0,
+  totalPages: pagination?.totalPages ?? 0,
+  hasNextPage: pagination?.hasNextPage ?? false,
+  hasPrevPage: pagination?.hasPrevPage ?? false,
+});
+
 // Helper to map backend response to frontend Video type
-const mapVideoResponse = (video: any): Video => ({
-  ...video,
+const mapVideoResponse = (video: VideoPayload): Video => ({
+  ...(video as Video),
   videoUrl: forceHttps(video.url || video.videoUrl),
   thumbnailUrl: forceHttps(video.thumbnailUrl),
   likes: video.likesCount ?? video.likes ?? 0,
   views: video.views ?? 0,
   owner: video.owner
     ? {
-        ...video.owner,
+        ...(video.owner as Video["owner"]),
         avatarUrl: forceHttps(video.owner.avatarUrl || video.owner.avatar),
         subscribersCount: video.owner.subscribersCount ?? 0,
       }
-    : video.owner,
+    : ({} as Video["owner"]),
 });
 
 export const videoService = {
   // Get all videos with pagination and filters
   getVideos: async (
-    filters?: VideoFilters
+    filters?: VideoFilters,
   ): Promise<PaginatedResponse<Video>> => {
     const params = new URLSearchParams();
 
@@ -39,29 +74,22 @@ export const videoService = {
     if (filters?.category) params.append("category", filters.category);
     if (filters?.tags) params.append("tags", filters.tags.join(","));
 
-    const response = await apiClient.get<ApiResponse<Video[]>>(
-      `/videos?${params.toString()}`
+    const response = await apiClient.get<ApiResponse<VideoPayload[]>>(
+      `/videos?${params.toString()}`,
     );
 
     // Backend returns { data: [...videos], meta: { pagination: {...} } }
     const videos = (response.data.data || []).map(mapVideoResponse);
     return {
       docs: videos,
-      pagination: (response.data as any).meta?.pagination || {
-        page: 1,
-        limit: 20,
-        totalDocs: 0,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPrevPage: false,
-      },
+      pagination: toPagination(response.data.meta?.pagination),
     };
   },
 
   // Get video by ID
   getVideoById: async (videoId: string): Promise<Video> => {
-    const response = await apiClient.get<ApiResponse<any>>(
-      `/videos/${videoId}`
+    const response = await apiClient.get<ApiResponse<VideoPayload>>(
+      `/videos/${videoId}`,
     );
     if (!response.data.data) {
       throw new Error("Video not found");
@@ -71,7 +99,7 @@ export const videoService = {
 
   // Search videos
   searchVideos: async (
-    searchParams: SearchParams
+    searchParams: SearchParams,
   ): Promise<PaginatedResponse<Video>> => {
     const params = new URLSearchParams();
 
@@ -82,31 +110,23 @@ export const videoService = {
     if (searchParams.sortBy) params.append("sortBy", searchParams.sortBy);
     if (searchParams.sortType) params.append("sortType", searchParams.sortType);
 
-    const response = await apiClient.get<ApiResponse<any>>(
-      `/videos/search?${params.toString()}`
+    const response = await apiClient.get<ApiResponse<VideoPayload[]>>(
+      `/videos/search?${params.toString()}`,
     );
 
     // Backend returns { data: [...videos], meta: { pagination: {...} } }
     const videos = response.data.data || [];
-    const pagination = (response.data as any).meta?.pagination || {
-      page: 1,
-      limit: 20,
-      totalDocs: 0,
-      totalPages: 0,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
 
     return {
       docs: Array.isArray(videos) ? videos.map(mapVideoResponse) : [],
-      pagination,
+      pagination: toPagination(response.data.meta?.pagination),
     };
   },
 
   // Get search suggestions
   getSearchSuggestions: async (query: string): Promise<string[]> => {
     const response = await apiClient.get<ApiResponse<string[]>>(
-      `/videos/suggestions?query=${encodeURIComponent(query)}`
+      `/videos/suggestions?query=${encodeURIComponent(query)}`,
     );
     return response.data.data || [];
   },
@@ -115,40 +135,25 @@ export const videoService = {
   getUserVideos: async (
     userId: string,
     page = 1,
-    limit = 20
+    limit = 20,
   ): Promise<PaginatedResponse<Video>> => {
-    const response = await apiClient.get<ApiResponse<any>>(
-      `/videos/user/${userId}?page=${page}&limit=${limit}`
+    const response = await apiClient.get<ApiResponse<VideoPayload[]>>(
+      `/videos/user/${userId}?page=${page}&limit=${limit}`,
     );
 
     // Backend returns data in response.data (docs array) and meta.pagination
     const docs = (response.data.data || []).map(mapVideoResponse);
-    const pagination = (response.data as any).meta?.pagination || {
-      page: 1,
-      limit: 20,
-      totalDocs: 0,
-      totalPages: 0,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
 
     return {
       docs,
-      pagination: {
-        page: pagination.page || 1,
-        limit: pagination.limit || 20,
-        totalDocs: pagination.total || 0,
-        totalPages: pagination.totalPages || 0,
-        hasNextPage: pagination.hasNextPage || false,
-        hasPrevPage: pagination.hasPrevPage || false,
-      },
+      pagination: toPagination(response.data.meta?.pagination),
     };
   },
 
   // Upload video
   uploadVideo: async (
     data: UploadVideoFormData | FormData,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
   ): Promise<Video> => {
     let formData: FormData;
 
@@ -170,11 +175,14 @@ export const videoService = {
     }
 
     // Calculate timeout based on file size (same logic as backend)
-    const videoFile = formData.get('video') as File;
+    const videoFile = formData.get("video") as File;
     const fileSizeMB = videoFile?.size ? videoFile.size / 1024 / 1024 : 25;
-    const calculatedTimeout = Math.max(30000, Math.min(600000, fileSizeMB * 1200));
-    
-    const response = await apiClient.post<ApiResponse<any>>(
+    const calculatedTimeout = Math.max(
+      30000,
+      Math.min(600000, fileSizeMB * 1200),
+    );
+
+    const response = await apiClient.post<ApiResponse<VideoPayload>>(
       "/videos/upload",
       formData,
       {
@@ -185,39 +193,50 @@ export const videoService = {
         onUploadProgress: (progressEvent) => {
           if (onProgress && progressEvent.total) {
             const progress = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
+              (progressEvent.loaded * 100) / progressEvent.total,
             );
             onProgress(progress);
           }
         },
-      }
+      },
     );
+    if (!response.data.data) {
+      throw new Error("Failed to upload video");
+    }
     return mapVideoResponse(response.data.data);
   },
 
   // Update video (with file upload support for thumbnail)
   updateVideoWithFile: async (
     videoId: string,
-    formData: FormData
+    formData: FormData,
   ): Promise<Video> => {
-    const response = await apiClient.patch<ApiResponse<any>>(
+    const response = await apiClient.patch<ApiResponse<VideoPayload>>(
       `/videos/${videoId}`,
       formData,
       {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
+    if (!response.data.data) {
+      throw new Error("Failed to update video");
+    }
     return mapVideoResponse(response.data.data);
   },
 
   // Update video (for JSON data only)
   updateVideo: async (
     videoId: string,
-    data: Partial<UploadVideoFormData>
+    data: Partial<UploadVideoFormData>,
   ): Promise<Video> => {
-    const updateData: any = {};
+    const updateData: Partial<
+      Pick<
+        UploadVideoFormData,
+        "title" | "description" | "privacy" | "category" | "tags"
+      >
+    > = {};
 
     if (data.title) updateData.title = data.title;
     if (data.description !== undefined)
@@ -226,10 +245,13 @@ export const videoService = {
     if (data.category) updateData.category = data.category;
     if (data.tags) updateData.tags = data.tags;
 
-    const response = await apiClient.patch<ApiResponse<any>>(
+    const response = await apiClient.patch<ApiResponse<VideoPayload>>(
       `/videos/${videoId}`,
-      updateData
+      updateData,
     );
+    if (!response.data.data) {
+      throw new Error("Failed to update video");
+    }
     return mapVideoResponse(response.data.data);
   },
 
@@ -240,7 +262,7 @@ export const videoService = {
 
   // Toggle video like
   toggleLike: async (
-    videoId: string
+    videoId: string,
   ): Promise<{ isLiked: boolean; likesCount: number }> => {
     const response = await apiClient.post<
       ApiResponse<{ isLiked: boolean; likesCount: number }>
@@ -250,9 +272,17 @@ export const videoService = {
 
   // Get liked videos
   getLikedVideos: async (): Promise<Video[]> => {
-    const response = await apiClient.get<ApiResponse<any>>("/likes/user");
-    const videos = response.data.data?.videos || [];
-    return videos.map(mapVideoResponse);
+    const response =
+      await apiClient.get<ApiResponse<{ docs?: LikedVideoEntry[] }>>(
+        "/likes/videos",
+      );
+    const paginated = response.data.data || {};
+    const docs = paginated.docs || [];
+
+    return docs
+      .map((item) => item?.video)
+      .filter((video): video is VideoPayload => Boolean(video))
+      .map(mapVideoResponse);
   },
 
   // Increment video views
@@ -264,7 +294,7 @@ export const videoService = {
   reportVideo: async (
     videoId: string,
     reason: string,
-    description?: string
+    description?: string,
   ): Promise<void> => {
     await apiClient.post(`/reports`, {
       type: "video",

@@ -3,21 +3,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Check, Loader2 } from "lucide-react";
 import { playlistService } from "../../services/playlistService.ts";
-import type { Playlist } from "../../types";
+import { handleApiError } from "../../services/apiClient.ts";
+import type { Playlist, PlaylistVideo } from "../../types";
 import toast from "react-hot-toast";
 
 interface AddToPlaylistModalProps {
   isOpen: boolean;
   onClose: () => void;
   videoId: string;
-  userId: string;
 }
 
 export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
   isOpen,
   onClose,
   videoId,
-  userId,
 }) => {
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -29,7 +28,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
     setIsMobile(window.innerWidth < 768);
   }, []);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["userPlaylists"],
     queryFn: () => playlistService.getUserPlaylists(),
     enabled: isOpen,
@@ -44,11 +43,10 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
       setShowCreateForm(false);
       setNewPlaylistName("");
       setNewPlaylistDescription("");
-      refetch();
       addToPlaylistMutation.mutate(newPlaylist._id);
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to create playlist");
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
     },
   });
 
@@ -59,10 +57,9 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
       toast.success("Added to playlist!");
       queryClient.invalidateQueries({ queryKey: ["userPlaylists"] });
       queryClient.invalidateQueries({ queryKey: ["playlist"] });
-      refetch();
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to add to playlist");
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
     },
   });
 
@@ -73,16 +70,15 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
       toast.success("Removed from playlist");
       queryClient.invalidateQueries({ queryKey: ["userPlaylists"] });
       queryClient.invalidateQueries({ queryKey: ["playlist"] });
-      refetch();
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to remove from playlist");
+    onError: (error: unknown) => {
+      toast.error(handleApiError(error));
     },
   });
 
   const playlists = data || [];
 
-  const ModalWrapper = isMobile ? 'div' : motion.div;
+  const ModalWrapper = isMobile ? "div" : motion.div;
   const modalProps = isMobile
     ? { className: "fixed inset-0 z-50 flex items-center justify-center p-4" }
     : {
@@ -134,7 +130,13 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                   <div className="space-y-2">
                     {playlists.map((playlist: Playlist) => {
                       const isInPlaylist = playlist.videos.some(
-                        (v: any) => v.video?._id === videoId || v.video === videoId
+                        (v: PlaylistVideo) => {
+                          const currentVideoId =
+                            typeof v.video === "string"
+                              ? v.video
+                              : v.video?._id;
+                          return currentVideoId === videoId;
+                        },
                       );
 
                       return (
