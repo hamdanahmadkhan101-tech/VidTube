@@ -7,7 +7,10 @@ import {
   securityMiddleware,
   securityHeaders,
 } from './middlewares/security.middleware.js';
-import { apiLimiter } from './middlewares/rateLimit.middleware.js';
+import {
+  apiLimiter,
+  getRateLimitDiagnostics,
+} from './middlewares/rateLimit.middleware.js';
 import { requestLogger, errorLogger } from './middlewares/logger.middleware.js';
 import userRoutes from './routes/user.routes.js';
 import videoRoutes from './routes/video.routes.js';
@@ -125,6 +128,7 @@ app.get('/metrics', (req, res) => {
   const memoryUsage = process.memoryUsage();
   const realtime = getSocketDiagnostics();
   const cache = getCacheDiagnostics();
+  const rateLimit = getRateLimitDiagnostics();
 
   res.status(200).json({
     success: true,
@@ -142,6 +146,7 @@ app.get('/metrics', (req, res) => {
       environment: process.env.NODE_ENV || 'development',
       realtime,
       cache,
+      rateLimit,
     },
     requestId: req.requestId,
   });
@@ -172,6 +177,20 @@ app.get('/metrics/cache', (req, res) => {
     statusCode: 200,
     message: 'Cache metrics retrieved successfully',
     data: getCacheDiagnostics(),
+    requestId: req.requestId,
+  });
+});
+
+app.get('/metrics/ratelimit', (req, res) => {
+  if (!authorizeMetricsRequest(req, res)) {
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    statusCode: 200,
+    message: 'Rate limit metrics retrieved successfully',
+    data: getRateLimitDiagnostics(),
     requestId: req.requestId,
   });
 });

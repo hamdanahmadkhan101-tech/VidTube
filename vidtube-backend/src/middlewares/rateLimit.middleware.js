@@ -1,6 +1,7 @@
 import rateLimit from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
 import { sendRedisCommand } from '../services/cache.service.js';
+import { logInfo } from '../utils/logger.js';
 
 /**
  * Rate Limiting Middleware
@@ -49,8 +50,55 @@ const hasValidRedisUrl = (value) => {
   }
 };
 
+const getRedisTarget = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value);
+    const port = parsed.port ? `:${parsed.port}` : '';
+    return `${parsed.protocol}//${parsed.hostname}${port}`;
+  } catch {
+    return null;
+  }
+};
+
+const REDIS_URL_VALID = hasValidRedisUrl(REDIS_URL);
+
 const REDIS_RATE_LIMIT_STORE_ENABLED =
-  RATE_LIMIT_REDIS_ENABLED && hasValidRedisUrl(REDIS_URL);
+  RATE_LIMIT_REDIS_ENABLED && REDIS_URL_VALID;
+
+export const getRateLimitDiagnostics = () => {
+  const redisUrlConfigured = Boolean(REDIS_URL);
+
+  let modeReason = 'redis-enabled';
+  if (!RATE_LIMIT_REDIS_ENABLED) {
+    modeReason = 'RATE_LIMIT_REDIS_ENABLED=false';
+  } else if (!redisUrlConfigured) {
+    modeReason = 'REDIS_URL-missing';
+  } else if (!REDIS_URL_VALID) {
+    modeReason = 'REDIS_URL-invalid-format';
+  }
+
+  return {
+    redisRequested: RATE_LIMIT_REDIS_ENABLED,
+    redisUrlConfigured,
+    redisUrlValid: REDIS_URL_VALID,
+    storeMode: REDIS_RATE_LIMIT_STORE_ENABLED ? 'redis' : 'memory',
+    modeReason,
+    prefix: RATE_LIMIT_PREFIX,
+    redisTarget: getRedisTarget(REDIS_URL),
+  };
+};
+
+const rateLimitDiagnostics = getRateLimitDiagnostics();
+logInfo('Rate limiter store mode initialized', {
+  storeMode: rateLimitDiagnostics.storeMode,
+  modeReason: rateLimitDiagnostics.modeReason,
+  redisTarget: rateLimitDiagnostics.redisTarget,
+  prefix: rateLimitDiagnostics.prefix,
+});
 
 const createLimiter = ({
   key,
