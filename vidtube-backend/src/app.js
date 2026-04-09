@@ -23,20 +23,37 @@ const app = express();
 // correct IPs and secure cookie/HTTPS detection
 app.set('trust proxy', 1);
 
-// CORS Configuration - allow configured production frontend + known dev origins
+// CORS Configuration - production uses env-defined origins, development also allows localhost defaults
+const isProduction = process.env.NODE_ENV === 'production';
+const defaultDevOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+];
 const envFrontend = process.env.FRONTEND_URL?.trim();
 const envAllowed =
   process.env.ALLOWED_ORIGINS?.split(',')
     .map((s) => s.trim())
     .filter(Boolean) || [];
-const allowedOrigins = [
-  'https://vid-tube-beta.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
+
+const configuredOrigins = [
   ...(envFrontend ? [envFrontend] : []),
   ...envAllowed,
 ];
+
+const allowedOrigins = [
+  ...new Set(
+    isProduction
+      ? configuredOrigins
+      : [...defaultDevOrigins, ...configuredOrigins]
+  ),
+];
+
+if (isProduction && allowedOrigins.length === 0) {
+  throw new Error(
+    'CORS misconfiguration: set FRONTEND_URL or ALLOWED_ORIGINS in production'
+  );
+}
 
 // Security: Request ID for tracing (must be first)
 app.use(requestIdMiddleware);
