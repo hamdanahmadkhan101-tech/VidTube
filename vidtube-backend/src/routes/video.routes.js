@@ -26,6 +26,8 @@ import { verifyJWT, optionalJWT } from '../middlewares/auth.middleware.js';
 import {
   uploadLimiter,
   searchLimiter,
+  videoMutationLimiter,
+  watchHistoryLimiter,
 } from '../middlewares/rateLimit.middleware.js';
 import {
   cacheResponse,
@@ -84,18 +86,31 @@ router.route('/upload').post(
 
 router
   .route('/toggle/publish/:videoId')
-  .patch(verifyJWT, invalidateVideoDiscoveryCache, togglePublishStatus);
+  .patch(
+    verifyJWT,
+    videoMutationLimiter,
+    invalidateVideoDiscoveryCache,
+    togglePublishStatus
+  );
 
 router
   .route('/:videoId')
   .patch(
     verifyJWT,
+    videoMutationLimiter,
     uploadImage.fields([{ name: 'thumbnail', maxCount: 1 }]),
     invalidateVideoDiscoveryCache,
     updateVideo
   )
-  .delete(verifyJWT, invalidateVideoDiscoveryCache, deleteVideo);
+  .delete(
+    verifyJWT,
+    videoMutationLimiter,
+    invalidateVideoDiscoveryCache,
+    deleteVideo
+  );
 
-router.route('/:videoId/watch').post(verifyJWT, addVideoToWatchHistory);
+router
+  .route('/:videoId/watch')
+  .post(verifyJWT, watchHistoryLimiter, addVideoToWatchHistory);
 
 export default router;

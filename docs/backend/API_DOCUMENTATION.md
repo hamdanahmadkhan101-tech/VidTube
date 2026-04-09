@@ -62,6 +62,20 @@ Rate limiting is enforced by middleware and may return `429` with `RateLimit-*` 
 - Auth endpoints: `5 requests / 15 minutes / IP` (successful requests are skipped)
 - Upload endpoint: `10 requests / hour / IP`
 - Search endpoints: `30 requests / minute / IP`
+- Availability checks (`check-username`, `check-email`): `30 requests / minute / IP`
+- Profile mutations (profile/avatar/cover/password): `25 requests / 15 minutes / IP`
+- Subscription toggles: `40 requests / 15 minutes / IP`
+- Video management mutations (publish/update/delete): `60 requests / 15 minutes / IP`
+- Watch events (`POST /videos/:videoId/watch`): `120 requests / minute / IP`
+- Comment mutations: `45 requests / minute / IP`
+- Like toggles: `120 requests / minute / IP`
+- Notification reads: `120 requests / minute / IP`
+- Notification mutations: `80 requests / minute / IP`
+- Playlist mutations: `60 requests / 15 minutes / IP`
+- Report submissions: `20 requests / hour / IP`
+- Admin moderation endpoints: `300 requests / 15 minutes / IP`
+
+Rate limit counters are stored in Redis when `REDIS_URL` is configured and `RATE_LIMIT_REDIS_ENABLED=true`. In shared single-database setups, isolate keys via `RATE_LIMIT_PREFIX`.
 
 ## System Endpoints
 

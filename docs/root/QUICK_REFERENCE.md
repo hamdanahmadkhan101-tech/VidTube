@@ -86,6 +86,8 @@ Use [API_DOCUMENTATION.md](../backend/API_DOCUMENTATION.md) for full endpoint de
 - `REDIS_URL` (optional but recommended for distributed caching)
 - `CACHE_ENABLED`
 - `CACHE_DEFAULT_TTL_SECONDS`
+- `RATE_LIMIT_REDIS_ENABLED`
+- `RATE_LIMIT_PREFIX`
 
 ### Frontend
 

@@ -26,6 +26,12 @@ This document summarizes the optimizations currently implemented and the next re
 - Route-specific rate limiters protect expensive paths (`auth`, `upload`, `search`)
 - Upload routes have explicit extended timeouts
 
+### Distributed Rate Limiting
+
+- Rate limit counters are stored in Redis when configured
+- Critical mutation endpoint families have dedicated limiter buckets
+- Shared-database safety is supported through configurable limiter key prefixing
+
 ### Distributed Cache
 
 - Redis-backed response caching added for high-traffic read endpoints
@@ -71,7 +77,7 @@ Current architecture supports horizontal API scaling because:
 2. Introduce targeted performance tests for high-traffic endpoints
 3. Add API response compression and explicit cache headers where safe
 4. Add DB query-level profiling and APM instrumentation in production
-5. Move distributed rate limiting to Redis store for multi-instance consistency
+5. Add rate-limit observability dashboards and alert thresholds for abuse spikes
 
 ## Performance Verification Workflow
 

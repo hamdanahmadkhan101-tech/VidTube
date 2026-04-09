@@ -112,6 +112,8 @@ REDIS_URL=rediss://default:password@your-redis-host:6379
 CACHE_ENABLED=true
 CACHE_PREFIX=vidtube
 CACHE_DEFAULT_TTL_SECONDS=60
+RATE_LIMIT_REDIS_ENABLED=true
+RATE_LIMIT_PREFIX=vidtube:ratelimit:
 NODE_ENV=development
 ```
 
@@ -186,7 +188,7 @@ npm run build
 
 - Report moderation endpoints are role-gated (`admin`)
 - Sensitive request fields are redacted from logs
-- Rate limits are route-specific (API/auth/upload/search)
+- Rate limits are route-specific and Redis-backed when configured (auth/upload/search and critical mutation endpoints)
 - Refresh tokens are rotated and bounded in persisted history
 
 ## License

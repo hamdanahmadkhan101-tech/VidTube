@@ -72,6 +72,15 @@ const ensureClient = async () => {
   return redisClient;
 };
 
+export const sendRedisCommand = async (...args) => {
+  const client = await ensureClient();
+  if (!client) {
+    throw new Error('Redis client unavailable');
+  }
+
+  return client.sendCommand(args);
+};
+
 const scanKeys = async (client, pattern) => {
   const matchedKeys = [];
   let cursor = '0';

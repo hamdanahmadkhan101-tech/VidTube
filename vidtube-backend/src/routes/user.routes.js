@@ -25,7 +25,12 @@ import {
 import { User } from '../models/user.model.js';
 import { uploadImage } from '../middlewares/multer.middleware.js';
 import { verifyJWT, optionalJWT } from '../middlewares/auth.middleware.js';
-import { authLimiter } from '../middlewares/rateLimit.middleware.js';
+import {
+  authLimiter,
+  availabilityLimiter,
+  profileMutationLimiter,
+  subscriptionLimiter,
+} from '../middlewares/rateLimit.middleware.js';
 
 const router = Router();
 
@@ -46,31 +51,35 @@ router.route('/login').post(authLimiter, loginUser);
 router.route('/refresh-token').post(authLimiter, refreshAccessToken);
 
 // Availability checks (for frontend validation)
-router.route('/check-username/:username').get(async (req, res) => {
-  try {
-    const { username } = req.params;
-    const user = await User.findOne({ username: username.toLowerCase() });
-    if (user) {
-      return res.status(200).json({ message: 'Username already exists' });
+router
+  .route('/check-username/:username')
+  .get(availabilityLimiter, async (req, res) => {
+    try {
+      const { username } = req.params;
+      const user = await User.findOne({ username: username.toLowerCase() });
+      if (user) {
+        return res.status(200).json({ message: 'Username already exists' });
+      }
+      res.status(404).json({ message: 'Username is available' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error checking username' });
     }
-    res.status(404).json({ message: 'Username is available' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error checking username' });
-  }
-});
+  });
 
-router.route('/check-email/:email').get(async (req, res) => {
-  try {
-    const { email } = req.params;
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (user) {
-      return res.status(200).json({ message: 'Email already exists' });
+router
+  .route('/check-email/:email')
+  .get(availabilityLimiter, async (req, res) => {
+    try {
+      const { email } = req.params;
+      const user = await User.findOne({ email: email.toLowerCase() });
+      if (user) {
+        return res.status(200).json({ message: 'Email already exists' });
+      }
+      res.status(404).json({ message: 'Email is available' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error checking email' });
     }
-    res.status(404).json({ message: 'Email is available' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error checking email' });
-  }
-});
+  });
 
 // ============================================
 // PROTECTED ROUTES (Authentication Required)
@@ -81,24 +90,38 @@ router.route('/logout').post(verifyJWT, logoutUser);
 
 // Profile Information & Management
 router.route('/profile').get(verifyJWT, getCurrentUserProfile);
-router.route('/update-profile').patch(verifyJWT, updateUserProfile);
+router
+  .route('/update-profile')
+  .patch(verifyJWT, profileMutationLimiter, updateUserProfile);
 
 // Media Upload & Management
 router
   .route('/avatar')
-  .patch(verifyJWT, uploadImage.single('avatar'), updateUserAvatar);
+  .patch(
+    verifyJWT,
+    profileMutationLimiter,
+    uploadImage.single('avatar'),
+    updateUserAvatar
+  );
 router
   .route('/cover-image')
-  .patch(verifyJWT, uploadImage.single('coverImage'), updateUserCoverImage);
+  .patch(
+    verifyJWT,
+    profileMutationLimiter,
+    uploadImage.single('coverImage'),
+    updateUserCoverImage
+  );
 
 // Account Security
-router.route('/change-password').patch(verifyJWT, changeCurrentUserPassword);
+router
+  .route('/change-password')
+  .patch(verifyJWT, profileMutationLimiter, changeCurrentUserPassword);
 
 // Channel & Social Features (public with optional auth for isSubscribed)
 router.route('/c/:username').get(optionalJWT, getUserChannelProfile);
 router
   .route('/toggle-subscription/:channelId')
-  .post(verifyJWT, toggleSubscription);
+  .post(verifyJWT, subscriptionLimiter, toggleSubscription);
 
 // Content & History
 router.route('/watch-history').get(verifyJWT, getUserWatchHistory);

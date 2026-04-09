@@ -11,6 +11,7 @@ import {
   cacheResponse,
   invalidateCacheOnSuccess,
 } from '../middlewares/cache.middleware.js';
+import { commentMutationLimiter } from '../middlewares/rateLimit.middleware.js';
 
 const router = Router();
 
@@ -29,7 +30,12 @@ const invalidateCommentReadCache = invalidateCacheOnSuccess({
 
 router
   .route('/:videoId')
-  .post(verifyJWT, invalidateCommentReadCache, addComment)
+  .post(
+    verifyJWT,
+    commentMutationLimiter,
+    invalidateCommentReadCache,
+    addComment
+  )
   .get(
     optionalJWT,
     cacheResponse({
@@ -46,8 +52,18 @@ router
 
 router
   .route('/c/:commentId')
-  .patch(verifyJWT, invalidateCommentReadCache, updateComment)
-  .delete(verifyJWT, invalidateCommentReadCache, deleteComment);
+  .patch(
+    verifyJWT,
+    commentMutationLimiter,
+    invalidateCommentReadCache,
+    updateComment
+  )
+  .delete(
+    verifyJWT,
+    commentMutationLimiter,
+    invalidateCommentReadCache,
+    deleteComment
+  );
 
 router.route('/:commentId/replies').get(
   optionalJWT,

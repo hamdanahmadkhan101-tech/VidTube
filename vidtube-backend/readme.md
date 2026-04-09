@@ -32,6 +32,8 @@ REDIS_URL=rediss://default:password@your-redis-host:6379
 CACHE_ENABLED=true
 CACHE_PREFIX=vidtube
 CACHE_DEFAULT_TTL_SECONDS=60
+RATE_LIMIT_REDIS_ENABLED=true
+RATE_LIMIT_PREFIX=vidtube:ratelimit:
 NODE_ENV=development
 ```
 
@@ -79,8 +81,18 @@ Recommended additional variables:
 - `CACHE_ENABLED=true`
 - `CACHE_PREFIX=vidtube`
 - `CACHE_DEFAULT_TTL_SECONDS=60`
+- `RATE_LIMIT_REDIS_ENABLED=true`
+- `RATE_LIMIT_PREFIX=vidtube:ratelimit:`
 
-If your Upstash plan allows only one Redis database, you can still use it safely across projects by assigning a unique `CACHE_PREFIX` per app/environment (for example `vidtube:prod:api`).
+If your Upstash plan allows only one Redis database, you can still use it safely across projects by assigning unique prefixes per app/environment:
+
+- `CACHE_PREFIX` for response cache keys
+- `RATE_LIMIT_PREFIX` for rate-limit keys
+
+Example shared-prefix strategy:
+
+- `CACHE_PREFIX=vidtube:prod:api:cache`
+- `RATE_LIMIT_PREFIX=vidtube:prod:api:ratelimit:`
 
 ## Architecture Snapshot
 
@@ -115,7 +127,8 @@ Full endpoint reference: [../docs/backend/API_DOCUMENTATION.md](../docs/backend/
 
 - JWT access token validation + cookie-based refresh token rotation
 - RBAC support (`requireRole`) for admin-gated moderation routes
-- Route-specific rate limiting for auth/upload/search
+- Route-specific rate limiting for auth/upload/search and critical mutation endpoints
+- Redis-backed distributed limiter store is used when configured
 - Request ID tracing and sensitive-field log redaction
 
 Security documentation: [../SECURITY.md](../SECURITY.md)
