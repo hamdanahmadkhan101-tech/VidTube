@@ -1,7 +1,12 @@
 import 'dotenv/config';
+import { createServer } from 'node:http';
 import app from './app.js';
 import connectDB from './db/dbconnect.js';
 import { startCleanupScheduler } from './utils/cleanupTemp.js';
+import {
+  initializeSocketServer,
+  closeSocketServer,
+} from './socket/socket.server.js';
 
 connectDB()
   .then(() => {
@@ -9,8 +14,12 @@ connectDB()
     const stopCleanup = startCleanupScheduler();
     console.log('Temp file cleanup scheduler started');
 
-    // Start server only after DB connection
-    const server = app.listen(process.env.PORT || 8080, () => {
+    // Start HTTP + Socket server only after DB connection
+    const server = createServer(app);
+    initializeSocketServer(server);
+    console.log('Socket server initialized');
+
+    server.listen(process.env.PORT || 8080, () => {
       console.log(`Server running on port ${process.env.PORT || 8080}`);
     });
 
@@ -23,9 +32,11 @@ connectDB()
     const shutdown = () => {
       console.log('Shutting down gracefully...');
       stopCleanup();
-      server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
+      closeSocketServer().finally(() => {
+        server.close(() => {
+          console.log('Server closed');
+          process.exit(0);
+        });
       });
     };
 

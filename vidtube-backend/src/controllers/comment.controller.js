@@ -9,7 +9,7 @@ import apiResponse from '../utils/apiResponse.js';
 // Models
 import Video from '../models/video.model.js';
 import Comment from '../models/comment.model.js';
-import Notification from '../models/notification.model.js';
+import { createNotificationAndEmit } from '../services/notification.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -102,7 +102,7 @@ const addComment = asyncHandler(async (req, res) => {
     // Reply to comment - notify the parent comment owner
     if (parentComment.owner.toString() !== req.user._id.toString()) {
       try {
-        await Notification.create({
+        await createNotificationAndEmit({
           recipient: parentComment.owner,
           type: 'comment',
           title: 'New Reply',
@@ -118,7 +118,7 @@ const addComment = asyncHandler(async (req, res) => {
     // Top-level comment - notify the video owner (don't notify self)
     if (video.owner.toString() !== req.user._id.toString()) {
       try {
-        await Notification.create({
+        await createNotificationAndEmit({
           recipient: video.owner,
           type: 'comment',
           title: 'New Comment',

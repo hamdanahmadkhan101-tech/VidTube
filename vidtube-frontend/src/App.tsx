@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import { Loader2 } from "lucide-react";
 import { Header } from "./components/layout/Header";
+import { NotificationRealtimeBridge } from "./components/notification/NotificationRealtimeBridge";
 import { useAuthStore } from "./store/authStore";
 
 // Lazy load pages for code splitting
@@ -82,6 +83,7 @@ function App() {
       <BrowserRouter>
         <div className="min-h-screen bg-background">
           <Header />
+          <NotificationRealtimeBridge />
 
           <main>
             <Suspense fallback={<PageLoader />}>

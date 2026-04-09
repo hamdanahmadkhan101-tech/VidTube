@@ -14,6 +14,7 @@ import {
 
 // Models
 import Notification from '../models/notification.model.js';
+import { createNotificationAndEmit } from '../services/notification.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -239,7 +240,7 @@ const createNotification = asyncHandler(async (req, res) => {
     ]);
   }
 
-  const notification = await Notification.create({
+  const notification = await createNotificationAndEmit({
     recipient,
     type,
     title: validateStringLength(title, 1, 200, 'title'),

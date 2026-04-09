@@ -15,6 +15,7 @@ import { formatRelativeTime } from "../../utils/helpers";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import type { Notification } from "../../types";
+import { useNotificationSocketConnection } from "../../hooks/useNotificationSocketConnection";
 
 interface NotificationDropdownProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const [isMobile, setIsMobile] = React.useState(false);
+  const isRealtimeConnected = useNotificationSocketConnection();
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -39,7 +41,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     queryKey: ["notifications"],
     queryFn: () => notificationService.getNotifications({ page: 1, limit: 10 }),
     enabled: isOpen,
-    refetchInterval: isOpen ? 10000 : false,
+    refetchInterval: isOpen && !isRealtimeConnected ? 10000 : false,
   });
 
   const markAsReadMutation = useMutation({

@@ -16,6 +16,8 @@ import commentRoutes from './routes/comment.routes.js';
 import playlistRoutes from './routes/playlist.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import { getAllowedOrigins } from './config/cors.config.js';
+import { getSocketDiagnostics } from './socket/socket.server.js';
 
 const app = express();
 
@@ -23,37 +25,8 @@ const app = express();
 // correct IPs and secure cookie/HTTPS detection
 app.set('trust proxy', 1);
 
-// CORS Configuration - production uses env-defined origins, development also allows localhost defaults
-const isProduction = process.env.NODE_ENV === 'production';
-const defaultDevOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-];
-const envFrontend = process.env.FRONTEND_URL?.trim();
-const envAllowed =
-  process.env.ALLOWED_ORIGINS?.split(',')
-    .map((s) => s.trim())
-    .filter(Boolean) || [];
-
-const configuredOrigins = [
-  ...(envFrontend ? [envFrontend] : []),
-  ...envAllowed,
-];
-
-const allowedOrigins = [
-  ...new Set(
-    isProduction
-      ? configuredOrigins
-      : [...defaultDevOrigins, ...configuredOrigins]
-  ),
-];
-
-if (isProduction && allowedOrigins.length === 0) {
-  throw new Error(
-    'CORS misconfiguration: set FRONTEND_URL or ALLOWED_ORIGINS in production'
-  );
-}
+// CORS Configuration - centralized in config and env-driven for production
+const allowedOrigins = getAllowedOrigins();
 
 // Security: Request ID for tracing (must be first)
 app.use(requestIdMiddleware);
@@ -105,6 +78,28 @@ app.use(cookieParser());
 // ============================================
 // HEALTH CHECK & METRICS (for deployment monitoring)
 // ============================================
+const authorizeMetricsRequest = (req, res) => {
+  if (process.env.NODE_ENV !== 'production') {
+    return true;
+  }
+
+  const metricsToken = process.env.METRICS_TOKEN;
+  const providedToken = req.get('x-metrics-token');
+
+  if (!metricsToken || !providedToken || providedToken !== metricsToken) {
+    res.status(403).json({
+      success: false,
+      statusCode: 403,
+      message: 'Forbidden',
+      data: null,
+      requestId: req.requestId,
+    });
+    return false;
+  }
+
+  return true;
+};
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -122,22 +117,13 @@ app.get('/health', (req, res) => {
 
 // Basic metrics endpoint (expand in Phase 1.5)
 app.get('/metrics', (req, res) => {
-  if (process.env.NODE_ENV === 'production') {
-    const metricsToken = process.env.METRICS_TOKEN;
-    const providedToken = req.get('x-metrics-token');
-
-    if (!metricsToken || !providedToken || providedToken !== metricsToken) {
-      return res.status(403).json({
-        success: false,
-        statusCode: 403,
-        message: 'Forbidden',
-        data: null,
-        requestId: req.requestId,
-      });
-    }
+  if (!authorizeMetricsRequest(req, res)) {
+    return;
   }
 
   const memoryUsage = process.memoryUsage();
+  const realtime = getSocketDiagnostics();
+
   res.status(200).json({
     success: true,
     statusCode: 200,
@@ -152,7 +138,23 @@ app.get('/metrics', (req, res) => {
       },
       nodeVersion: process.version,
       environment: process.env.NODE_ENV || 'development',
+      realtime,
     },
+    requestId: req.requestId,
+  });
+});
+
+// Focused realtime diagnostics endpoint for notification/socket delivery health.
+app.get('/metrics/realtime', (req, res) => {
+  if (!authorizeMetricsRequest(req, res)) {
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    statusCode: 200,
+    message: 'Realtime metrics retrieved successfully',
+    data: getSocketDiagnostics(),
     requestId: req.requestId,
   });
 });

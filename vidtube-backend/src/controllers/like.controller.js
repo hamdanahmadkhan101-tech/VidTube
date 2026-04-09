@@ -10,7 +10,7 @@ import apiResponse from '../utils/apiResponse.js';
 import Video from '../models/video.model.js';
 import Like from '../models/like.model.js';
 import Comment from '../models/comment.model.js';
-import Notification from '../models/notification.model.js';
+import { createNotificationAndEmit } from '../services/notification.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -85,7 +85,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
       // Create notification for the video owner (don't notify self)
       if (video.owner.toString() !== req.user._id.toString()) {
         try {
-          await Notification.create({
+          await createNotificationAndEmit({
             recipient: video.owner,
             type: 'like',
             title: 'New Like',
@@ -239,7 +239,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
       // Create notification for the comment owner (don't notify self)
       if (comment.owner.toString() !== req.user._id.toString()) {
         try {
-          await Notification.create({
+          await createNotificationAndEmit({
             recipient: comment.owner,
             type: 'like',
             title: 'New Like',

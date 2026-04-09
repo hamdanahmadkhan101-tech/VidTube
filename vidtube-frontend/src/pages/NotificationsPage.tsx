@@ -15,15 +15,17 @@ import { formatRelativeTime } from "../utils/helpers";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import type { Notification } from "../types";
+import { useNotificationSocketConnection } from "../hooks/useNotificationSocketConnection";
 
 export const NotificationsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
+  const isRealtimeConnected = useNotificationSocketConnection();
 
   const { data, isLoading } = useQuery({
     queryKey: ["notifications", page],
     queryFn: () => notificationService.getNotifications({ page, limit: 20 }),
-    refetchInterval: 30000,
+    refetchInterval: isRealtimeConnected ? false : 30000,
     refetchIntervalInBackground: false,
   });
 

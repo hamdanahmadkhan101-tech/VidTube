@@ -19,6 +19,7 @@ import { videoService } from "../../services/videoService";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { notificationService } from "../../services/notificationService.ts";
 import { NotificationDropdown } from "../notification/NotificationDropdown";
+import { useNotificationSocketConnection } from "../../hooks/useNotificationSocketConnection";
 import toast from "react-hot-toast";
 
 export const Header: React.FC = () => {
@@ -31,6 +32,7 @@ export const Header: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const isRealtimeConnected = useNotificationSocketConnection();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -107,7 +109,7 @@ export const Header: React.FC = () => {
     queryFn: notificationService.getUnreadCount,
     enabled: isAuthenticated,
     staleTime: 30_000,
-    refetchInterval: 30_000,
+    refetchInterval: isRealtimeConnected ? false : 30_000,
     refetchIntervalInBackground: false,
   });
 

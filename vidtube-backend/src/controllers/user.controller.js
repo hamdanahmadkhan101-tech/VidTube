@@ -10,7 +10,6 @@ import mongoose from 'mongoose';
 // Models
 import { User } from '../models/user.model.js';
 import Subscription from '../models/subscription.model.js';
-import Notification from '../models/notification.model.js';
 // Note: Video collection referenced by name in aggregation pipeline
 
 import Video from '../models/video.model.js';
@@ -20,6 +19,7 @@ import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from '../utils/cloudinary.js';
+import { createNotificationAndEmit } from '../services/notification.service.js';
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -617,7 +617,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
     // Create notification for the channel owner
     try {
-      await Notification.create({
+      await createNotificationAndEmit({
         recipient: channelId,
         type: 'subscription',
         title: 'New Subscriber',

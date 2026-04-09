@@ -21,7 +21,7 @@ import Report from '../models/report.model.js';
 import Video from '../models/video.model.js';
 import Comment from '../models/comment.model.js';
 import { User } from '../models/user.model.js';
-import Notification from '../models/notification.model.js';
+import { createNotificationAndEmit } from '../services/notification.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -180,7 +180,7 @@ const createReport = asyncHandler(async (req, res) => {
     // Don't notify if user reports themselves
     if (ownerId && ownerId.toString() !== req.user._id.toString()) {
       const reasonText = reason.replace(/_/g, ' ');
-      await Notification.create({
+      await createNotificationAndEmit({
         recipient: ownerId,
         type: 'system',
         title: 'Content Reported',
