@@ -19,10 +19,19 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:8080/api/v1";
+const rawApiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+
+if (import.meta.env.PROD && !rawApiBaseUrl) {
+  throw new Error(
+    "Missing VITE_API_BASE_URL (or VITE_API_URL) in production environment.",
+  );
+}
+
+const API_BASE_URL = (rawApiBaseUrl || "http://localhost:8080/api/v1").replace(
+  /\/+$/,
+  "",
+);
 
 const getStoredAuth = (): StoredAuthState | null => {
   try {

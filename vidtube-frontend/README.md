@@ -23,6 +23,12 @@ VITE_API_BASE_URL=http://localhost:8080/api/v1
 VITE_API_URL=http://localhost:8080/api/v1
 ```
 
+For production (Vercel), set:
+
+```env
+VITE_API_BASE_URL=https://your-backend-service.onrender.com/api/v1
+```
+
 ## Scripts
 
 - `npm run dev`: start Vite development server
@@ -57,6 +63,18 @@ VITE_API_URL=http://localhost:8080/api/v1
 npm run lint
 npm run build
 ```
+
+## Deploy to Vercel
+
+1. Import the repository in Vercel.
+2. Set Root Directory to `vidtube-frontend`.
+3. Build Command: `npm run build`.
+4. Output Directory: `dist`.
+5. Add environment variable:
+   - `VITE_API_BASE_URL=https://your-backend-service.onrender.com/api/v1`
+6. Deploy.
+
+This project includes `vercel.json` SPA rewrite config so client-side routes work correctly.
 
 ## Related Docs
 
