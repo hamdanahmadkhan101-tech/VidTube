@@ -169,6 +169,7 @@ npm run build
 ## Deployment Notes
 
 - Backend defaults to `PORT=8080` if not provided
+- Render backend deployment blueprint is available at `render.yaml`
 - `trust proxy` is enabled for reverse-proxy deployments
 - In production, `/metrics` requires `x-metrics-token`
 - Development diagnostics route `/test-cloudinary` is disabled in production unless explicitly enabled

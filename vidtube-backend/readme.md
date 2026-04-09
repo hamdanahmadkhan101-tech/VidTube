@@ -41,6 +41,37 @@ NODE_ENV=development
 - `npm run format`: run Prettier write on backend source
 - `npm run format:check`: check Prettier formatting
 
+## Deploy on Render
+
+This repository includes a Render Blueprint at [../render.yaml](../render.yaml).
+
+Manual setup steps in Render:
+
+1. Create a new Web Service from this repository.
+2. Set Root Directory to `vidtube-backend`.
+3. Use Build Command `npm install`.
+4. Use Start Command `npm start`.
+5. Set Health Check Path to `/health`.
+6. Add environment variables from [.env.example](./.env.example).
+
+Required environment variables for production:
+
+- `MONGODB_URI`
+- `ACCESS_TOKEN_SECRET`
+- `REFRESH_TOKEN_SECRET`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `FRONTEND_URL` (your frontend production URL)
+
+Recommended additional variables:
+
+- `ALLOWED_ORIGINS`
+- `METRICS_TOKEN`
+- `BODY_SIZE_LIMIT=1mb`
+- `ENABLE_DEBUG_ROUTES=false`
+- `LOG_LEVEL=info`
+
 ## Architecture Snapshot
 
 - Routes: endpoint and middleware composition

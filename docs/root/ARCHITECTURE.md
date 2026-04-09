@@ -112,7 +112,7 @@ Pages
 
 ## Deployment Model
 
-- Frontend: Vercel/Netlify-compatible static deployment
+- Frontend: Vercel/Cloudflare Pages-compatible static deployment
 - Backend: container or Node runtime on managed hosts (Render/Railway/etc.)
 - Database: MongoDB Atlas recommended for production
 - Media: Cloudinary
