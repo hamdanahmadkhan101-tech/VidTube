@@ -9,9 +9,48 @@ import { sendRedisCommand } from '../services/cache.service.js';
 
 const RATE_LIMIT_REDIS_ENABLED =
   process.env.RATE_LIMIT_REDIS_ENABLED !== 'false';
+
+const normalizeRedisUrl = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const startsWithQuote = trimmed.startsWith('"') || trimmed.startsWith("'");
+  const endsWithQuote = trimmed.endsWith('"') || trimmed.endsWith("'");
+
+  if (startsWithQuote && endsWithQuote && trimmed.length >= 2) {
+    const unquoted = trimmed.slice(1, -1).trim();
+    return unquoted || null;
+  }
+
+  return trimmed;
+};
+
+const REDIS_URL = normalizeRedisUrl(process.env.REDIS_URL);
 const RATE_LIMIT_PREFIX =
   process.env.RATE_LIMIT_PREFIX ||
   `${process.env.CACHE_PREFIX || 'vidtube'}:ratelimit:`;
+
+const hasValidRedisUrl = (value) => {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'redis:' || parsed.protocol === 'rediss:';
+  } catch {
+    return false;
+  }
+};
+
+const REDIS_RATE_LIMIT_STORE_ENABLED =
+  RATE_LIMIT_REDIS_ENABLED && hasValidRedisUrl(REDIS_URL);
 
 const createLimiter = ({
   key,
@@ -21,8 +60,7 @@ const createLimiter = ({
   errorMessage,
   skipSuccessfulRequests = false,
 }) => {
-  const useRedisStore =
-    RATE_LIMIT_REDIS_ENABLED && Boolean(process.env.REDIS_URL);
+  const useRedisStore = REDIS_RATE_LIMIT_STORE_ENABLED;
 
   return rateLimit({
     windowMs,

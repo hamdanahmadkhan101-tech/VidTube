@@ -5,7 +5,42 @@ import { logInfo, logWarn } from '../utils/logger.js';
 const CACHE_PREFIX = process.env.CACHE_PREFIX || 'vidtube';
 const CACHE_ENABLED = process.env.CACHE_ENABLED !== 'false';
 const DEFAULT_TTL_SECONDS = Number(process.env.CACHE_DEFAULT_TTL_SECONDS) || 60;
-const REDIS_URL = process.env.REDIS_URL;
+
+const normalizeRedisUrl = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const startsWithQuote = trimmed.startsWith('"') || trimmed.startsWith("'");
+  const endsWithQuote = trimmed.endsWith('"') || trimmed.endsWith("'");
+
+  if (startsWithQuote && endsWithQuote && trimmed.length >= 2) {
+    const unquoted = trimmed.slice(1, -1).trim();
+    return unquoted || null;
+  }
+
+  return trimmed;
+};
+
+const hasValidRedisUrl = (value) => {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'redis:' || parsed.protocol === 'rediss:';
+  } catch {
+    return false;
+  }
+};
+
+const REDIS_URL = normalizeRedisUrl(process.env.REDIS_URL);
 
 let redisClient = null;
 let initAttempted = false;
@@ -54,7 +89,7 @@ const toStableJson = (value) => JSON.stringify(normalizeForStableJson(value));
 
 const getNamespacePattern = (namespace) => `${CACHE_PREFIX}:${namespace}:*`;
 
-const isCacheConfigured = () => CACHE_ENABLED && Boolean(REDIS_URL);
+const isCacheConfigured = () => CACHE_ENABLED && hasValidRedisUrl(REDIS_URL);
 
 const ensureClient = async () => {
   if (redisClient?.isOpen) {
@@ -116,12 +151,14 @@ export const initializeCache = async () => {
 
   if (!isCacheConfigured()) {
     cacheDiagnostics.enabled = CACHE_ENABLED;
-    cacheDiagnostics.configured = Boolean(REDIS_URL);
+    cacheDiagnostics.configured = hasValidRedisUrl(REDIS_URL);
     cacheDiagnostics.connected = false;
     cacheDiagnostics.provider = 'none';
 
     if (!CACHE_ENABLED) {
       logInfo('Distributed cache disabled via CACHE_ENABLED=false');
+    } else if (REDIS_URL) {
+      logWarn('Distributed cache disabled because REDIS_URL format is invalid');
     } else {
       logInfo('Distributed cache disabled because REDIS_URL is not configured');
     }
@@ -276,7 +313,7 @@ export const invalidateCacheNamespaces = async (namespaces = []) => {
 export const getCacheDiagnostics = () => ({
   ...cacheDiagnostics,
   enabled: CACHE_ENABLED,
-  configured: Boolean(REDIS_URL),
+  configured: hasValidRedisUrl(REDIS_URL),
   prefix: CACHE_PREFIX,
   defaultTtlSeconds: DEFAULT_TTL_SECONDS,
 });
