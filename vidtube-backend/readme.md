@@ -28,6 +28,10 @@ CLOUDINARY_API_SECRET=your-cloudinary-secret
 FRONTEND_URL=http://localhost:5173
 ALLOWED_ORIGINS=http://localhost:5173
 METRICS_TOKEN=optional-metrics-token
+REDIS_URL=rediss://default:password@your-redis-host:6379
+CACHE_ENABLED=true
+CACHE_PREFIX=vidtube
+CACHE_DEFAULT_TTL_SECONDS=60
 NODE_ENV=development
 ```
 
@@ -71,6 +75,12 @@ Recommended additional variables:
 - `BODY_SIZE_LIMIT=1mb`
 - `ENABLE_DEBUG_ROUTES=false`
 - `LOG_LEVEL=info`
+- `REDIS_URL` (for distributed cache)
+- `CACHE_ENABLED=true`
+- `CACHE_PREFIX=vidtube`
+- `CACHE_DEFAULT_TTL_SECONDS=60`
+
+If your Upstash plan allows only one Redis database, you can still use it safely across projects by assigning a unique `CACHE_PREFIX` per app/environment (for example `vidtube:prod:api`).
 
 ## Architecture Snapshot
 
@@ -96,6 +106,8 @@ System endpoints:
 
 - `GET /health`
 - `GET /metrics` (token-gated in production)
+- `GET /metrics/realtime` (token-gated in production)
+- `GET /metrics/cache` (token-gated in production)
 
 Full endpoint reference: [../docs/backend/API_DOCUMENTATION.md](../docs/backend/API_DOCUMENTATION.md)
 

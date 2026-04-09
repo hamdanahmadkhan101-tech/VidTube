@@ -27,16 +27,43 @@ import {
   uploadLimiter,
   searchLimiter,
 } from '../middlewares/rateLimit.middleware.js';
+import {
+  cacheResponse,
+  invalidateCacheOnSuccess,
+} from '../middlewares/cache.middleware.js';
 
 const router = Router();
+
+const invalidateVideoDiscoveryCache = invalidateCacheOnSuccess({
+  namespaces: ['videos:list', 'videos:search', 'videos:suggestions'],
+});
 
 // ============================================
 // PUBLIC ROUTES (with optional auth for like/subscribe status)
 // ============================================
 
-router.route('/').get(optionalJWT, getAllVideos);
-router.route('/search').get(searchLimiter, optionalJWT, searchVideos);
-router.route('/suggestions').get(searchLimiter, getSearchSuggestions);
+router
+  .route('/')
+  .get(
+    optionalJWT,
+    cacheResponse({ namespace: 'videos:list', ttlSeconds: 60 }),
+    getAllVideos
+  );
+router
+  .route('/search')
+  .get(
+    searchLimiter,
+    optionalJWT,
+    cacheResponse({ namespace: 'videos:search', ttlSeconds: 45 }),
+    searchVideos
+  );
+router
+  .route('/suggestions')
+  .get(
+    searchLimiter,
+    cacheResponse({ namespace: 'videos:suggestions', ttlSeconds: 300 }),
+    getSearchSuggestions
+  );
 router.route('/user/:userId').get(optionalJWT, getVideosByOwner);
 router.route('/:videoId').get(optionalJWT, getVideoById);
 
@@ -51,19 +78,23 @@ router.route('/upload').post(
     { name: 'video', maxCount: 1 },
     { name: 'thumbnail', maxCount: 1 },
   ]),
+  invalidateVideoDiscoveryCache,
   uploadVideo
 );
 
-router.route('/toggle/publish/:videoId').patch(verifyJWT, togglePublishStatus);
+router
+  .route('/toggle/publish/:videoId')
+  .patch(verifyJWT, invalidateVideoDiscoveryCache, togglePublishStatus);
 
 router
   .route('/:videoId')
   .patch(
     verifyJWT,
     uploadImage.fields([{ name: 'thumbnail', maxCount: 1 }]),
+    invalidateVideoDiscoveryCache,
     updateVideo
   )
-  .delete(verifyJWT, deleteVideo);
+  .delete(verifyJWT, invalidateVideoDiscoveryCache, deleteVideo);
 
 router.route('/:videoId/watch').post(verifyJWT, addVideoToWatchHistory);
 

@@ -26,6 +26,12 @@ This document summarizes the optimizations currently implemented and the next re
 - Route-specific rate limiters protect expensive paths (`auth`, `upload`, `search`)
 - Upload routes have explicit extended timeouts
 
+### Distributed Cache
+
+- Redis-backed response caching added for high-traffic read endpoints
+- Write paths trigger namespace-based invalidation for freshness
+- Cache health and counters are available through `/metrics/cache`
+
 ## Frontend Optimizations Implemented
 
 ### Data Fetching and Cache Strategy
@@ -61,11 +67,11 @@ Current architecture supports horizontal API scaling because:
 
 ## Recommended Next Optimizations
 
-1. Add Redis for hot-read caching and short-lived computed payloads
-2. Add queue-based async processing for notifications/media-derived workloads
-3. Introduce targeted performance tests for high-traffic endpoints
-4. Add API response compression and explicit cache headers where safe
-5. Add DB query-level profiling and APM instrumentation in production
+1. Add queue-based async processing for notifications/media-derived workloads
+2. Introduce targeted performance tests for high-traffic endpoints
+3. Add API response compression and explicit cache headers where safe
+4. Add DB query-level profiling and APM instrumentation in production
+5. Move distributed rate limiting to Redis store for multi-instance consistency
 
 ## Performance Verification Workflow
 

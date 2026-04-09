@@ -7,8 +7,21 @@ import {
   getVideoComments,
   getCommentReplies,
 } from '../controllers/comment.controller.js';
+import {
+  cacheResponse,
+  invalidateCacheOnSuccess,
+} from '../middlewares/cache.middleware.js';
 
 const router = Router();
+
+const invalidateCommentReadCache = invalidateCacheOnSuccess({
+  namespaces: [
+    'comments:video',
+    'comments:replies',
+    'videos:list',
+    'videos:search',
+  ],
+});
 
 // ============================================
 // COMMENT ROUTES
@@ -16,14 +29,38 @@ const router = Router();
 
 router
   .route('/:videoId')
-  .post(verifyJWT, addComment)
-  .get(optionalJWT, getVideoComments);
+  .post(verifyJWT, invalidateCommentReadCache, addComment)
+  .get(
+    optionalJWT,
+    cacheResponse({
+      namespace: 'comments:video',
+      ttlSeconds: 30,
+      skip: (req) => Boolean(req.user?._id),
+      keyBuilder: (req) => ({
+        videoId: req.params.videoId,
+        query: req.query,
+      }),
+    }),
+    getVideoComments
+  );
 
 router
   .route('/c/:commentId')
-  .patch(verifyJWT, updateComment)
-  .delete(verifyJWT, deleteComment);
+  .patch(verifyJWT, invalidateCommentReadCache, updateComment)
+  .delete(verifyJWT, invalidateCommentReadCache, deleteComment);
 
-router.route('/:commentId/replies').get(optionalJWT, getCommentReplies);
+router.route('/:commentId/replies').get(
+  optionalJWT,
+  cacheResponse({
+    namespace: 'comments:replies',
+    ttlSeconds: 30,
+    skip: (req) => Boolean(req.user?._id),
+    keyBuilder: (req) => ({
+      commentId: req.params.commentId,
+      query: req.query,
+    }),
+  }),
+  getCommentReplies
+);
 
 export default router;

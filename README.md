@@ -108,6 +108,10 @@ CLOUDINARY_API_SECRET=your-cloudinary-secret
 FRONTEND_URL=http://localhost:5173
 ALLOWED_ORIGINS=http://localhost:5173
 METRICS_TOKEN=optional-metrics-token
+REDIS_URL=rediss://default:password@your-redis-host:6379
+CACHE_ENABLED=true
+CACHE_PREFIX=vidtube
+CACHE_DEFAULT_TTL_SECONDS=60
 NODE_ENV=development
 ```
 
@@ -175,6 +179,7 @@ npm run build
 - Render backend deployment blueprint is available at `render.yaml`
 - `trust proxy` is enabled for reverse-proxy deployments
 - In production, `/metrics` requires `x-metrics-token`
+- In production, `/metrics/realtime` and `/metrics/cache` also require `x-metrics-token`
 - Development diagnostics route `/test-cloudinary` is disabled in production unless explicitly enabled
 
 ## Security and Operational Notes

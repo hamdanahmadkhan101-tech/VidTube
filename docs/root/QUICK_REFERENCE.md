@@ -56,6 +56,7 @@ npm run build
 - Health: `GET /health`
 - Metrics: `GET /metrics` (token required in production)
 - Realtime metrics: `GET /metrics/realtime` (same token policy as `/metrics`)
+- Cache metrics: `GET /metrics/cache` (same token policy as `/metrics`)
 
 ## Route Map
 
@@ -82,6 +83,9 @@ Use [API_DOCUMENTATION.md](../backend/API_DOCUMENTATION.md) for full endpoint de
 - `CLOUDINARY_CLOUD_NAME`
 - `CLOUDINARY_API_KEY`
 - `CLOUDINARY_API_SECRET`
+- `REDIS_URL` (optional but recommended for distributed caching)
+- `CACHE_ENABLED`
+- `CACHE_DEFAULT_TTL_SECONDS`
 
 ### Frontend
 

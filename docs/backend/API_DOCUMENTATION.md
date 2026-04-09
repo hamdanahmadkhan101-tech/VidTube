@@ -65,12 +65,13 @@ Rate limiting is enforced by middleware and may return `429` with `RateLimit-*` 
 
 ## System Endpoints
 
-| Method | Path                | Auth                               | Notes                                                             |
-| ------ | ------------------- | ---------------------------------- | ----------------------------------------------------------------- |
-| GET    | `/health`           | Public                             | Service health and runtime status                                 |
-| GET    | `/metrics`          | Public in dev, token-gated in prod | In production requires `x-metrics-token` matching `METRICS_TOKEN` |
-| GET    | `/metrics/realtime` | Public in dev, token-gated in prod | Socket/realtime diagnostics; same token policy as `/metrics`      |
-| GET    | `/test-cloudinary`  | Dev only by default                | Disabled in production unless `ENABLE_DEBUG_ROUTES=true`          |
+| Method | Path                | Auth                               | Notes                                                                |
+| ------ | ------------------- | ---------------------------------- | -------------------------------------------------------------------- |
+| GET    | `/health`           | Public                             | Service health and runtime status                                    |
+| GET    | `/metrics`          | Public in dev, token-gated in prod | In production requires `x-metrics-token` matching `METRICS_TOKEN`    |
+| GET    | `/metrics/realtime` | Public in dev, token-gated in prod | Socket/realtime diagnostics; same token policy as `/metrics`         |
+| GET    | `/metrics/cache`    | Public in dev, token-gated in prod | Redis/distributed cache diagnostics; same token policy as `/metrics` |
+| GET    | `/test-cloudinary`  | Dev only by default                | Disabled in production unless `ENABLE_DEBUG_ROUTES=true`             |
 
 ## Users
 
@@ -178,6 +179,25 @@ Use `GET /metrics/realtime` (or `GET /metrics` under `data.realtime`) to inspect
 - auth failures
 - emitted events and emit attempts without active subscribers
 - last connection/disconnect/emit timestamps
+
+## Distributed Cache (Redis)
+
+Hot-read endpoints use Redis-backed response caching with automatic invalidation on write paths.
+
+### Cached Endpoint Families
+
+- Video discovery list/search/suggestions
+- Anonymous comment reads (top-level comments and replies)
+
+### Cache Headers
+
+- `X-Server-Cache: HIT` response served from Redis
+- `X-Server-Cache: MISS` response generated from DB and written to Redis
+- `X-Server-Cache: BYPASS` response was intentionally not cached
+
+### Cache Diagnostics
+
+`GET /metrics/cache` includes provider, connection state, hit/miss counters, set/invalidation counters, and recent cache errors.
 
 ## Reports
 

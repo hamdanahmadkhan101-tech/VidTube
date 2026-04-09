@@ -18,6 +18,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import { getAllowedOrigins } from './config/cors.config.js';
 import { getSocketDiagnostics } from './socket/socket.server.js';
+import { getCacheDiagnostics } from './services/cache.service.js';
 
 const app = express();
 
@@ -123,6 +124,7 @@ app.get('/metrics', (req, res) => {
 
   const memoryUsage = process.memoryUsage();
   const realtime = getSocketDiagnostics();
+  const cache = getCacheDiagnostics();
 
   res.status(200).json({
     success: true,
@@ -139,6 +141,7 @@ app.get('/metrics', (req, res) => {
       nodeVersion: process.version,
       environment: process.env.NODE_ENV || 'development',
       realtime,
+      cache,
     },
     requestId: req.requestId,
   });
@@ -155,6 +158,20 @@ app.get('/metrics/realtime', (req, res) => {
     statusCode: 200,
     message: 'Realtime metrics retrieved successfully',
     data: getSocketDiagnostics(),
+    requestId: req.requestId,
+  });
+});
+
+app.get('/metrics/cache', (req, res) => {
+  if (!authorizeMetricsRequest(req, res)) {
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    statusCode: 200,
+    message: 'Cache metrics retrieved successfully',
+    data: getCacheDiagnostics(),
     requestId: req.requestId,
   });
 });

@@ -7,15 +7,17 @@ import {
   initializeSocketServer,
   closeSocketServer,
 } from './socket/socket.server.js';
+import { initializeCache, closeCache } from './services/cache.service.js';
 
 connectDB()
-  .then(() => {
+  .then(async () => {
     // Start temp file cleanup scheduler
     const stopCleanup = startCleanupScheduler();
     console.log('Temp file cleanup scheduler started');
 
     // Start HTTP + Socket server only after DB connection
     const server = createServer(app);
+    await initializeCache();
     initializeSocketServer(server);
     console.log('Socket server initialized');
 
@@ -33,9 +35,11 @@ connectDB()
       console.log('Shutting down gracefully...');
       stopCleanup();
       closeSocketServer().finally(() => {
-        server.close(() => {
-          console.log('Server closed');
-          process.exit(0);
+        closeCache().finally(() => {
+          server.close(() => {
+            console.log('Server closed');
+            process.exit(0);
+          });
         });
       });
     };

@@ -5,15 +5,28 @@ import {
   toggleCommentLike,
   getLikedVideos,
 } from '../controllers/like.controller.js';
+import { invalidateCacheOnSuccess } from '../middlewares/cache.middleware.js';
 
 const router = Router();
+
+const invalidateVideoDiscoveryCache = invalidateCacheOnSuccess({
+  namespaces: ['videos:list', 'videos:search'],
+});
+
+const invalidateCommentReadCache = invalidateCacheOnSuccess({
+  namespaces: ['comments:video', 'comments:replies'],
+});
 
 // ============================================
 // PROTECTED ROUTES
 // ============================================
 
-router.route('/toggle/v/:videoId').post(verifyJWT, toggleVideoLike);
-router.route('/toggle/c/:commentId').post(verifyJWT, toggleCommentLike);
+router
+  .route('/toggle/v/:videoId')
+  .post(verifyJWT, invalidateVideoDiscoveryCache, toggleVideoLike);
+router
+  .route('/toggle/c/:commentId')
+  .post(verifyJWT, invalidateCommentReadCache, toggleCommentLike);
 router.route('/videos').get(verifyJWT, getLikedVideos);
 
 export default router;

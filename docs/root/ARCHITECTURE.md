@@ -97,6 +97,7 @@ Pages
 - Targeted database indexes on identity and content lookup fields
 - Aggregation-first retrieval for complex page payloads
 - Request throttling on abuse-prone endpoints
+- Redis-backed distributed response cache for hot-read endpoint families
 
 ### Planned / Next
 
@@ -109,6 +110,7 @@ Pages
 - Health endpoint: `/health`
 - Basic runtime metrics endpoint: `/metrics`
 - Realtime diagnostics endpoint: `/metrics/realtime`
+- Cache diagnostics endpoint: `/metrics/cache`
 - Structured logging with environment metadata
 - Graceful shutdown hooks in backend process lifecycle
 
