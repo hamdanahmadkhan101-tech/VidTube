@@ -7,8 +7,9 @@ This guide covers the current validation workflow for the VidTube monorepo.
 Primary gates currently used:
 
 1. Backend unit/integration tests (`Jest + Supertest`)
-2. Frontend static analysis (`ESLint + TypeScript`)
-3. Frontend production build (`vite build`)
+2. Frontend realtime/component tests (`Vitest + React Testing Library`)
+3. Frontend static analysis (`ESLint + TypeScript`)
+4. Frontend production build (`vite build`)
 
 ## Prerequisites
 
@@ -30,11 +31,14 @@ cd vidtube-backend
 npm test
 ```
 
+Current backend suite coverage includes controller integration tests, utility unit tests, and socket diagnostics tests.
+
 Useful variants:
 
 ```bash
 npm run test:watch
 npm run test:verbose
+npx jest src/__tests__/socket/socket.server.test.js
 ```
 
 Formatting checks:
@@ -47,10 +51,18 @@ Note: formatting check still surfaces legacy baseline issues across existing fil
 
 ## Frontend Validation
 
-Run lint:
+Run frontend tests:
 
 ```bash
 cd vidtube-frontend
+npm run test
+```
+
+Current frontend coverage includes reconnect and dedupe behavior tests for the realtime notification bridge.
+
+Run lint:
+
+```bash
 npm run lint
 ```
 
@@ -75,6 +87,7 @@ npm test
 
 # frontend
 cd ../vidtube-frontend
+npm run test
 npm run lint
 npm run build
 ```
@@ -89,6 +102,8 @@ After local startup, verify:
 4. Playlist add/remove flow
 5. Notifications load and mark-as-read actions
 6. Report creation and admin moderation route behavior
+7. Realtime notifications arrive without page refresh while socket is connected
+8. `/metrics/realtime` reflects connection and emit counters during notification activity
 
 ## API Smoke Commands (Optional)
 
@@ -108,9 +123,10 @@ Suggested pipeline order:
 
 1. Install dependencies for both packages
 2. Run backend tests
-3. Run frontend lint
-4. Run frontend build
-5. Optionally run backend format check as non-blocking until baseline cleanup is complete
+3. Run frontend tests
+4. Run frontend lint
+5. Run frontend build
+6. Optionally run backend format check as non-blocking until baseline cleanup is complete
 
 ## Troubleshooting
 

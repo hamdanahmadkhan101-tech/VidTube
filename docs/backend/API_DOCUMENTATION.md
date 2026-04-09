@@ -65,11 +65,12 @@ Rate limiting is enforced by middleware and may return `429` with `RateLimit-*` 
 
 ## System Endpoints
 
-| Method | Path               | Auth                               | Notes                                                             |
-| ------ | ------------------ | ---------------------------------- | ----------------------------------------------------------------- |
-| GET    | `/health`          | Public                             | Service health and runtime status                                 |
-| GET    | `/metrics`         | Public in dev, token-gated in prod | In production requires `x-metrics-token` matching `METRICS_TOKEN` |
-| GET    | `/test-cloudinary` | Dev only by default                | Disabled in production unless `ENABLE_DEBUG_ROUTES=true`          |
+| Method | Path                | Auth                               | Notes                                                             |
+| ------ | ------------------- | ---------------------------------- | ----------------------------------------------------------------- |
+| GET    | `/health`           | Public                             | Service health and runtime status                                 |
+| GET    | `/metrics`          | Public in dev, token-gated in prod | In production requires `x-metrics-token` matching `METRICS_TOKEN` |
+| GET    | `/metrics/realtime` | Public in dev, token-gated in prod | Socket/realtime diagnostics; same token policy as `/metrics`      |
+| GET    | `/test-cloudinary`  | Dev only by default                | Disabled in production unless `ENABLE_DEBUG_ROUTES=true`          |
 
 ## Users
 
@@ -146,6 +147,37 @@ Rate limiting is enforced by middleware and may return `429` with `RateLimit-*` 
 | PATCH  | `/notifications/:notificationId/read` | Required | Mark single notification as read          |
 | PATCH  | `/notifications/read-all`             | Required | Mark all unread notifications as read     |
 | DELETE | `/notifications/:notificationId`      | Required | Delete single notification                |
+
+## Realtime Notifications (Socket.io)
+
+VidTube emits realtime notification events over Socket.io in addition to HTTP polling.
+
+### Transport
+
+- Server: Socket.io (`websocket` with polling fallback)
+- User scoping: each authenticated connection joins room `user:<userId>`
+
+### Socket Authentication
+
+Access token can be provided in any of these handshake locations:
+
+1. `auth.token`
+2. `Authorization` header (`Bearer <accessToken>`)
+3. `query.token`
+
+### Realtime Events
+
+- `socket:connected`: emitted after successful auth/room join
+- `notification:new`: emitted to recipient user room on new notification creation
+
+### Observability
+
+Use `GET /metrics/realtime` (or `GET /metrics` under `data.realtime`) to inspect:
+
+- active and total socket connections
+- auth failures
+- emitted events and emit attempts without active subscribers
+- last connection/disconnect/emit timestamps
 
 ## Reports
 

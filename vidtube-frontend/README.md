@@ -33,6 +33,8 @@ VITE_API_BASE_URL=https://your-backend-service.onrender.com/api/v1
 
 - `npm run dev`: start Vite development server
 - `npm run lint`: run ESLint
+- `npm run test`: run frontend unit/integration tests with Vitest
+- `npm run test:watch`: run Vitest in watch mode
 - `npm run build`: run TypeScript build and Vite production build
 - `npm run preview`: preview production build
 - `npm start`: preview on host/port for deployment environments
@@ -60,6 +62,7 @@ VITE_API_BASE_URL=https://your-backend-service.onrender.com/api/v1
 ## Validation
 
 ```bash
+npm run test
 npm run lint
 npm run build
 ```

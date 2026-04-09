@@ -33,7 +33,8 @@ Detailed technical docs:
 
 ## Current Engineering Baseline
 
-- Backend tests: passing (4 suites, 32 tests)
+- Backend tests: passing (5 suites, 35 tests)
+- Frontend tests: passing (1 file, 2 tests)
 - Frontend lint: passing
 - Frontend production build: passing
 - Backend format check: known legacy baseline still pending full repo normalization
@@ -146,6 +147,7 @@ npm run format:check
 ```bash
 cd vidtube-frontend
 npm run dev
+npm run test
 npm run lint
 npm run build
 npm run preview
@@ -162,6 +164,7 @@ npm test
 
 # frontend
 cd ../vidtube-frontend
+npm run test
 npm run lint
 npm run build
 ```

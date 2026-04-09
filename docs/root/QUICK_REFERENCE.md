@@ -25,6 +25,7 @@ npm test
 
 # frontend quality gates
 cd ../vidtube-frontend
+npm run test
 npm run lint
 npm run build
 ```
@@ -43,6 +44,8 @@ npm run build
 ### Frontend (`vidtube-frontend/package.json`)
 
 - `npm run dev`: start Vite dev server
+- `npm run test`: run Vitest test suite
+- `npm run test:watch`: run Vitest in watch mode
 - `npm run lint`: run ESLint
 - `npm run build`: run TypeScript build + Vite production bundle
 - `npm run preview`: preview production build
@@ -52,6 +55,7 @@ npm run build
 - Base URL (local default): `http://localhost:8080/api/v1`
 - Health: `GET /health`
 - Metrics: `GET /metrics` (token required in production)
+- Realtime metrics: `GET /metrics/realtime` (same token policy as `/metrics`)
 
 ## Route Map
 
@@ -89,6 +93,7 @@ Use [API_DOCUMENTATION.md](../backend/API_DOCUMENTATION.md) for full endpoint de
 - Access tokens can be supplied as `Authorization: Bearer <token>`.
 - Refresh token is managed via secure HTTP-only cookie.
 - Request IDs are attached to responses via `X-Request-Id`.
+- Realtime notification channel uses Socket.io user rooms (`user:<userId>`).
 
 ## Known Baseline Notes
 

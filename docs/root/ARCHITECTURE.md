@@ -87,6 +87,7 @@ Pages
 - Centralized API client for auth-aware requests
 - Consistent query key usage and invalidation paths
 - Route and payload alignment with backend endpoints
+- Socket.io bridge for push notifications with polling fallback when disconnected
 
 ## Scalability Characteristics
 
@@ -107,6 +108,7 @@ Pages
 
 - Health endpoint: `/health`
 - Basic runtime metrics endpoint: `/metrics`
+- Realtime diagnostics endpoint: `/metrics/realtime`
 - Structured logging with environment metadata
 - Graceful shutdown hooks in backend process lifecycle
 
