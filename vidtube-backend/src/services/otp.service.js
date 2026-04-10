@@ -187,16 +187,34 @@ export const issueOtp = async ({ userId, email, fullName, purpose }) => {
   });
 
   const template = buildEmailTemplate({ purpose, otp });
-  const emailResult = await sendEmail({
-    to: normalizedEmail,
-    toName: fullName,
-    subject: template.subject,
-    htmlContent: template.html,
-    textContent: template.text,
-  });
+  let emailResult;
+
+  try {
+    emailResult = await sendEmail({
+      to: normalizedEmail,
+      toName: fullName,
+      subject: template.subject,
+      htmlContent: template.html,
+      textContent: template.text,
+    });
+  } catch (error) {
+    await OtpCode.deleteMany({
+      user: userId,
+      purpose,
+      consumedAt: null,
+    });
+
+    throw error;
+  }
 
   if (emailResult.skipped) {
     if (process.env.NODE_ENV === 'production') {
+      await OtpCode.deleteMany({
+        user: userId,
+        purpose,
+        consumedAt: null,
+      });
+
       throw new apiError(503, 'Email service is not configured');
     }
 

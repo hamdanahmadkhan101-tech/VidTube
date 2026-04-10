@@ -72,6 +72,24 @@ const getRefreshCookieOptions = () => {
 const isAccountVerificationRequired = () =>
   process.env.ACCOUNT_VERIFICATION_REQUIRED === 'true';
 
+const rollbackRegistrationArtifacts = async ({
+  userId,
+  avatarUrl,
+  coverUrl,
+}) => {
+  const cleanupTasks = [User.findByIdAndDelete(userId)];
+
+  if (avatarUrl && isCloudinaryUrl(avatarUrl)) {
+    cleanupTasks.push(deleteFromCloudinary(avatarUrl));
+  }
+
+  if (coverUrl && isCloudinaryUrl(coverUrl)) {
+    cleanupTasks.push(deleteFromCloudinary(coverUrl));
+  }
+
+  await Promise.allSettled(cleanupTasks);
+};
+
 // ============================================
 // AUTHENTICATION CONTROLLERS
 // ============================================
@@ -146,7 +164,16 @@ const registerUser = asyncHandler(async (req, res) => {
     otpDispatched = !otpResult.skipped;
   } catch (error) {
     if (isAccountVerificationRequired()) {
-      throw error;
+      await rollbackRegistrationArtifacts({
+        userId: newUser._id,
+        avatarUrl: avatarUploadResult?.url,
+        coverUrl: coverUploadResult?.url,
+      });
+
+      throw new apiError(
+        502,
+        'Registration failed because verification email could not be delivered. Please try again.'
+      );
     }
 
     logWarn('Email verification OTP dispatch failed after registration', {
