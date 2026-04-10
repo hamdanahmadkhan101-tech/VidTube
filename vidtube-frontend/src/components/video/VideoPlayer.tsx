@@ -35,6 +35,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -288,6 +289,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }
 
       switch (e.key) {
+        case "Escape":
+          if (showSettings) {
+            setShowSettings(false);
+          }
+          break;
         case " ":
         case "k":
           e.preventDefault();
@@ -329,7 +335,31 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     volume,
     toggleMute,
     toggleFullscreen,
+    showSettings,
   ]);
+
+  useEffect(() => {
+    if (!showSettings) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (
+        settingsRef.current &&
+        target &&
+        !settingsRef.current.contains(target)
+      ) {
+        setShowSettings(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, [showSettings]);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -488,7 +518,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               {/* Right Controls */}
               <div className="flex items-center gap-3">
                 {/* Playback Speed */}
-                <div className="relative">
+                <div className="relative" ref={settingsRef}>
                   <button
                     onClick={() => setShowSettings(!showSettings)}
                     className="text-white hover:text-primary-500 transition-colors flex items-center gap-1"
@@ -503,7 +533,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute bottom-full right-0 mb-2 glass-card p-2 min-w-32"
+                        className="absolute bottom-full right-0 mb-2 min-w-32 rounded-xl border border-white/12 bg-background-secondary p-2 shadow-[0_18px_40px_rgba(0,0,0,0.55)]"
                       >
                         <div className="text-xs text-text-secondary mb-2 px-2">
                           Playback Speed
