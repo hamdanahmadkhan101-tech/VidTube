@@ -3,18 +3,30 @@ import { logError, logWarn } from '../utils/logger.js';
 
 const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
 
+const sanitizeEnvValue = (value) => {
+  const normalized = String(value || '').trim();
+
+  if (
+    (normalized.startsWith('"') && normalized.endsWith('"')) ||
+    (normalized.startsWith("'") && normalized.endsWith("'"))
+  ) {
+    return normalized.slice(1, -1).trim();
+  }
+
+  return normalized;
+};
+
+const getBrevoApiKey = () => sanitizeEnvValue(process.env.BREVO_API_KEY);
+
 const getProvider = () =>
-  String(process.env.EMAIL_PROVIDER || '')
-    .trim()
-    .toLowerCase();
+  sanitizeEnvValue(process.env.EMAIL_PROVIDER).toLowerCase();
 
 const getSender = () => ({
-  name: process.env.MAIL_FROM_NAME || 'VidTube',
-  email: process.env.MAIL_FROM_EMAIL || '',
+  name: sanitizeEnvValue(process.env.MAIL_FROM_NAME) || 'VidTube',
+  email: sanitizeEnvValue(process.env.MAIL_FROM_EMAIL),
 });
 
-const isBrevoConfigured = () =>
-  Boolean(process.env.BREVO_API_KEY && getSender().email);
+const isBrevoConfigured = () => Boolean(getBrevoApiKey() && getSender().email);
 
 export const sendEmail = async ({
   to,
@@ -67,7 +79,7 @@ export const sendEmail = async ({
       method: 'POST',
       headers: {
         accept: 'application/json',
-        'api-key': process.env.BREVO_API_KEY,
+        'api-key': getBrevoApiKey(),
         'content-type': 'application/json',
       },
       body: JSON.stringify(payload),
@@ -79,6 +91,13 @@ export const sendEmail = async ({
         status: response.status,
         body: rawBody,
       });
+
+      if (response.status === 401) {
+        logWarn('Brevo API unauthorized response', {
+          hint: 'Check BREVO_API_KEY. Use an active Brevo API v3 key and avoid wrapping quotes.',
+        });
+      }
+
       throw new apiError(502, 'Email delivery failed');
     }
 
