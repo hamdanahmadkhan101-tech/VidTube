@@ -11,6 +11,10 @@ import Video from '../models/video.model.js';
 import Like from '../models/like.model.js';
 import Comment from '../models/comment.model.js';
 import { createNotificationAndEmit } from '../services/notification.service.js';
+import {
+  buildLikedVideosPipeline,
+  buildCommentLikesCountPipeline,
+} from '../services/likeQuery.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -129,65 +133,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 const getLikedVideos = asyncHandler(async (req, res) => {
   const { page, limit } = getPaginationParams(req.query);
 
-  const pipeline = [
-    {
-      $match: {
-        likedBy: req.user._id,
-      },
-    },
-    {
-      $sort: {
-        createdAt: -1,
-      },
-    },
-    {
-      $lookup: {
-        from: 'videos',
-        localField: 'video',
-        foreignField: '_id',
-        as: 'video',
-        pipeline: [
-          {
-            $match: {
-              isPublished: true,
-            },
-          },
-          {
-            $lookup: {
-              from: 'users',
-              localField: 'owner',
-              foreignField: '_id',
-              as: 'owner',
-              pipeline: [
-                {
-                  $project: {
-                    username: 1,
-                    fullName: 1,
-                    avatarUrl: 1,
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $addFields: {
-              owner: { $first: '$owner' },
-            },
-          },
-        ],
-      },
-    },
-    {
-      $unwind: '$video',
-    },
-    {
-      $project: {
-        _id: 0,
-        likedAt: '$createdAt',
-        video: 1,
-      },
-    },
-  ];
+  const pipeline = buildLikedVideosPipeline({ userId: req.user._id });
 
   const aggregate = Like.aggregate(pipeline);
   const result = await Like.aggregatePaginate(aggregate, {
@@ -264,16 +210,9 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   }
 
   // Get total likes count
-  const likesCountResult = await Like.aggregate([
-    {
-      $match: {
-        comment: new mongoose.Types.ObjectId(commentId),
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
+  const likesCountResult = await Like.aggregate(
+    buildCommentLikesCountPipeline({ commentId })
+  );
 
   const likesCount = likesCountResult[0]?.count || 0;
 

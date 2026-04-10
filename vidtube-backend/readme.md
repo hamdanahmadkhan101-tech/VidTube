@@ -98,6 +98,7 @@ Example shared-prefix strategy:
 
 - Routes: endpoint and middleware composition
 - Controllers: request orchestration and domain validation
+- Query services: reusable aggregation/query builders that keep controllers focused on HTTP orchestration
 - Models: Mongoose schemas and indexing
 - Middlewares: auth, authorization, logging, security, rate limiting, error handling
 - Utilities: API response wrappers, validation helpers, logging, media helpers

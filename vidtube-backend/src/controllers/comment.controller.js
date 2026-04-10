@@ -10,6 +10,12 @@ import apiResponse from '../utils/apiResponse.js';
 import Video from '../models/video.model.js';
 import Comment from '../models/comment.model.js';
 import { createNotificationAndEmit } from '../services/notification.service.js';
+import {
+  buildCreatedCommentPipeline,
+  buildCommentDeletionTreePipeline,
+  buildVideoCommentsPipeline,
+  buildCommentRepliesPipeline,
+} from '../services/commentQuery.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -133,31 +139,9 @@ const addComment = asyncHandler(async (req, res) => {
   }
 
   // Return comment with owner details
-  const [createdComment] = await Comment.aggregate([
-    { $match: { _id: new mongoose.Types.ObjectId(comment._id) } },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'owner',
-        foreignField: '_id',
-        as: 'owner',
-        pipeline: [
-          {
-            $project: {
-              username: 1,
-              fullName: 1,
-              avatarUrl: 1,
-            },
-          },
-        ],
-      },
-    },
-    {
-      $addFields: {
-        owner: { $first: '$owner' },
-      },
-    },
-  ]);
+  const [createdComment] = await Comment.aggregate(
+    buildCreatedCommentPipeline({ commentId: comment._id })
+  );
 
   res
     .status(201)
@@ -222,29 +206,9 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new apiError(403, 'You are not allowed to delete this comment');
   }
 
-  const [commentTree] = await Comment.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(comment._id),
-      },
-    },
-    {
-      $graphLookup: {
-        from: 'comments',
-        startWith: '$_id',
-        connectFromField: '_id',
-        connectToField: 'parent',
-        as: 'descendants',
-      },
-    },
-    {
-      $project: {
-        idsToDelete: {
-          $concatArrays: [['$_id'], '$descendants._id'],
-        },
-      },
-    },
-  ]);
+  const [commentTree] = await Comment.aggregate(
+    buildCommentDeletionTreePipeline({ commentId: comment._id })
+  );
 
   const idsToDelete = commentTree?.idsToDelete || [comment._id];
   const deleteResult = await Comment.deleteMany({ _id: { $in: idsToDelete } });
@@ -286,122 +250,11 @@ const getVideoComments = asyncHandler(async (req, res) => {
     throw new apiError(404, 'Video not found or not published');
   }
 
-  const pipeline = [
-    {
-      $match: {
-        video: new mongoose.Types.ObjectId(videoId),
-        parent: null, // Only get top-level comments
-      },
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'owner',
-        foreignField: '_id',
-        as: 'owner',
-        pipeline: [
-          {
-            $project: {
-              username: 1,
-              fullName: 1,
-              avatarUrl: 1,
-            },
-          },
-        ],
-      },
-    },
-    {
-      $lookup: {
-        from: 'comments',
-        let: { commentId: '$_id' },
-        pipeline: [
-          {
-            $match: {
-              $expr: { $eq: ['$parent', '$$commentId'] },
-            },
-          },
-          {
-            $sort: { createdAt: 1 },
-          },
-          {
-            $lookup: {
-              from: 'users',
-              localField: 'owner',
-              foreignField: '_id',
-              as: 'owner',
-              pipeline: [
-                {
-                  $project: {
-                    username: 1,
-                    fullName: 1,
-                    avatarUrl: 1,
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $lookup: {
-              from: 'likes',
-              localField: '_id',
-              foreignField: 'comment',
-              as: 'replyLikes',
-            },
-          },
-          {
-            $addFields: {
-              owner: { $first: '$owner' },
-              likes: { $size: '$replyLikes' },
-              isLiked: {
-                $in: [req.user?._id, '$replyLikes.likedBy'],
-              },
-            },
-          },
-        ],
-        as: 'replies',
-      },
-    },
-    {
-      $lookup: {
-        from: 'likes',
-        localField: '_id',
-        foreignField: 'comment',
-        as: 'commentLikes',
-      },
-    },
-    // First stage: compute basic fields
-    {
-      $addFields: {
-        owner: { $first: '$owner' },
-        repliesCount: { $size: '$replies' },
-        likes: { $size: '$commentLikes' },
-        isLiked: {
-          $in: [req.user?._id, '$commentLikes.likedBy'],
-        },
-        isOwnComment: {
-          $eq: ['$owner._id', req.user?._id],
-        },
-      },
-    },
-    // Second stage: compute engagement score using computed likes
-    {
-      $addFields: {
-        engagementScore: {
-          $add: [
-            { $multiply: ['$likes', 2] }, // Likes are worth 2 points
-            '$repliesCount', // Replies are worth 1 point each
-          ],
-        },
-      },
-    },
-    // Sort based on sortBy parameter
-    {
-      $sort:
-        sortBy === 'top'
-          ? { isOwnComment: -1, engagementScore: -1, createdAt: -1 } // Top: own comments first, then by engagement
-          : { isOwnComment: -1, createdAt: -1 }, // Newest: own comments first, then by date
-    },
-  ];
+  const pipeline = buildVideoCommentsPipeline({
+    videoId,
+    sortBy,
+    currentUserId: req.user?._id,
+  });
 
   const aggregate = Comment.aggregate(pipeline);
   const result = await Comment.aggregatePaginate(aggregate, {
@@ -430,55 +283,10 @@ const getCommentReplies = asyncHandler(async (req, res) => {
 
   const { page, limit } = getPaginationParams(req.query);
 
-  const pipeline = [
-    {
-      $match: {
-        parent: new mongoose.Types.ObjectId(commentId),
-      },
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'owner',
-        foreignField: '_id',
-        as: 'owner',
-        pipeline: [
-          {
-            $project: {
-              username: 1,
-              fullName: 1,
-              avatarUrl: 1,
-            },
-          },
-        ],
-      },
-    },
-    {
-      $lookup: {
-        from: 'likes',
-        localField: '_id',
-        foreignField: 'comment',
-        as: 'replyLikes',
-      },
-    },
-    {
-      $addFields: {
-        owner: { $first: '$owner' },
-        likes: { $size: '$replyLikes' },
-        isLiked: {
-          $in: [req.user?._id, '$replyLikes.likedBy'],
-        },
-      },
-    },
-    {
-      $project: {
-        replyLikes: 0,
-      },
-    },
-    {
-      $sort: { createdAt: 1 },
-    },
-  ];
+  const pipeline = buildCommentRepliesPipeline({
+    commentId,
+    currentUserId: req.user?._id,
+  });
 
   const aggregate = Comment.aggregate(pipeline);
   const result = await Comment.aggregatePaginate(aggregate, {

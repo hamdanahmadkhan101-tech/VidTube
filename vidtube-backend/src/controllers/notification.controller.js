@@ -1,7 +1,6 @@
 // ============================================
 // IMPORTS & DEPENDENCIES
 // ============================================
-import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
@@ -15,6 +14,10 @@ import {
 // Models
 import Notification from '../models/notification.model.js';
 import { createNotificationAndEmit } from '../services/notification.service.js';
+import {
+  buildNotificationsMatchStage,
+  buildPaginationMeta,
+} from '../services/notificationQuery.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -45,11 +48,10 @@ const getNotifications = asyncHandler(async (req, res) => {
   const { page, limit, skip } = getPaginationParams(req.query);
   const { unreadOnly = false } = req.query;
 
-  const matchStage = { recipient: req.user._id };
-
-  if (unreadOnly === 'true') {
-    matchStage.isRead = false;
-  }
+  const matchStage = buildNotificationsMatchStage({
+    recipientId: req.user._id,
+    unreadOnly,
+  });
 
   const notifications = await Notification.find(matchStage)
     .sort({ createdAt: -1 })
@@ -68,14 +70,11 @@ const getNotifications = asyncHandler(async (req, res) => {
 
   const response = new apiResponse(200, 'Notifications fetched successfully', {
     notifications,
-    pagination: {
+    pagination: buildPaginationMeta({
       page,
       limit,
       total: totalCount,
-      totalPages: Math.ceil(totalCount / limit),
-      hasNextPage: page * limit < totalCount,
-      hasPrevPage: page > 1,
-    },
+    }),
   });
 
   res.status(200).json(response);

@@ -1,7 +1,6 @@
 // ============================================
 // IMPORTS & DEPENDENCIES
 // ============================================
-import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
@@ -22,6 +21,7 @@ import Video from '../models/video.model.js';
 import Comment from '../models/comment.model.js';
 import { User } from '../models/user.model.js';
 import { createNotificationAndEmit } from '../services/notification.service.js';
+import { buildReportsListPipeline } from '../services/reportQuery.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -38,33 +38,6 @@ const getPaginationParams = (query) => {
   const skip = (page - 1) * limit;
   return { page, limit, skip };
 };
-
-/**
- * Build reporter lookup pipeline
- */
-const reporterLookupPipeline = [
-  {
-    $lookup: {
-      from: 'users',
-      localField: 'reportedBy',
-      foreignField: '_id',
-      as: 'reportedBy',
-      pipeline: [
-        {
-          $project: {
-            username: 1,
-            fullName: 1,
-          },
-        },
-      ],
-    },
-  },
-  {
-    $addFields: {
-      reportedBy: { $first: '$reportedBy' },
-    },
-  },
-];
 
 // ============================================
 // REPORT MANAGEMENT
@@ -214,19 +187,11 @@ const getAllReports = asyncHandler(async (req, res) => {
   if (status) matchStage.status = status;
   if (type) matchStage.type = type;
 
-  const pipeline = [
-    { $match: matchStage },
-    ...reporterLookupPipeline,
-    {
-      $sort: { createdAt: -1 },
-    },
-    {
-      $skip: skip,
-    },
-    {
-      $limit: limit,
-    },
-  ];
+  const pipeline = buildReportsListPipeline({
+    matchStage,
+    skip,
+    limit,
+  });
 
   const reports = await Report.aggregate(pipeline);
   const totalCount = await Report.countDocuments(matchStage);

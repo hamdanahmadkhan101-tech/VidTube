@@ -1,7 +1,6 @@
 // ============================================
 // IMPORTS & DEPENDENCIES
 // ============================================
-import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
@@ -19,35 +18,11 @@ import {
 // Models
 import Playlist from '../models/playlist.model.js';
 import Video from '../models/video.model.js';
+import { buildUserPlaylistsQuery } from '../services/playlistQuery.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
-
-const ownerLookupPipeline = [
-  {
-    $lookup: {
-      from: 'users',
-      localField: 'owner',
-      foreignField: '_id',
-      as: 'owner',
-      pipeline: [
-        {
-          $project: {
-            username: 1,
-            fullName: 1,
-            avatarUrl: 1,
-          },
-        },
-      ],
-    },
-  },
-  {
-    $addFields: {
-      owner: { $first: '$owner' },
-    },
-  },
-];
 
 const getPaginationParams = (query) => {
   const page = Math.max(parseInt(query.page, 10) || 1, 1);
@@ -56,19 +31,6 @@ const getPaginationParams = (query) => {
   if (limit < 1) limit = 1;
   const skip = (page - 1) * limit;
   return { page, limit, skip };
-};
-
-const updatePlaylistThumbnail = async (playlist) => {
-  if (!playlist.thumbnailUrl) {
-    for (const item of playlist.videos) {
-      const video = await Video.findById(item.video).select('thumbnailUrl');
-      if (video?.thumbnailUrl) {
-        playlist.thumbnailUrl = video.thumbnailUrl;
-        await playlist.save();
-        break;
-      }
-    }
-  }
 };
 
 // ============================================
@@ -102,7 +64,9 @@ const createPlaylist = asyncHandler(async (req, res) => {
     select: 'username fullName avatarUrl',
   });
 
-  res.status(201).json(new apiResponse(201, 'Playlist created successfully', playlist));
+  res
+    .status(201)
+    .json(new apiResponse(201, 'Playlist created successfully', playlist));
 });
 
 const getCurrentUserPlaylists = asyncHandler(async (req, res) => {
@@ -117,9 +81,11 @@ const getCurrentUserPlaylists = asyncHandler(async (req, res) => {
     })
     .sort({ createdAt: -1 });
 
-  res.status(200).json(
-    new apiResponse(200, 'User playlists fetched successfully', playlists)
-  );
+  res
+    .status(200)
+    .json(
+      new apiResponse(200, 'User playlists fetched successfully', playlists)
+    );
 });
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
@@ -127,28 +93,13 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
   validateObjectId(userId, 'userId');
 
   const { page, limit, skip } = getPaginationParams(req.query);
-
-  const matchStage = {
-    owner: new mongoose.Types.ObjectId(userId),
-  };
-
-  if (req.user?._id.toString() !== userId) {
-    matchStage.isPublic = true;
-  }
-
-  const pipeline = [
-    { $match: matchStage },
-    ...ownerLookupPipeline,
-    {
-      $sort: { createdAt: -1 },
-    },
-    {
-      $skip: skip,
-    },
-    {
-      $limit: limit,
-    },
-  ];
+  const includePrivate = req.user?._id.toString() === userId;
+  const { matchStage, pipeline } = buildUserPlaylistsQuery({
+    ownerId: userId,
+    includePrivate,
+    skip,
+    limit,
+  });
 
   const playlists = await Playlist.aggregate(pipeline);
   const totalCount = await Playlist.countDocuments(matchStage);
@@ -179,7 +130,8 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     })
     .populate({
       path: 'videos.video',
-      select: 'title thumbnailUrl duration _id videoUrl url owner views likes isPublished privacy',
+      select:
+        'title thumbnailUrl duration _id videoUrl url owner views likes isPublished privacy',
       populate: {
         path: 'owner',
         select: 'username fullName avatarUrl',
@@ -197,7 +149,9 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     throw new ForbiddenError('You do not have access to this playlist');
   }
 
-  res.status(200).json(new apiResponse(200, 'Playlist fetched successfully', playlist));
+  res
+    .status(200)
+    .json(new apiResponse(200, 'Playlist fetched successfully', playlist));
 });
 
 const updatePlaylist = asyncHandler(async (req, res) => {
@@ -229,7 +183,9 @@ const updatePlaylist = asyncHandler(async (req, res) => {
 
   await playlist.save();
 
-  res.status(200).json(new apiResponse(200, 'Playlist updated successfully', playlist));
+  res
+    .status(200)
+    .json(new apiResponse(200, 'Playlist updated successfully', playlist));
 });
 
 const deletePlaylist = asyncHandler(async (req, res) => {
@@ -247,7 +203,9 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 
   await Playlist.deleteOne({ _id: playlistId });
 
-  res.status(200).json(new apiResponse(200, 'Playlist deleted successfully', null));
+  res
+    .status(200)
+    .json(new apiResponse(200, 'Playlist deleted successfully', null));
 });
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
@@ -293,7 +251,11 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     select: 'title thumbnailUrl duration _id',
   });
 
-  res.status(200).json(new apiResponse(200, 'Video added to playlist successfully', playlist));
+  res
+    .status(200)
+    .json(
+      new apiResponse(200, 'Video added to playlist successfully', playlist)
+    );
 });
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
@@ -317,7 +279,11 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
   await playlist.save();
 
-  res.status(200).json(new apiResponse(200, 'Video removed from playlist successfully', playlist));
+  res
+    .status(200)
+    .json(
+      new apiResponse(200, 'Video removed from playlist successfully', playlist)
+    );
 });
 
 // ============================================

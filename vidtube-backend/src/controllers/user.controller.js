@@ -10,9 +10,6 @@ import mongoose from 'mongoose';
 // Models
 import { User } from '../models/user.model.js';
 import Subscription from '../models/subscription.model.js';
-// Note: Video collection referenced by name in aggregation pipeline
-
-import Video from '../models/video.model.js';
 
 // Services
 import {
@@ -20,6 +17,11 @@ import {
   deleteFromCloudinary,
 } from '../utils/cloudinary.js';
 import { createNotificationAndEmit } from '../services/notification.service.js';
+import {
+  buildCurrentUserProfilePipeline,
+  buildChannelProfilePipeline,
+  buildWatchHistoryPipeline,
+} from '../services/userQuery.service.js';
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -306,41 +308,9 @@ const changeCurrentUserPassword = asyncHandler(async (req, res) => {
  * @access Private
  */
 const getCurrentUserProfile = asyncHandler(async (req, res) => {
-  const userProfile = await User.aggregate([
-    {
-      $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
-    },
-    {
-      $lookup: {
-        from: 'subscriptions',
-        localField: '_id',
-        foreignField: 'channel',
-        as: 'subscribers',
-      },
-    },
-    {
-      $lookup: {
-        from: 'subscriptions',
-        localField: '_id',
-        foreignField: 'subscriber',
-        as: 'subscribedTo',
-      },
-    },
-    {
-      $addFields: {
-        subscribersCount: { $size: '$subscribers' },
-        subscribedToCount: { $size: '$subscribedTo' },
-      },
-    },
-    {
-      $project: {
-        password: 0,
-        refreshTokens: 0,
-        subscribers: 0,
-        subscribedTo: 0,
-      },
-    },
-  ]);
+  const userProfile = await User.aggregate(
+    buildCurrentUserProfilePipeline({ userId: req.user._id })
+  );
 
   if (!userProfile || userProfile.length === 0) {
     throw new apiError(404, 'User not found');
@@ -491,67 +461,12 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   if (!username?.trim()) {
     throw new apiError(400, 'Username is missing');
   }
-  const channel = await User.aggregate([
-    {
-      $match: {
-        username: username.toLowerCase(),
-      },
-    },
-    {
-      $lookup: {
-        from: 'subscriptions',
-        localField: '_id',
-        foreignField: 'channel',
-        as: 'subscribers',
-      },
-    },
-    {
-      $lookup: {
-        from: 'subscriptions',
-        localField: '_id',
-        foreignField: 'subscriber',
-        as: 'subscribedTo',
-      },
-    },
-    {
-      $lookup: {
-        from: 'videos',
-        localField: '_id',
-        foreignField: 'owner',
-        as: 'videos',
-      },
-    },
-    {
-      $addFields: {
-        subscribersCount: {
-          $size: '$subscribers',
-        },
-        channelsSubscribedToCount: {
-          $size: '$subscribedTo',
-        },
-        videosCount: {
-          $size: '$videos',
-        },
-        isSubscribed: {
-          $in: [req.user?._id, '$subscribers.subscriber'],
-        },
-      },
-    },
-    {
-      $project: {
-        fullName: 1,
-        username: 1,
-        avatarUrl: 1,
-        coverUrl: 1,
-        bio: 1,
-        createdAt: 1,
-        subscribersCount: 1,
-        channelsSubscribedToCount: 1,
-        videosCount: 1,
-        isSubscribed: 1,
-      },
-    },
-  ]);
+  const channel = await User.aggregate(
+    buildChannelProfilePipeline({
+      username,
+      viewerUserId: req.user?._id,
+    })
+  );
   if (!channel.length) {
     throw new apiError(404, 'Channel not found');
   }
@@ -669,98 +584,13 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   // Fetch paginated watch history directly from DB to avoid in-memory slicing for large histories
-  const [watchHistoryResult] = await User.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(req.user._id),
-      },
-    },
-    {
-      $project: {
-        watchHistory: 1,
-      },
-    },
-    {
-      $unwind: {
-        path: '$watchHistory',
-        includeArrayIndex: 'watchIndex',
-        preserveNullAndEmptyArrays: false,
-      },
-    },
-    {
-      $sort: {
-        watchIndex: -1,
-      },
-    },
-    {
-      $lookup: {
-        from: 'videos',
-        localField: 'watchHistory',
-        foreignField: '_id',
-        as: 'video',
-        pipeline: [
-          {
-            $match: {
-              isPublished: true,
-            },
-          },
-          {
-            $lookup: {
-              from: 'users',
-              localField: 'owner',
-              foreignField: '_id',
-              as: 'owner',
-              pipeline: [
-                {
-                  $project: {
-                    username: 1,
-                    fullName: 1,
-                    avatarUrl: 1,
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $addFields: {
-              owner: {
-                $first: '$owner',
-              },
-            },
-          },
-          {
-            $project: {
-              title: 1,
-              description: 1,
-              url: 1,
-              thumbnailUrl: 1,
-              duration: 1,
-              views: 1,
-              createdAt: 1,
-              owner: 1,
-            },
-          },
-        ],
-      },
-    },
-    {
-      $unwind: {
-        path: '$video',
-        preserveNullAndEmptyArrays: false,
-      },
-    },
-    {
-      $replaceRoot: {
-        newRoot: '$video',
-      },
-    },
-    {
-      $facet: {
-        videos: [{ $skip: skip }, { $limit: limit }],
-        totalCount: [{ $count: 'count' }],
-      },
-    },
-  ]);
+  const [watchHistoryResult] = await User.aggregate(
+    buildWatchHistoryPipeline({
+      userId: req.user._id,
+      skip,
+      limit,
+    })
+  );
 
   const paginatedVideos = watchHistoryResult?.videos || [];
   const totalVideos = watchHistoryResult?.totalCount?.[0]?.count || 0;

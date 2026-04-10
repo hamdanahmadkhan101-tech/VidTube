@@ -30,48 +30,13 @@ import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from '../utils/cloudinary.js';
-
-/**
- * Build common owner lookup pipeline
- */
-const ownerLookupPipeline = [
-  {
-    $lookup: {
-      from: 'users',
-      localField: 'owner',
-      foreignField: '_id',
-      as: 'owner',
-      pipeline: [
-        {
-          $lookup: {
-            from: 'subscriptions',
-            localField: '_id',
-            foreignField: 'channel',
-            as: 'subscribers',
-          },
-        },
-        {
-          $addFields: {
-            subscribersCount: { $size: '$subscribers' },
-          },
-        },
-        {
-          $project: {
-            username: 1,
-            fullName: 1,
-            avatarUrl: 1,
-            subscribersCount: 1,
-          },
-        },
-      ],
-    },
-  },
-  {
-    $addFields: {
-      owner: { $first: '$owner' },
-    },
-  },
-];
+import {
+  ownerLookupPipeline,
+  buildPublishedVideosPipeline,
+  buildVideoDetailsPipeline,
+  buildVideoSearchPipeline,
+  buildOwnerVideosPipeline,
+} from '../services/videoQuery.service.js';
 
 // ============================================
 // CORE VIDEO MANAGEMENT
@@ -179,59 +144,15 @@ const uploadVideo = asyncHandler(async (req, res) => {
  */
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page, limit } = getPaginationParams(req.query);
+  const sortBy = req.query.sortBy;
   const allowedSortFields = ['createdAt', 'views', 'title', 'trending'];
   const { sortStage } = getSortParams(
-    req.query.sortBy,
+    sortBy,
     req.query.sortType,
     allowedSortFields
   );
 
-  const pipeline = [
-    {
-      $match: {
-        isPublished: true,
-      },
-    },
-    ...ownerLookupPipeline,
-  ];
-
-  // Only compute engagement score for explicit trending sort.
-  // For sortBy=views, rely on indexed numeric sort for faster landing-page queries.
-  if (req.query.sortBy === 'trending') {
-    pipeline.push({
-      $addFields: {
-        // Calculate trending score: views * 0.5 + likes * 2 + comments * 3
-        // More recent videos get a boost
-        trendingScore: {
-          $add: [
-            { $multiply: ['$views', 0.5] },
-            { $multiply: ['$likesCount', 2] },
-            { $multiply: ['$commentsCount', 3] },
-            // Recency boost: videos from last 7 days get bonus points
-            {
-              $cond: {
-                if: {
-                  $gte: [
-                    '$createdAt',
-                    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-                  ],
-                },
-                then: 1000,
-                else: 0,
-              },
-            },
-          ],
-        },
-      },
-    });
-    pipeline.push({
-      $sort: sortStage,
-    });
-  } else {
-    pipeline.push({
-      $sort: sortStage,
-    });
-  }
+  const pipeline = buildPublishedVideosPipeline({ sortBy, sortStage });
 
   const aggregate = Video.aggregate(pipeline);
   const result = await Video.aggregatePaginate(aggregate, {
@@ -278,51 +199,9 @@ const getVideoById = asyncHandler(async (req, res) => {
     ? new mongoose.Types.ObjectId(req.user._id)
     : null;
 
-  const pipeline = [
-    {
-      $match: { _id: new mongoose.Types.ObjectId(videoId) },
-    },
-    ...ownerLookupPipeline,
-    {
-      $lookup: {
-        from: 'subscriptions',
-        let: { ownerId: '$owner._id' },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ['$channel', '$$ownerId'] },
-                  { $eq: ['$subscriber', currentUserId] },
-                ],
-              },
-            },
-          },
-        ],
-        as: 'subscriptionCheck',
-      },
-    },
-  ];
-
-  // Add engagement fields via aggregation
-  if (currentUserId) {
-    pipeline.push({
-      $addFields: {
-        'owner.isSubscribed': { $gt: [{ $size: '$subscriptionCheck' }, 0] },
-      },
-    });
-  } else {
-    pipeline.push({
-      $addFields: {
-        'owner.isSubscribed': false,
-      },
-    });
-  }
-
-  pipeline.push({
-    $project: {
-      subscriptionCheck: 0,
-    },
+  const pipeline = buildVideoDetailsPipeline({
+    videoId,
+    currentUserId,
   });
 
   const [detailedVideoData] = await Video.aggregate(pipeline);
@@ -548,58 +427,7 @@ const searchVideos = asyncHandler(async (req, res) => {
   // Escape special regex characters for safe search
   const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  // Use text search with scoring for better relevance
-  const matchStage = {
-    isPublished: true,
-    $or: [
-      { title: { $regex: escapedQuery, $options: 'i' } },
-      { description: { $regex: escapedQuery, $options: 'i' } },
-    ],
-  };
-
-  const pipeline = [
-    { $match: matchStage },
-    ...ownerLookupPipeline,
-    // Add relevance score: title match scores higher than description
-    {
-      $addFields: {
-        relevanceScore: {
-          $add: [
-            {
-              $cond: {
-                if: {
-                  $regexMatch: {
-                    input: '$title',
-                    regex: escapedQuery,
-                    options: 'i',
-                  },
-                },
-                then: 10,
-                else: 0,
-              },
-            },
-            {
-              $cond: {
-                if: {
-                  $regexMatch: {
-                    input: '$description',
-                    regex: escapedQuery,
-                    options: 'i',
-                  },
-                },
-                then: 5,
-                else: 0,
-              },
-            },
-            // Boost recent and popular videos
-            { $multiply: ['$views', 0.001] },
-            { $multiply: ['$likesCount', 0.01] },
-          ],
-        },
-      },
-    },
-    { $sort: { relevanceScore: -1, createdAt: -1 } },
-  ];
+  const pipeline = buildVideoSearchPipeline({ escapedQuery });
 
   const aggregate = Video.aggregate(pipeline);
   const result = await Video.aggregatePaginate(aggregate, {
@@ -677,28 +505,13 @@ const getVideosByOwner = asyncHandler(async (req, res) => {
   validateObjectId(userId, 'userId');
 
   const { page, limit } = getPaginationParams(req.query);
-  const isOwner =
+  const includeUnpublished =
     req.user && req.user._id && req.user._id.toString() === userId.toString();
 
-  const matchStage = {
-    owner: new mongoose.Types.ObjectId(userId),
-  };
-
-  if (!isOwner) {
-    matchStage.isPublished = true;
-  }
-
-  const pipeline = [
-    { $match: matchStage },
-    ...ownerLookupPipeline,
-    {
-      $addFields: {
-        likesCount: { $ifNull: ['$likesCount', 0] },
-        commentsCount: { $ifNull: ['$commentsCount', 0] },
-      },
-    },
-    { $sort: { createdAt: -1 } },
-  ];
+  const pipeline = buildOwnerVideosPipeline({
+    ownerId: userId,
+    includeUnpublished,
+  });
 
   const aggregate = Video.aggregate(pipeline);
   const result = await Video.aggregatePaginate(aggregate, {
