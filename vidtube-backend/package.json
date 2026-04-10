@@ -2,7 +2,7 @@
   "name": "vidtube-backend",
   "version": "1.0.0",
   "description": "vidtube backend",
-  "license": "ISC",
+  "license": "MIT",
   "author": "Hamdan Ahmad Khan",
   "type": "module",
   "main": "index.js",
