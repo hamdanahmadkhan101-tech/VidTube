@@ -1,0 +1,259 @@
+/* Advanced Animations & Interactions */
+
+/* Smooth transitions for all interactive elements */
+@layer base {
+  * {
+    @apply transition-colors duration-200;
+  }
+
+  button, a, input, textarea, select, [role="button"] {
+    @apply transition-all duration-200 ease-out;
+  }
+}
+
+/* Hover lift effect */
+@keyframes hoverLift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-4px);
+  }
+}
+
+/* Subtle glow pulse */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 14px 32px rgba(14, 165, 233, 0.25);
+  }
+  50% {
+    box-shadow: 0 14px 40px rgba(14, 165, 233, 0.35);
+  }
+}
+
+/* Smooth entrance from right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Smooth entrance from left */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Smooth entrance from bottom */
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth entrance with zoom */
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Subtle bounce */
+@keyframes subtleBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Loading spinner rotation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Gradient animation */
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Smooth fade and slide combo */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Utility animation classes */
+.animate-hover-lift {
+  animation: hoverLift 0.4s ease-out;
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 2.5s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.4s ease-out;
+}
+
+.animate-slide-in-down {
+  animation: slideInDown 0.4s ease-out;
+}
+
+.animate-zoom-in {
+  animation: zoomIn 0.3s ease-out;
+}
+
+.animate-subtle-bounce {
+  animation: subtleBounce 1.5s ease-in-out infinite;
+}
+
+.animate-gradient-flow {
+  animation: gradientFlow 8s ease-in-out infinite;
+  background-size: 200% 200%;
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.35s ease-out;
+}
+
+/* Hover transform utilities */
+.hover-scale-up:hover {
+  @apply scale-105 transition-transform;
+}
+
+.hover-scale-down:hover {
+  @apply scale-95 transition-transform;
+}
+
+.hover-lift:hover {
+  @apply -translate-y-1 transition-transform;
+}
+
+.hover-glow {
+  @apply transition-shadow duration-300;
+}
+
+.hover-glow:hover {
+  @apply shadow-lg;
+  box-shadow: 0 14px 32px rgba(14, 165, 233, 0.25);
+}
+
+/* Smooth focus states */
+.focus-ring:focus {
+  @apply outline-none;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+}
+
+/* Blurred backdrop effect */
+.backdrop-blur-sm {
+  backdrop-filter: blur(6px) saturate(120%);
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+.backdrop-blur-lg {
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+/* Glass effect enhancement */
+.glass-effect {
+  background: rgba(15, 19, 25, 0.92);
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  border-radius: 20px;
+}
+
+.glass-effect-sm {
+  background: rgba(20, 27, 38, 0.85);
+  backdrop-filter: blur(12px) saturate(130%);
+  border: 1px solid rgba(100, 116, 139, 0.18);
+  border-radius: 14px;
+}
+
+/* Professional shadow elevations */
+.shadow-elevation-1 {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.shadow-elevation-2 {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.shadow-elevation-3 {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.shadow-elevation-4 {
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+}
+
+.shadow-elevation-5 {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.65);
+}
+
+/* Accent glow effects */
+.glow-accent {
+  box-shadow: 0 0 30px rgba(14, 165, 233, 0.2);
+}
+
+.glow-accent-sm {
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.15);
+}
+
+/* Smooth state transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-smooth-slow {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-smooth-fast {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}

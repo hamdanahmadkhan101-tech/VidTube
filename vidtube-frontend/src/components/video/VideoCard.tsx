@@ -98,7 +98,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
     <>
       <div
         className={cn(
-          "bento-item group cursor-pointer border border-white/10 hover:border-primary-300/35",
+          "bento-item group cursor-pointer",
           className,
         )}
       >
@@ -107,11 +107,11 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
             <img
               src={video.thumbnailUrl || "/default-thumbnail.jpg"}
               alt={video.title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              className="w-full h-full object-cover transition-all duration-500 group-hover:scale-125"
               loading="lazy"
             />
 
-            <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded-md text-xs font-semibold text-white">
+            <div className="absolute bottom-3 right-3 px-2.5 py-1.5 bg-black/85 backdrop-blur-sm rounded-lg text-xs font-bold text-white border border-white/15 shadow-elevation-2">
               {formattedDuration}
             </div>
 
@@ -119,15 +119,17 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
               <motion.div
                 initial={{ opacity: 0 }}
                 whileHover={{ opacity: 1 }}
-                className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center"
+                transition={{ duration: 0.3 }}
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center"
               >
                 <motion.div
-                  initial={{ scale: 0.8 }}
-                  whileHover={{ scale: 1 }}
-                  className="w-14 h-14 rounded-full bg-primary-500/90 flex items-center justify-center shadow-glow"
+                  initial={{ scale: 0.7 }}
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-glow ring-4 ring-primary-400/30"
                 >
                   <Play
-                    className="w-6 h-6 text-white ml-0.5"
+                    className="w-7 h-7 text-white ml-1"
                     fill="currentColor"
                   />
                 </motion.div>
@@ -155,7 +157,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
               )}
 
               <div className="flex-1 min-w-0">
-                <h3 className="text-text-primary font-semibold line-clamp-2 hover:text-primary-500 transition-colors mb-1 text-sm sm:text-base">
+                <h3 className="text-text-primary font-bold line-clamp-2 hover:text-primary-400 transition-colors duration-300 mb-2 text-sm sm:text-base leading-snug">
                   {video.title}
                 </h3>
 
@@ -172,22 +174,22 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
                   </span>
                 )}
 
-                <div className="flex items-center gap-2 sm:gap-3 text-text-tertiary text-xs sm:text-sm mt-1">
-                  <div className="flex items-center gap-1">
-                    <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span>{formattedViews} views</span>
+                <div className="flex items-center gap-2 sm:gap-3 text-text-tertiary text-xs sm:text-sm mt-2 flex-wrap">
+                  <div className="flex items-center gap-1 text-text-muted hover:text-text-secondary transition-colors">
+                    <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="font-medium">{formattedViews}</span>
                   </div>
-                  <span>•</span>
-                  <span className="hidden sm:inline">{formattedTime}</span>
-                  <span className="sm:hidden">
+                  <span className="text-text-muted">•</span>
+                  <span className="hidden sm:inline text-text-muted">{formattedTime}</span>
+                  <span className="sm:hidden text-text-muted">
                     {formattedTime.replace(" ago", "")}
                   </span>
                   {video.likes > 0 && (
                     <>
-                      <span className="hidden sm:inline">•</span>
-                      <div className="hidden sm:flex items-center gap-1">
+                      <span className="hidden sm:inline text-text-muted">•</span>
+                      <div className="hidden sm:flex items-center gap-1 text-text-muted hover:text-primary-400 transition-colors">
                         <ThumbsUp className="w-4 h-4" />
-                        <span>{formattedLikes}</span>
+                        <span className="font-medium">{formattedLikes}</span>
                       </div>
                     </>
                   )}

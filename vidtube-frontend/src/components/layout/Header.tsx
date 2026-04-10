@@ -196,15 +196,15 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/8 bg-background-secondary/92 backdrop-blur-md shadow-[0_10px_26px_rgba(4,8,14,0.48)]">
+    <header className="sticky top-0 z-50 border-b border-white/6 bg-background-secondary/95 backdrop-blur-xl shadow-elevation-3 transition-all duration-300">
       <div className="container mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary-500/90 text-white flex items-center justify-center shadow-[0_8px_18px_rgba(0,0,0,0.38)] ring-1 ring-white/18 group-hover:-translate-y-px transition-transform">
+          <Link to="/" className="flex items-center gap-2 group shrink-0 transition-all">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 text-white flex items-center justify-center shadow-glow ring-1 ring-primary-400/20 group-hover:-translate-y-0.5 group-hover:shadow-lg transition-all duration-300">
               <Video className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
             </div>
-            <span className="text-lg sm:text-xl font-semibold text-text-primary hidden sm:block tracking-tight">
+            <span className="text-lg sm:text-xl font-bold text-text-primary hidden sm:block tracking-tight bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
               VidTube
             </span>
           </Link>
@@ -213,10 +213,10 @@ export const Header: React.FC = () => {
             <NavLink
               to="/"
               className={({ isActive }) =>
-                `px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                `px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
                   isActive
-                    ? "text-text-primary bg-surface-active"
-                    : "text-text-secondary hover:text-text-primary hover:bg-surface"
+                    ? "text-text-primary bg-primary-500/15 border border-primary-400/20 shadow-elevation-1"
+                    : "text-text-secondary hover:text-text-primary hover:bg-surface-hover hover:-translate-y-0.5"
                 }`
               }
             >
@@ -225,10 +225,10 @@ export const Header: React.FC = () => {
             <NavLink
               to="/trending"
               className={({ isActive }) =>
-                `px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                `px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
                   isActive
-                    ? "text-text-primary bg-surface-active"
-                    : "text-text-secondary hover:text-text-primary hover:bg-surface"
+                    ? "text-text-primary bg-primary-500/15 border border-primary-400/20 shadow-elevation-1"
+                    : "text-text-secondary hover:text-text-primary hover:bg-surface-hover hover:-translate-y-0.5"
                 }`
               }
             >
@@ -242,18 +242,18 @@ export const Header: React.FC = () => {
             className="flex-1 max-w-2xl mx-2 sm:mx-4 lg:mx-8 hidden md:block relative"
           >
             <form onSubmit={handleSearch}>
-              <div className="relative">
+              <div className="relative group">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => handleSearchInput(e.target.value)}
                   onFocus={() => setShowSuggestions(true)}
                   placeholder="Search videos..."
-                  className="glass-input w-full pr-12"
+                  className="glass-input w-full pr-12 focus:shadow-elevation-2 group-hover:shadow-elevation-1"
                 />
                 <button
                   type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-text-tertiary hover:text-primary-500 transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 text-text-tertiary hover:text-primary-400 transition-all duration-300 hover:-translate-y-1/2 hover:scale-110"
                 >
                   <Search className="w-5 h-5" />
                 </button>
@@ -306,10 +306,10 @@ export const Header: React.FC = () => {
                 {/* Upload Button */}
                 <Link
                   to="/upload"
-                  className="hidden sm:flex items-center gap-2 btn-glass shrink-0"
+                  className="hidden sm:flex items-center gap-2 btn-primary shrink-0 hover:shadow-glow"
                 >
                   <Upload className="w-5 h-5" />
-                  <span className="hidden lg:inline">Upload</span>
+                  <span className="hidden lg:inline font-semibold">Upload</span>
                 </Link>
 
                 {/* Notifications */}

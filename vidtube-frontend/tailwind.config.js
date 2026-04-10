@@ -5,64 +5,66 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep slate base with refined blue/cyan accents
+        // Premium dark slate with sky blue accents
         background: {
-          DEFAULT: "#090f17",
-          secondary: "#101927",
-          tertiary: "#182335",
+          DEFAULT: "#080b12",
+          secondary: "#0f1319",
+          tertiary: "#161d2a",
         },
         surface: {
-          DEFAULT: "rgba(22, 33, 49, 0.72)",
-          hover: "rgba(31, 45, 67, 0.84)",
-          active: "rgba(40, 58, 86, 0.92)",
+          DEFAULT: "rgba(20, 27, 38, 0.85)",
+          hover: "rgba(28, 37, 50, 0.95)",
+          active: "rgba(38, 48, 65, 0.98)",
         },
         primary: {
-          50: "#eef8ff",
-          100: "#d6edff",
-          200: "#aedbff",
-          300: "#7ec3ff",
-          400: "#49a7ff",
-          500: "#1f8fff",
-          600: "#0d76de",
-          700: "#0b60b5",
-          800: "#0f4d8f",
-          900: "#113f74",
+          50: "#f0f9ff",
+          100: "#e0f2fe",
+          200: "#bae6fd",
+          300: "#7dd3fc",
+          400: "#38bdf8",
+          500: "#0ea5e9",
+          600: "#0284c7",
+          700: "#0369a1",
+          800: "#075985",
+          900: "#0c3d66",
         },
         accent: {
-          blue: "#43b8ff",
-          cyan: "#14d3c6",
-          purple: "#4f6eff",
-          pink: "#ff6f9d",
+          blue: "#3b82f6",
+          cyan: "#06b6d4",
+          purple: "#a855f7",
+          pink: "#ec4899",
         },
         text: {
-          primary: "#f7fbff",
-          secondary: "rgba(232, 241, 255, 0.78)",
-          tertiary: "rgba(198, 214, 235, 0.58)",
-          muted: "rgba(168, 189, 216, 0.42)",
+          primary: "#f8fafc",
+          secondary: "rgba(241, 245, 250, 0.8)",
+          tertiary: "rgba(203, 213, 225, 0.65)",
+          muted: "rgba(148, 163, 184, 0.48)",
         },
       },
       backgroundImage: {
         "glass-gradient":
-          "linear-gradient(135deg, rgba(67, 184, 255, 0.16) 0%, rgba(20, 211, 198, 0.12) 100%)",
+          "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(6, 182, 212, 0.12) 100%)",
         "glass-gradient-hover":
-          "linear-gradient(135deg, rgba(67, 184, 255, 0.26) 0%, rgba(20, 211, 198, 0.2) 100%)",
+          "linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(6, 182, 212, 0.18) 100%)",
         "liquid-lux":
-          "radial-gradient(circle at 20% 10%, rgba(67, 184, 255, 0.2) 0%, transparent 45%), radial-gradient(circle at 88% 8%, rgba(20, 211, 198, 0.16) 0%, transparent 40%)",
+          "radial-gradient(circle at 20% 10%, rgba(14, 165, 233, 0.18) 0%, transparent 45%), radial-gradient(circle at 88% 8%, rgba(6, 182, 212, 0.14) 0%, transparent 40%)",
       },
       backdropBlur: {
-        xs: "2px",
+        xs: "4px",
       },
       boxShadow: {
-        glass: "0 20px 42px rgba(2, 8, 20, 0.45)",
-        "glass-lg": "0 28px 64px rgba(2, 8, 20, 0.58)",
-        glow: "0 14px 30px rgba(31, 143, 255, 0.35)",
-        "glow-blue": "0 14px 30px rgba(20, 211, 198, 0.3)",
+        glass: "0 20px 40px rgba(0, 0, 0, 0.35)",
+        "glass-lg": "0 28px 60px rgba(0, 0, 0, 0.45)",
+        glow: "0 14px 32px rgba(14, 165, 233, 0.25)",
+        "glow-blue": "0 14px 32px rgba(6, 182, 212, 0.22)",
       },
       animation: {
-        "fade-in": "fadeIn 0.3s ease-in-out",
-        "slide-up": "slideUp 0.3s ease-out",
+        "fade-in": "fadeIn 0.3s ease-out",
+        "slide-up": "slideUp 0.35s ease-out",
         "scale-in": "scaleIn 0.2s ease-out",
         shimmer: "shimmer 2s infinite",
+        "float": "float 3s ease-in-out infinite",
+        "pulse-subtle": "pulseSoft 2s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -70,16 +72,24 @@ export default {
           "100%": { opacity: "1" },
         },
         slideUp: {
-          "0%": { transform: "translateY(10px)", opacity: "0" },
+          "0%": { transform: "translateY(12px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
         scaleIn: {
-          "0%": { transform: "scale(0.95)", opacity: "0" },
+          "0%": { transform: "scale(0.96)", opacity: "0" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-8px)" },
+        },
+        pulseSoft: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
         },
       },
     },
