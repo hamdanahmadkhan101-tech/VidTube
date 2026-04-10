@@ -106,7 +106,7 @@ router.route('/upload').post(
     { name: 'thumbnail', maxCount: 1 },
   ]),
   validate(videoUploadSchema),
-  enforceIdempotency({ requireKey: false }),
+  enforceIdempotency({ requireKey: true }),
   invalidateVideoDiscoveryCache,
   uploadVideo
 );
