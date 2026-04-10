@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -11,8 +11,13 @@ import type { SearchParams, Video } from "../types";
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
+  const [searchInput, setSearchInput] = useState(query);
   const [sortBy, setSortBy] = useState<SearchParams["sortBy"]>("views");
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    setSearchInput(query);
+  }, [query]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["search", query, sortBy],
@@ -30,9 +35,14 @@ export const SearchPage: React.FC = () => {
   const videos = data?.docs || [];
 
   const handleSearch = (newQuery: string) => {
-    if (newQuery.trim()) {
-      setSearchParams({ q: newQuery });
+    const trimmedQuery = newQuery.trim();
+
+    if (trimmedQuery) {
+      setSearchParams({ q: trimmedQuery });
+      return;
     }
+
+    setSearchParams({});
   };
 
   return (
@@ -54,10 +64,11 @@ export const SearchPage: React.FC = () => {
           <div className="flex-1 relative">
             <input
               type="text"
-              defaultValue={query}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  handleSearch(e.currentTarget.value);
+                  handleSearch(searchInput);
                 }
               }}
               placeholder="Search videos..."

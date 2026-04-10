@@ -25,6 +25,8 @@ const SubscriptionsPage = lazy(() => import("./pages/SubscriptionsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const PlaylistsPage = lazy(() => import("./pages/PlaylistsPage"));
 const EditVideoPage = lazy(() => import("./pages/EditVideoPage"));
+const WatchHistoryPage = lazy(() => import("./pages/WatchHistoryPage"));
+const LikedVideosPage = lazy(() => import("./pages/LikedVideosPage"));
 const Devtools = import.meta.env.DEV
   ? lazy(() =>
       import("@tanstack/react-query-devtools").then((module) => ({
@@ -189,6 +191,22 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <NotificationsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/history"
+                  element={
+                    <ProtectedRoute>
+                      <WatchHistoryPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/liked-videos"
+                  element={
+                    <ProtectedRoute>
+                      <LikedVideosPage />
                     </ProtectedRoute>
                   }
                 />

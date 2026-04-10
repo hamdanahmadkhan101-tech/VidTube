@@ -5,10 +5,13 @@ import {
   Search,
   Bell,
   User,
+  Users,
   LogOut,
   Settings,
   LayoutDashboard,
   Video,
+  History,
+  ThumbsUp,
   Menu,
   X,
   Upload,
@@ -132,6 +135,11 @@ export const Header: React.FC = () => {
     refetchIntervalInBackground: false,
   });
 
+  const unreadNotificationCount =
+    typeof unreadCount === "number" && Number.isFinite(unreadCount)
+      ? Math.max(0, Math.floor(unreadCount))
+      : 0;
+
   const { data: userPreferences } = useQuery({
     queryKey: ["userPreferences"],
     queryFn: userPreferenceService.getPreferences,
@@ -193,6 +201,13 @@ export const Header: React.FC = () => {
         if (input) (input as HTMLInputElement).focus();
       }, 0);
     }
+  };
+
+  const toggleNavigationDrawer = () => {
+    setShowUserMenu(false);
+    setShowNotifications(false);
+    setShowMobileSearch(false);
+    setShowMobileMenu((current) => !current);
   };
 
   return (
@@ -319,9 +334,11 @@ export const Header: React.FC = () => {
                     className="relative p-2 rounded-lg text-text-primary hover:text-primary-300 hover:bg-surface transition-colors"
                   >
                     <Bell className="w-6 h-6" />
-                    {unreadCount && unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">
-                        {unreadCount > 9 ? "9+" : unreadCount}
+                    {unreadNotificationCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-1 bg-red-500 rounded-full text-[9px] font-bold leading-none flex items-center justify-center text-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] sm:-top-1 sm:-right-1 sm:min-w-[1.1rem] sm:h-[1.1rem] sm:text-[10px]">
+                        {unreadNotificationCount > 9
+                          ? "9+"
+                          : unreadNotificationCount}
                       </span>
                     )}
                   </button>
@@ -390,6 +407,30 @@ export const Header: React.FC = () => {
                         </Link>
 
                         <Link
+                          to="/history"
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-hover transition-colors text-text-primary"
+                        >
+                          <History className="w-5 h-5" />
+                          Watch History
+                        </Link>
+
+                        <Link
+                          to="/liked-videos"
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-hover transition-colors text-text-primary"
+                        >
+                          <ThumbsUp className="w-5 h-5" />
+                          Liked Videos
+                        </Link>
+
+                        <Link
+                          to="/subscriptions"
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-hover transition-colors text-text-primary"
+                        >
+                          <Users className="w-5 h-5" />
+                          Subscriptions
+                        </Link>
+
+                        <Link
                           to="/settings"
                           className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-hover transition-colors text-text-primary"
                         >
@@ -431,10 +472,15 @@ export const Header: React.FC = () => {
               </div>
             )}
 
-            {/* Mobile Menu */}
+            {/* Navigation Drawer Toggle */}
             <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden p-2 rounded-lg text-text-primary hover:text-primary-300 hover:bg-surface shrink-0"
+              onClick={toggleNavigationDrawer}
+              className="p-2 rounded-lg text-text-primary hover:text-primary-300 hover:bg-surface shrink-0"
+              aria-label={
+                showMobileMenu
+                  ? "Close navigation menu"
+                  : "Open navigation menu"
+              }
             >
               {showMobileMenu ? (
                 <X className="w-6 h-6" />
@@ -486,7 +532,7 @@ export const Header: React.FC = () => {
         )}
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Navigation Drawer */}
       <AnimatePresence>
         {showMobileMenu && (
           <>
@@ -504,7 +550,7 @@ export const Header: React.FC = () => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: drawerOffscreenX, opacity: 0 }}
               transition={{ type: "spring", stiffness: 320, damping: 28 }}
-              className={`md:hidden fixed top-0 bottom-0 z-50 w-[min(88vw,22rem)] ${drawerPositionClass} border-white/10 bg-background-secondary/98 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.58)]`}
+              className={`fixed top-0 bottom-0 z-50 w-[min(88vw,22rem)] ${drawerPositionClass} border-white/10 bg-background-secondary/98 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.58)]`}
             >
               <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
                 <p className="text-sm font-semibold tracking-[0.18em] text-text-tertiary uppercase">
@@ -589,6 +635,30 @@ export const Header: React.FC = () => {
                     >
                       <Video className="w-4 h-4 text-text-tertiary" />
                       My Playlists
+                    </Link>
+                    <Link
+                      to="/history"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      <History className="w-4 h-4 text-text-tertiary" />
+                      Watch History
+                    </Link>
+                    <Link
+                      to="/liked-videos"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      <ThumbsUp className="w-4 h-4 text-text-tertiary" />
+                      Liked Videos
+                    </Link>
+                    <Link
+                      to="/subscriptions"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      <Users className="w-4 h-4 text-text-tertiary" />
+                      Subscriptions
                     </Link>
                     <Link
                       to="/settings"

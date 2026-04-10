@@ -54,6 +54,14 @@ export const notificationService = {
     const response = await apiClient.get<ApiResponse<{ count: number }>>(
       "/notifications/unread/count",
     );
-    return response.data.data!.count;
+    const rawCount = response.data.data?.count;
+    const parsedCount =
+      typeof rawCount === "number" && Number.isFinite(rawCount)
+        ? rawCount
+        : Number(rawCount ?? 0);
+
+    return Number.isFinite(parsedCount) && parsedCount > 0
+      ? Math.floor(parsedCount)
+      : 0;
   },
 };

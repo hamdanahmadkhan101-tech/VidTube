@@ -29,6 +29,17 @@ type LikedVideoEntry = {
   video?: VideoPayload;
 };
 
+type WatchHistoryPayload = {
+  videos?: VideoPayload[];
+  pagination?: {
+    currentPage?: number;
+    totalPages?: number;
+    totalVideos?: number;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+  };
+};
+
 type PaginationMeta = NonNullable<
   NonNullable<ApiResponse<unknown>["meta"]>["pagination"]
 >;
@@ -297,6 +308,37 @@ export const videoService = {
       .map((item) => item?.video)
       .filter((video): video is VideoPayload => Boolean(video))
       .map(mapVideoResponse);
+  },
+
+  // Get watch history
+  getWatchHistory: async (
+    page = 1,
+    limit = 24,
+  ): Promise<{
+    videos: Video[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalVideos: number;
+      hasNextPage: boolean;
+      hasPrevPage: boolean;
+    };
+  }> => {
+    const response = await apiClient.get<ApiResponse<WatchHistoryPayload>>(
+      `/users/watch-history?page=${page}&limit=${limit}`,
+    );
+    const payload = response.data.data;
+
+    return {
+      videos: (payload?.videos || []).map(mapVideoResponse),
+      pagination: {
+        currentPage: payload?.pagination?.currentPage ?? page,
+        totalPages: payload?.pagination?.totalPages ?? 0,
+        totalVideos: payload?.pagination?.totalVideos ?? 0,
+        hasNextPage: payload?.pagination?.hasNextPage ?? false,
+        hasPrevPage: payload?.pagination?.hasPrevPage ?? false,
+      },
+    };
   },
 
   // Increment video views
