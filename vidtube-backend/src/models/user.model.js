@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { DEFAULT_AVATAR_URL } from '../utils/avatar.js';
 
 const userSchema = new Schema(
   {
@@ -22,7 +23,7 @@ const userSchema = new Schema(
     },
     fullName: { type: String, required: true, trim: true, index: true },
     password: { type: String, required: [true, 'Password is required'] },
-    avatarUrl: { type: String, required: true, default: '' },
+    avatarUrl: { type: String, required: true, default: DEFAULT_AVATAR_URL },
     coverUrl: { type: String, default: '' },
     bio: { type: String, default: '', trim: true },
     socialLinks: {

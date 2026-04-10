@@ -16,6 +16,7 @@ import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from '../utils/cloudinary.js';
+import { buildDefaultAvatarUrl, isCloudinaryUrl } from '../utils/avatar.js';
 import { createNotificationAndEmit } from '../services/notification.service.js';
 import {
   buildCurrentUserProfilePipeline,
@@ -71,7 +72,7 @@ const getRefreshCookieOptions = () => {
 // ============================================
 
 /**
- * Register a new user with avatar and optional cover image
+ * Register a new user with optional avatar and cover image
  * @route POST /api/v1/users/register
  * @access Public
  */
@@ -98,7 +99,13 @@ const registerUser = asyncHandler(async (req, res) => {
   const coverPath = req.files?.coverImage?.[0]?.path ?? null;
   // console.log(req.files);
 
-  // Avatar is now optional - upload only if provided
+  // Avatar is optional. If not uploaded, assign a deterministic default image URL.
+  const defaultAvatarUrl = buildDefaultAvatarUrl({
+    fullName,
+    username: normalizedUsername,
+    email: normalizedEmail,
+  });
+
   const avatarUploadResult = avatarPath
     ? await uploadOnCloudinary(avatarPath)
     : null;
@@ -111,7 +118,7 @@ const registerUser = asyncHandler(async (req, res) => {
     username: normalizedUsername,
     email: normalizedEmail,
     password,
-    avatarUrl: avatarUploadResult?.url || '',
+    avatarUrl: avatarUploadResult?.url || defaultAvatarUrl,
     coverUrl: coverUploadResult?.url || '',
   });
 
@@ -395,8 +402,10 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     { new: true }
   ).select('-password -refreshTokens');
 
-  // Optional: Delete old image from Cloudinary
-  if (oldAvatarUrl) await deleteFromCloudinary(oldAvatarUrl);
+  // Delete old image only when it is a Cloudinary asset
+  if (isCloudinaryUrl(oldAvatarUrl)) {
+    await deleteFromCloudinary(oldAvatarUrl);
+  }
 
   res
     .status(200)
@@ -433,7 +442,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     ).select('-password -refreshTokens');
 
     // Delete old image from Cloudinary
-    if (oldCoverUrl) {
+    if (isCloudinaryUrl(oldCoverUrl)) {
       await deleteFromCloudinary(oldCoverUrl).catch((err) => {
         console.error('Failed to delete old cover:', err);
       });

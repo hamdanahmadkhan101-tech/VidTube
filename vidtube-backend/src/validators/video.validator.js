@@ -22,7 +22,7 @@ export const videoUploadSchema = z.object({
     .trim()
     .min(1, 'Video format is required')
     .max(20, 'Video format must be at most 20 characters'),
-  duration: z
+  duration: z.coerce
     .number({
       required_error: 'Duration is required',
       invalid_type_error: 'Duration must be a number',
@@ -45,19 +45,39 @@ export const videoUpdateSchema = z.object({
     .optional(),
 });
 
-export const videoSearchSchema = z.object({
+export const videoSearchSchema = z
+  .object({
+    query: z
+      .string()
+      .trim()
+      .min(1, 'Search query is required')
+      .max(100, 'Search query must be at most 100 characters')
+      .optional(),
+    q: z
+      .string()
+      .trim()
+      .min(1, 'Search query is required')
+      .max(100, 'Search query must be at most 100 characters')
+      .optional(),
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(50).optional(),
+  })
+  .refine((data) => Boolean(data.query || data.q), {
+    message: 'Search query is required',
+    path: ['query'],
+  });
+
+export const videoSuggestionsSchema = z.object({
   query: z
     .string()
     .trim()
-    .min(1, 'Search query is required')
-    .max(100, 'Search query must be at most 100 characters'),
-  page: z.coerce.number().int().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(50).optional(),
+    .max(100, 'Suggestion query must be at most 100 characters')
+    .optional(),
 });
 
-export const paginationSchema = z.object({
+export const videoListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).optional(),
-  sortBy: z.enum(['createdAt', 'views', 'title']).optional(),
+  sortBy: z.enum(['createdAt', 'views', 'title', 'trending']).optional(),
   sortType: z.enum(['asc', 'desc']).optional(),
 });

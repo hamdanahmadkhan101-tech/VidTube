@@ -31,6 +31,19 @@ import {
   profileMutationLimiter,
   subscriptionLimiter,
 } from '../middlewares/rateLimit.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import {
+  registerSchema,
+  loginSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+  usernameAvailabilityParamSchema,
+  emailAvailabilityParamSchema,
+} from '../validators/user.validator.js';
+import {
+  buildObjectIdParamSchema,
+  paginationQuerySchema,
+} from '../validators/common.validator.js';
 
 const router = Router();
 
@@ -45,41 +58,50 @@ router.route('/register').post(
     { name: 'avatar', maxCount: 1 },
     { name: 'coverImage', maxCount: 1 },
   ]),
+  validate(registerSchema),
   registerUser
 );
-router.route('/login').post(authLimiter, loginUser);
+router.route('/login').post(authLimiter, validate(loginSchema), loginUser);
 router.route('/refresh-token').post(authLimiter, refreshAccessToken);
 
 // Availability checks (for frontend validation)
 router
   .route('/check-username/:username')
-  .get(availabilityLimiter, async (req, res) => {
-    try {
-      const { username } = req.params;
-      const user = await User.findOne({ username: username.toLowerCase() });
-      if (user) {
-        return res.status(200).json({ message: 'Username already exists' });
+  .get(
+    availabilityLimiter,
+    validate(usernameAvailabilityParamSchema, 'params'),
+    async (req, res) => {
+      try {
+        const { username } = req.params;
+        const user = await User.findOne({ username: username.toLowerCase() });
+        if (user) {
+          return res.status(200).json({ message: 'Username already exists' });
+        }
+        res.status(404).json({ message: 'Username is available' });
+      } catch (error) {
+        res.status(500).json({ message: 'Error checking username' });
       }
-      res.status(404).json({ message: 'Username is available' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error checking username' });
     }
-  });
+  );
 
 router
   .route('/check-email/:email')
-  .get(availabilityLimiter, async (req, res) => {
-    try {
-      const { email } = req.params;
-      const user = await User.findOne({ email: email.toLowerCase() });
-      if (user) {
-        return res.status(200).json({ message: 'Email already exists' });
+  .get(
+    availabilityLimiter,
+    validate(emailAvailabilityParamSchema, 'params'),
+    async (req, res) => {
+      try {
+        const { email } = req.params;
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (user) {
+          return res.status(200).json({ message: 'Email already exists' });
+        }
+        res.status(404).json({ message: 'Email is available' });
+      } catch (error) {
+        res.status(500).json({ message: 'Error checking email' });
       }
-      res.status(404).json({ message: 'Email is available' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error checking email' });
     }
-  });
+  );
 
 // ============================================
 // PROTECTED ROUTES (Authentication Required)
@@ -92,7 +114,12 @@ router.route('/logout').post(verifyJWT, logoutUser);
 router.route('/profile').get(verifyJWT, getCurrentUserProfile);
 router
   .route('/update-profile')
-  .patch(verifyJWT, profileMutationLimiter, updateUserProfile);
+  .patch(
+    verifyJWT,
+    profileMutationLimiter,
+    validate(updateProfileSchema),
+    updateUserProfile
+  );
 
 // Media Upload & Management
 router
@@ -115,15 +142,37 @@ router
 // Account Security
 router
   .route('/change-password')
-  .patch(verifyJWT, profileMutationLimiter, changeCurrentUserPassword);
+  .patch(
+    verifyJWT,
+    profileMutationLimiter,
+    validate(changePasswordSchema),
+    changeCurrentUserPassword
+  );
 
 // Channel & Social Features (public with optional auth for isSubscribed)
-router.route('/c/:username').get(optionalJWT, getUserChannelProfile);
+router
+  .route('/c/:username')
+  .get(
+    optionalJWT,
+    validate(usernameAvailabilityParamSchema, 'params'),
+    getUserChannelProfile
+  );
 router
   .route('/toggle-subscription/:channelId')
-  .post(verifyJWT, subscriptionLimiter, toggleSubscription);
+  .post(
+    verifyJWT,
+    subscriptionLimiter,
+    validate(buildObjectIdParamSchema('channelId'), 'params'),
+    toggleSubscription
+  );
 
 // Content & History
-router.route('/watch-history').get(verifyJWT, getUserWatchHistory);
+router
+  .route('/watch-history')
+  .get(
+    verifyJWT,
+    validate(paginationQuerySchema, 'query'),
+    getUserWatchHistory
+  );
 
 export default router;

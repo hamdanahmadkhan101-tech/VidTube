@@ -33,6 +33,15 @@ import {
   cacheResponse,
   invalidateCacheOnSuccess,
 } from '../middlewares/cache.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import {
+  videoUploadSchema,
+  videoUpdateSchema,
+  videoSearchSchema,
+  videoSuggestionsSchema,
+  videoListQuerySchema,
+} from '../validators/video.validator.js';
+import { buildObjectIdParamSchema } from '../validators/common.validator.js';
 
 const router = Router();
 
@@ -48,6 +57,7 @@ router
   .route('/')
   .get(
     optionalJWT,
+    validate(videoListQuerySchema, 'query'),
     cacheResponse({ namespace: 'videos:list', ttlSeconds: 60 }),
     getAllVideos
   );
@@ -56,6 +66,7 @@ router
   .get(
     searchLimiter,
     optionalJWT,
+    validate(videoSearchSchema, 'query'),
     cacheResponse({ namespace: 'videos:search', ttlSeconds: 45 }),
     searchVideos
   );
@@ -63,11 +74,24 @@ router
   .route('/suggestions')
   .get(
     searchLimiter,
+    validate(videoSuggestionsSchema, 'query'),
     cacheResponse({ namespace: 'videos:suggestions', ttlSeconds: 300 }),
     getSearchSuggestions
   );
-router.route('/user/:userId').get(optionalJWT, getVideosByOwner);
-router.route('/:videoId').get(optionalJWT, getVideoById);
+router
+  .route('/user/:userId')
+  .get(
+    optionalJWT,
+    validate(buildObjectIdParamSchema('userId'), 'params'),
+    getVideosByOwner
+  );
+router
+  .route('/:videoId')
+  .get(
+    optionalJWT,
+    validate(buildObjectIdParamSchema('videoId'), 'params'),
+    getVideoById
+  );
 
 // ============================================
 // PROTECTED ROUTES
@@ -80,6 +104,7 @@ router.route('/upload').post(
     { name: 'video', maxCount: 1 },
     { name: 'thumbnail', maxCount: 1 },
   ]),
+  validate(videoUploadSchema),
   invalidateVideoDiscoveryCache,
   uploadVideo
 );
@@ -89,6 +114,7 @@ router
   .patch(
     verifyJWT,
     videoMutationLimiter,
+    validate(buildObjectIdParamSchema('videoId'), 'params'),
     invalidateVideoDiscoveryCache,
     togglePublishStatus
   );
@@ -98,19 +124,27 @@ router
   .patch(
     verifyJWT,
     videoMutationLimiter,
+    validate(buildObjectIdParamSchema('videoId'), 'params'),
     uploadImage.fields([{ name: 'thumbnail', maxCount: 1 }]),
+    validate(videoUpdateSchema),
     invalidateVideoDiscoveryCache,
     updateVideo
   )
   .delete(
     verifyJWT,
     videoMutationLimiter,
+    validate(buildObjectIdParamSchema('videoId'), 'params'),
     invalidateVideoDiscoveryCache,
     deleteVideo
   );
 
 router
   .route('/:videoId/watch')
-  .post(verifyJWT, watchHistoryLimiter, addVideoToWatchHistory);
+  .post(
+    verifyJWT,
+    watchHistoryLimiter,
+    validate(buildObjectIdParamSchema('videoId'), 'params'),
+    addVideoToWatchHistory
+  );
 
 export default router;

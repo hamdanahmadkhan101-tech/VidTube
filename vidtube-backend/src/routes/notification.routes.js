@@ -12,6 +12,11 @@ import {
   notificationReadLimiter,
   notificationMutationLimiter,
 } from '../middlewares/rateLimit.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import {
+  notificationsQuerySchema,
+  notificationIdParamSchema,
+} from '../validators/notification.validator.js';
 
 const router = Router();
 
@@ -19,7 +24,14 @@ const router = Router();
 // PROTECTED ROUTES
 // ============================================
 
-router.route('/').get(verifyJWT, notificationReadLimiter, getNotifications);
+router
+  .route('/')
+  .get(
+    verifyJWT,
+    notificationReadLimiter,
+    validate(notificationsQuerySchema, 'query'),
+    getNotifications
+  );
 router
   .route('/')
   .delete(verifyJWT, notificationMutationLimiter, deleteAllNotifications);
@@ -30,13 +42,23 @@ router
 
 router
   .route('/:notificationId/read')
-  .patch(verifyJWT, notificationMutationLimiter, markAsRead);
+  .patch(
+    verifyJWT,
+    notificationMutationLimiter,
+    validate(notificationIdParamSchema, 'params'),
+    markAsRead
+  );
 router
   .route('/read-all')
   .patch(verifyJWT, notificationMutationLimiter, markAllAsRead);
 
 router
   .route('/:notificationId')
-  .delete(verifyJWT, notificationMutationLimiter, deleteNotification);
+  .delete(
+    verifyJWT,
+    notificationMutationLimiter,
+    validate(notificationIdParamSchema, 'params'),
+    deleteNotification
+  );
 
 export default router;

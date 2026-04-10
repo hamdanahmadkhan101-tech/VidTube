@@ -13,6 +13,13 @@ import {
   reportCreateLimiter,
   adminModerationLimiter,
 } from '../middlewares/rateLimit.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import {
+  createReportSchema,
+  reportsQuerySchema,
+  reportIdParamSchema,
+  updateReportStatusSchema,
+} from '../validators/report.validator.js';
 
 const router = Router();
 
@@ -20,28 +27,52 @@ const router = Router();
 // PROTECTED ROUTES
 // ============================================
 
-router.route('/').post(verifyJWT, reportCreateLimiter, createReport);
+router
+  .route('/')
+  .post(
+    verifyJWT,
+    reportCreateLimiter,
+    validate(createReportSchema),
+    createReport
+  );
 
 // User routes
-router.route('/my-reports').get(verifyJWT, getMyReports);
+router
+  .route('/my-reports')
+  .get(verifyJWT, validate(reportsQuerySchema, 'query'), getMyReports);
 
 // Admin routes
 router
   .route('/')
-  .get(verifyJWT, adminModerationLimiter, requireRole('admin'), getAllReports);
+  .get(
+    verifyJWT,
+    adminModerationLimiter,
+    requireRole('admin'),
+    validate(reportsQuerySchema, 'query'),
+    getAllReports
+  );
 router
   .route('/:reportId')
-  .get(verifyJWT, adminModerationLimiter, requireRole('admin'), getReportById)
+  .get(
+    verifyJWT,
+    adminModerationLimiter,
+    requireRole('admin'),
+    validate(reportIdParamSchema, 'params'),
+    getReportById
+  )
   .patch(
     verifyJWT,
     adminModerationLimiter,
     requireRole('admin'),
+    validate(reportIdParamSchema, 'params'),
+    validate(updateReportStatusSchema),
     updateReportStatus
   )
   .delete(
     verifyJWT,
     adminModerationLimiter,
     requireRole('admin'),
+    validate(reportIdParamSchema, 'params'),
     deleteReport
   );
 

@@ -12,6 +12,15 @@ import {
   invalidateCacheOnSuccess,
 } from '../middlewares/cache.middleware.js';
 import { commentMutationLimiter } from '../middlewares/rateLimit.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { preventDuplicateCommentSpam } from '../middlewares/antiSpam.middleware.js';
+import {
+  createCommentSchema,
+  updateCommentSchema,
+  commentListQuerySchema,
+  commentRepliesQuerySchema,
+} from '../validators/comment.validator.js';
+import { buildObjectIdParamSchema } from '../validators/common.validator.js';
 
 const router = Router();
 
@@ -33,11 +42,16 @@ router
   .post(
     verifyJWT,
     commentMutationLimiter,
+    validate(buildObjectIdParamSchema('videoId'), 'params'),
+    validate(createCommentSchema),
+    preventDuplicateCommentSpam({ windowSeconds: 30 }),
     invalidateCommentReadCache,
     addComment
   )
   .get(
     optionalJWT,
+    validate(buildObjectIdParamSchema('videoId'), 'params'),
+    validate(commentListQuerySchema, 'query'),
     cacheResponse({
       namespace: 'comments:video',
       ttlSeconds: 30,
@@ -55,18 +69,23 @@ router
   .patch(
     verifyJWT,
     commentMutationLimiter,
+    validate(buildObjectIdParamSchema('commentId'), 'params'),
+    validate(updateCommentSchema),
     invalidateCommentReadCache,
     updateComment
   )
   .delete(
     verifyJWT,
     commentMutationLimiter,
+    validate(buildObjectIdParamSchema('commentId'), 'params'),
     invalidateCommentReadCache,
     deleteComment
   );
 
 router.route('/:commentId/replies').get(
   optionalJWT,
+  validate(buildObjectIdParamSchema('commentId'), 'params'),
+  validate(commentRepliesQuerySchema, 'query'),
   cacheResponse({
     namespace: 'comments:replies',
     ttlSeconds: 30,

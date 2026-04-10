@@ -91,7 +91,7 @@ Rate limit counters are stored in Redis when `REDIS_URL` is configured and `RATE
 
 | Method | Path                                    | Auth     | Notes                                                     |
 | ------ | --------------------------------------- | -------- | --------------------------------------------------------- |
-| POST   | `/users/register`                       | Public   | Multipart; supports `avatar` and `coverImage`             |
+| POST   | `/users/register`                       | Public   | Multipart; optional `avatar` and optional `coverImage`    |
 | POST   | `/users/login`                          | Public   | Accepts email or username + password                      |
 | POST   | `/users/refresh-token`                  | Public   | Reads refresh token from cookie                           |
 | GET    | `/users/check-username/:username`       | Public   | Username availability check                               |
