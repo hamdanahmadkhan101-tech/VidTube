@@ -123,15 +123,22 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="page-wrap page-stack max-w-4xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        className="page-stack"
       >
-        <h1 className="text-3xl font-bold text-text-primary mb-8">Settings</h1>
+        <div className="page-hero">
+          <span className="kicker-pill">Channel Controls</span>
+          <h1 className="page-title mt-3 mb-1">Settings</h1>
+          <p className="page-subtitle">
+            Update your profile branding and secure your account.
+          </p>
+        </div>
 
         {/* Profile Settings */}
-        <div className="glass-card p-8 mb-6">
+        <div className="section-card p-8">
           <h2 className="text-2xl font-bold text-text-primary mb-6">
             Profile Settings
           </h2>
@@ -154,7 +161,7 @@ export const SettingsPage: React.FC = () => {
                     alt="Avatar"
                     className="w-full h-full object-cover"
                   />
-                  <label className="absolute inset-0 bg-black/50 flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
+                  <label className="absolute inset-0 bg-black/55 flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
                     <Camera className="w-6 h-6 text-white" />
                     <input
                       type="file"
@@ -176,7 +183,7 @@ export const SettingsPage: React.FC = () => {
               <label className="block text-sm font-medium text-text-primary mb-2">
                 Cover Image
               </label>
-              <div className="relative h-48 rounded-xl overflow-hidden border-2 border-white/10">
+              <div className="relative h-48 rounded-xl overflow-hidden border-2 border-white/10 section-card-soft">
                 <img
                   src={
                     coverPreview ||
@@ -187,7 +194,7 @@ export const SettingsPage: React.FC = () => {
                   alt="Cover"
                   className="w-full h-full object-cover"
                 />
-                <label className="absolute inset-0 bg-black/50 flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
+                <label className="absolute inset-0 bg-black/55 flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
                   <div className="text-center">
                     <Camera className="w-8 h-8 text-white mx-auto mb-2" />
                     <p className="text-white text-sm">
@@ -254,7 +261,7 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Change Password */}
-        <div className="glass-card p-8">
+        <div className="section-card p-8">
           <h2 className="text-2xl font-bold text-text-primary mb-6">
             Change Password
           </h2>

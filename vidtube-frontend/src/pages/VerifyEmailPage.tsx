@@ -79,24 +79,27 @@ export const VerifyEmailPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-liquid-lux">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 auth-shell">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
+          <span className="inline-flex rounded-full border border-primary-300/35 bg-primary-300/10 px-3 py-1 text-[11px] font-semibold tracking-widest uppercase text-primary-100 mb-4">
+            Verify Identity
+          </span>
           <motion.div
-            whileHover={{ rotate: 360 }}
-            transition={{ duration: 0.5 }}
-            className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow mx-auto mb-4"
+            whileHover={{ scale: 1.04 }}
+            transition={{ duration: 0.25 }}
+            className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 via-accent-blue to-accent-cyan flex items-center justify-center shadow-glow mx-auto mb-4 ring-1 ring-white/25"
           >
             <Video className="w-8 h-8 text-white" />
           </motion.div>
           <h1 className="text-3xl font-bold text-gradient mb-2">
             Verify Email
           </h1>
-          <p className="text-text-secondary">
+          <p className="text-text-secondary text-sm sm:text-base">
             Enter the 6-digit OTP sent to your email address
           </p>
         </div>
@@ -106,7 +109,7 @@ export const VerifyEmailPage: React.FC = () => {
             <div>
               <label
                 htmlFor="email"
-                className="block text-text-primary font-medium mb-2"
+                className="block text-text-primary font-semibold mb-2 text-sm"
               >
                 Email
               </label>
@@ -127,7 +130,7 @@ export const VerifyEmailPage: React.FC = () => {
             <div>
               <label
                 htmlFor="otp"
-                className="block text-text-primary font-medium mb-2"
+                className="block text-text-primary font-semibold mb-2 text-sm"
               >
                 OTP Code
               </label>

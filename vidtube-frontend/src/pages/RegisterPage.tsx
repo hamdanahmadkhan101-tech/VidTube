@@ -94,31 +94,34 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-liquid-lux">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 auth-shell">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
         {/* Logo */}
         <div className="text-center mb-6">
+          <span className="inline-flex rounded-full border border-primary-300/35 bg-primary-300/10 px-3 py-1 text-[11px] font-semibold tracking-widest uppercase text-primary-100 mb-4">
+            Start creating
+          </span>
           <motion.div
-            whileHover={{ rotate: 360 }}
-            transition={{ duration: 0.5 }}
-            className="w-14 h-14 rounded-2xl bg-linear-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow mx-auto mb-3"
+            whileHover={{ scale: 1.04 }}
+            transition={{ duration: 0.25 }}
+            className="w-14 h-14 rounded-2xl bg-linear-to-br from-primary-500 via-accent-blue to-accent-cyan flex items-center justify-center shadow-glow mx-auto mb-3 ring-1 ring-white/25"
           >
             <Video className="w-7 h-7 text-white" />
           </motion.div>
-          <h1 className="text-2xl font-bold text-gradient mb-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gradient mb-1">
             Join VidTube
           </h1>
-          <p className="text-text-secondary text-sm">
-            Create your account and start sharing
+          <p className="text-text-secondary text-sm sm:text-base">
+            Build your profile and publish your first video.
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-6 sm:p-7">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Avatar Upload */}
             <div className="flex flex-col items-center gap-2">
@@ -159,7 +162,7 @@ export const RegisterPage: React.FC = () => {
             <div>
               <label
                 htmlFor="fullName"
-                className="block text-text-primary font-medium mb-2"
+                className="block text-text-primary font-semibold mb-2 text-sm"
               >
                 Full Name
               </label>
@@ -184,7 +187,7 @@ export const RegisterPage: React.FC = () => {
             <div>
               <label
                 htmlFor="username"
-                className="block text-text-primary font-medium mb-2"
+                className="block text-text-primary font-semibold mb-2 text-sm"
               >
                 Username
               </label>
@@ -211,7 +214,7 @@ export const RegisterPage: React.FC = () => {
             <div>
               <label
                 htmlFor="email"
-                className="block text-text-primary font-medium mb-2"
+                className="block text-text-primary font-semibold mb-2 text-sm"
               >
                 Email
               </label>
@@ -245,7 +248,7 @@ export const RegisterPage: React.FC = () => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-text-primary font-medium mb-2"
+                className="block text-text-primary font-semibold mb-2 text-sm"
               >
                 Password
               </label>
@@ -371,7 +374,7 @@ export const RegisterPage: React.FC = () => {
             Already have an account?{" "}
             <Link
               to="/login"
-              className="text-primary-500 hover:text-primary-400 font-medium transition-colors"
+              className="text-primary-300 hover:text-primary-100 font-semibold transition-colors"
             >
               Sign In
             </Link>

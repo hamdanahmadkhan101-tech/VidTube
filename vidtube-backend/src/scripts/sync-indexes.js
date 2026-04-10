@@ -12,6 +12,9 @@ import Report from '../models/report.model.js';
 import Subscription from '../models/subscription.model.js';
 import { OtpCode } from '../models/otpCode.model.js';
 import IdempotencyKey from '../models/idempotencyKey.model.js';
+import WatchHistoryEntry from '../models/watchHistoryEntry.model.js';
+import UserPreference from '../models/userPreference.model.js';
+import UserStatistic from '../models/userStatistic.model.js';
 
 const models = [
   User,
@@ -24,6 +27,9 @@ const models = [
   Subscription,
   OtpCode,
   IdempotencyKey,
+  WatchHistoryEntry,
+  UserPreference,
+  UserStatistic,
 ];
 
 const run = async () => {

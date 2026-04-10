@@ -99,7 +99,7 @@ export const ChannelPage: React.FC = () => {
 
   if (isLoadingUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center page-wrap">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary-500" />
       </div>
     );
@@ -107,8 +107,8 @@ export const ChannelPage: React.FC = () => {
 
   if (userError || !channelUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center page-wrap">
+        <div className="empty-state text-center">
           <h2 className="text-2xl font-bold text-text-primary mb-2">
             Channel Not Found
           </h2>
@@ -127,11 +127,11 @@ export const ChannelPage: React.FC = () => {
   const videos = videosData?.docs || [];
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-20 page-wrap page-stack">
       {/* Channel Header */}
       <div className="relative">
         {/* Cover Image */}
-        <div className="h-48 md:h-64 bg-linear-to-r from-primary-900 to-accent-blue overflow-hidden">
+        <div className="h-48 md:h-64 bg-linear-to-r from-primary-900 to-accent-blue overflow-hidden rounded-2xl border border-white/10">
           {channelUser.coverUrl || channelUser.coverImage ? (
             <img
               src={channelUser.coverUrl || channelUser.coverImage}
@@ -149,8 +149,8 @@ export const ChannelPage: React.FC = () => {
         </div>
 
         {/* Channel Info */}
-        <div className="container mx-auto px-4">
-          <div className="glass-card -mt-16 p-6 md:p-8">
+        <div className="px-1 sm:px-3">
+          <div className="section-card -mt-16 p-6 md:p-8">
             <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
               {/* Avatar */}
               <motion.div
@@ -182,21 +182,21 @@ export const ChannelPage: React.FC = () => {
                   @{channelUser.username}
                 </p>
 
-                <div className="flex flex-wrap gap-6 text-sm text-text-secondary">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-wrap gap-3 text-sm text-text-secondary">
+                  <div className="flex items-center gap-2 section-card-soft px-3 py-2 rounded-lg">
                     <Users className="w-4 h-4" />
                     <span>
                       {channelUser.subscribersCount?.toLocaleString() || 0}{" "}
                       subscribers
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 section-card-soft px-3 py-2 rounded-lg">
                     <VideoIcon className="w-4 h-4" />
                     <span>
                       {channelUser.videosCount?.toLocaleString() || 0} videos
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 section-card-soft px-3 py-2 rounded-lg">
                     <Calendar className="w-4 h-4" />
                     <span>
                       Joined{" "}
@@ -221,7 +221,7 @@ export const ChannelPage: React.FC = () => {
                     disabled={subscribeMutation.isPending}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
                       channelUser.isSubscribed
-                        ? "bg-surface hover:bg-surface-hover text-text-primary"
+                        ? "btn-glass"
                         : "bg-primary-500 hover:bg-primary-600 text-white shadow-glow"
                     }`}
                   >
@@ -256,8 +256,8 @@ export const ChannelPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="container mx-auto px-4 mt-8">
-        <div className="glass-card p-1 inline-flex rounded-xl">
+      <div>
+        <div className="section-card-soft p-1 inline-flex rounded-xl">
           <button
             onClick={() => setActiveTab("videos")}
             className={`px-6 py-2 rounded-lg transition-all ${
@@ -311,7 +311,7 @@ export const ChannelPage: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 mt-8">
+      <div>
         {activeTab === "videos" ? (
           <>
             {isLoadingVideos ? (
@@ -333,8 +333,10 @@ export const ChannelPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20">
-                <VideoIcon className="w-16 h-16 text-text-muted mx-auto mb-4" />
+              <div className="empty-state text-center py-20">
+                <div className="icon-badge mx-auto mb-4">
+                  <VideoIcon className="w-6 h-6" />
+                </div>
                 <h3 className="text-xl font-semibold text-text-primary mb-2">
                   No videos yet
                 </h3>
@@ -347,7 +349,7 @@ export const ChannelPage: React.FC = () => {
             )}
           </>
         ) : (
-          <div className="glass-card p-8 max-w-3xl">
+          <div className="section-card p-8 max-w-3xl">
             <h2 className="text-2xl font-bold text-text-primary mb-6">About</h2>
 
             <div className="space-y-6">
@@ -367,7 +369,7 @@ export const ChannelPage: React.FC = () => {
                   Stats
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="glass-card p-4">
+                  <div className="stat-tile">
                     <div className="flex items-center gap-2 text-text-secondary mb-1">
                       <Users className="w-4 h-4" />
                       <span className="text-sm">Subscribers</span>
@@ -376,7 +378,7 @@ export const ChannelPage: React.FC = () => {
                       {channelUser.subscribersCount?.toLocaleString() || 0}
                     </p>
                   </div>
-                  <div className="glass-card p-4">
+                  <div className="stat-tile">
                     <div className="flex items-center gap-2 text-text-secondary mb-1">
                       <VideoIcon className="w-4 h-4" />
                       <span className="text-sm">Videos</span>
@@ -385,7 +387,7 @@ export const ChannelPage: React.FC = () => {
                       {videos.length}
                     </p>
                   </div>
-                  <div className="glass-card p-4">
+                  <div className="stat-tile">
                     <div className="flex items-center gap-2 text-text-secondary mb-1">
                       <Calendar className="w-4 h-4" />
                       <span className="text-sm">Joined</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   Upload,
+  Home,
+  Flame,
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { authService } from "../../services/authService";
@@ -35,8 +37,21 @@ export const Header: React.FC = () => {
   const isRealtimeConnected = useNotificationSocketConnection();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const shouldLockBody = showMobileMenu || showNotifications;
+    if (!shouldLockBody) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showMobileMenu, showNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -46,10 +61,13 @@ export const Header: React.FC = () => {
       ) {
         setShowUserMenu(false);
       }
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
+      const clickedDesktopSearch = searchRef.current?.contains(
+        event.target as Node,
+      );
+      const clickedMobileSearch = mobileSearchRef.current?.contains(
+        event.target as Node,
+      );
+      if (!clickedDesktopSearch && !clickedMobileSearch) {
         setShowSuggestions(false);
       }
       if (
@@ -152,6 +170,8 @@ export const Header: React.FC = () => {
   };
 
   const handleMobileSearchClick = () => {
+    setShowMobileMenu(false);
+    setShowUserMenu(false);
     setShowMobileSearch(!showMobileSearch);
     if (!showMobileSearch) {
       setTimeout(() => {
@@ -162,21 +182,45 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 glass-card border-b border-white/5">
-      <div className="container mx-auto px-2 sm:px-4">
+    <header className="sticky top-0 z-50 border-b border-white/8 bg-background-secondary/92 backdrop-blur-md shadow-[0_10px_26px_rgba(4,8,14,0.48)]">
+      <div className="container mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
-          <Link
-            to="/"
-            className="flex items-center gap-1 sm:gap-2 group cursor-pointer shrink-0"
-          >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-linear-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow">
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary-500/90 text-white flex items-center justify-center shadow-[0_8px_18px_rgba(0,0,0,0.38)] ring-1 ring-white/18 group-hover:-translate-y-px transition-transform">
               <Video className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
             </div>
-            <span className="text-lg sm:text-2xl font-bold text-gradient hidden sm:block">
+            <span className="text-lg sm:text-xl font-semibold text-text-primary hidden sm:block tracking-tight">
               VidTube
             </span>
           </Link>
+
+          <nav className="hidden lg:flex items-center gap-1 ml-5">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "text-text-primary bg-surface-active"
+                    : "text-text-secondary hover:text-text-primary hover:bg-surface"
+                }`
+              }
+            >
+              Home
+            </NavLink>
+            <NavLink
+              to="/trending"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "text-text-primary bg-surface-active"
+                    : "text-text-secondary hover:text-text-primary hover:bg-surface"
+                }`
+              }
+            >
+              Trending
+            </NavLink>
+          </nav>
 
           {/* Desktop Search Bar */}
           <div
@@ -226,21 +270,29 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Right Section */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-4">
             {/* Mobile Search */}
             <button
               onClick={handleMobileSearchClick}
-              className="md:hidden text-text-primary hover:text-primary-500 transition-colors cursor-pointer shrink-0"
+              className="md:hidden p-2 rounded-lg text-text-primary hover:text-primary-300 hover:bg-surface transition-colors shrink-0"
             >
               <Search className="w-5 h-5" />
             </button>
 
             {isAuthenticated ? (
               <>
+                <Link
+                  to="/upload"
+                  className="sm:hidden p-2 rounded-lg text-text-primary hover:text-primary-300 hover:bg-surface transition-colors shrink-0"
+                  aria-label="Upload video"
+                >
+                  <Upload className="w-5 h-5" />
+                </Link>
+
                 {/* Upload Button */}
                 <Link
                   to="/upload"
-                  className="hidden sm:flex items-center gap-2 btn-glass cursor-pointer shrink-0"
+                  className="hidden sm:flex items-center gap-2 btn-glass shrink-0"
                 >
                   <Upload className="w-5 h-5" />
                   <span className="hidden lg:inline">Upload</span>
@@ -250,7 +302,7 @@ export const Header: React.FC = () => {
                 <div className="relative shrink-0" ref={notificationRef}>
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative text-text-primary hover:text-primary-500 transition-colors cursor-pointer"
+                    className="relative p-2 rounded-lg text-text-primary hover:text-primary-300 hover:bg-surface transition-colors"
                   >
                     <Bell className="w-6 h-6" />
                     {unreadCount && unreadCount > 0 && (
@@ -267,10 +319,13 @@ export const Header: React.FC = () => {
                 </div>
 
                 {/* User Menu */}
-                <div className="relative shrink-0" ref={userMenuRef}>
+                <div
+                  className="relative shrink-0 hidden md:block"
+                  ref={userMenuRef}
+                >
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+                    className="flex items-center gap-2 rounded-full p-0.5 hover:bg-surface transition-colors"
                   >
                     <img
                       src={user?.avatarUrl || "/default-avatar.jpg"}
@@ -285,9 +340,9 @@ export const Header: React.FC = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute right-0 mt-2 w-56 bg-background-secondary backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 z-50 p-2"
+                        className="absolute right-0 mt-2 w-56 bg-background-secondary/96 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 z-50 p-2"
                       >
-                        <div className="px-3 py-2 border-b border-white/10 mb-2">
+                        <div className="px-3 py-2 border-b border-white/8 mb-2">
                           <p className="text-text-primary font-semibold">
                             {user?.fullName}
                           </p>
@@ -355,7 +410,7 @@ export const Header: React.FC = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className="btn-primary text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2"
+                  className="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
                 >
                   Sign Up
                 </Link>
@@ -365,7 +420,7 @@ export const Header: React.FC = () => {
             {/* Mobile Menu */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden text-text-primary shrink-0"
+              className="md:hidden p-2 rounded-lg text-text-primary hover:text-primary-300 hover:bg-surface shrink-0"
             >
               {showMobileMenu ? (
                 <X className="w-6 h-6" />
@@ -378,7 +433,7 @@ export const Header: React.FC = () => {
 
         {/* Mobile Search Bar */}
         {showMobileSearch && (
-          <div className="md:hidden pb-3 px-2">
+          <div ref={mobileSearchRef} className="md:hidden pb-3 px-2">
             <form onSubmit={handleSearch}>
               <div className="relative">
                 <input
@@ -420,43 +475,149 @@ export const Header: React.FC = () => {
       {/* Mobile Menu Dropdown */}
       <AnimatePresence>
         {showMobileMenu && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-white/5"
-          >
-            <div className="container mx-auto px-4 py-4 space-y-2">
-              <Link
-                to="/"
-                className="block px-4 py-2 rounded-lg hover:bg-surface text-text-primary"
-              >
-                Home
-              </Link>
-              <Link
-                to="/trending"
-                className="block px-4 py-2 rounded-lg hover:bg-surface text-text-primary"
-              >
-                Trending
-              </Link>
-              {!isAuthenticated && (
-                <>
-                  <Link
-                    to="/login"
-                    className="block px-4 py-2 rounded-lg hover:bg-surface text-text-primary"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="block px-4 py-2 rounded-lg bg-primary-500 text-white text-center"
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
-          </motion.div>
+          <>
+            <motion.button
+              type="button"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowMobileMenu(false)}
+              className="fixed inset-0 z-40 bg-black/45"
+              aria-label="Close mobile menu"
+            />
+            <motion.div
+              initial={{ x: 340, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 340, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 320, damping: 28 }}
+              className="md:hidden fixed top-0 right-0 bottom-0 z-50 w-[min(88vw,22rem)] border-l border-white/10 bg-background-secondary/98 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.58)]"
+            >
+              <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
+                <p className="text-sm font-semibold tracking-[0.18em] text-text-tertiary uppercase">
+                  Navigation
+                </p>
+                <button
+                  onClick={() => setShowMobileMenu(false)}
+                  className="p-2 rounded-lg hover:bg-surface text-text-secondary hover:text-text-primary"
+                  aria-label="Close menu"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="px-4 py-4 space-y-2 max-h-[calc(100dvh-4.5rem)] overflow-y-auto">
+                {isAuthenticated && (
+                  <div className="section-card-soft p-3 mb-2">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={user?.avatarUrl || "/default-avatar.jpg"}
+                        alt={user?.username}
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-primary-500/20"
+                      />
+                      <div>
+                        <p className="text-text-primary font-semibold leading-tight">
+                          {user?.fullName}
+                        </p>
+                        <p className="text-text-tertiary text-sm leading-tight">
+                          @{user?.username}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Link
+                  to="/"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                >
+                  <Home className="w-4 h-4 text-text-tertiary" />
+                  Home
+                </Link>
+                <Link
+                  to="/trending"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                >
+                  <Flame className="w-4 h-4 text-text-tertiary" />
+                  Trending
+                </Link>
+                {isAuthenticated && (
+                  <>
+                    <Link
+                      to="/upload"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      <Upload className="w-4 h-4 text-text-tertiary" />
+                      Upload
+                    </Link>
+                    <Link
+                      to={`/channel/${user?.username}`}
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      <User className="w-4 h-4 text-text-tertiary" />
+                      Your Channel
+                    </Link>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-text-tertiary" />
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/playlists"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      <Video className="w-4 h-4 text-text-tertiary" />
+                      My Playlists
+                    </Link>
+                    <Link
+                      to="/settings"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      <Settings className="w-4 h-4 text-text-tertiary" />
+                      Settings
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setShowMobileMenu(false);
+                        handleLogout();
+                      }}
+                      disabled={logoutMutation.isPending}
+                      className="w-full text-left px-4 py-2.5 rounded-lg hover:bg-surface text-red-400 disabled:opacity-50"
+                    >
+                      {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                    </button>
+                  </>
+                )}
+
+                {!isAuthenticated && (
+                  <>
+                    <Link
+                      to="/login"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="block px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="block px-4 py-2.5 rounded-lg bg-primary-500 text-white text-center"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </header>

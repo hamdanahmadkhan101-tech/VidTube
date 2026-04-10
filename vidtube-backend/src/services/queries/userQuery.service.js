@@ -6,6 +6,22 @@ export const buildCurrentUserProfilePipeline = ({ userId }) => [
   },
   {
     $lookup: {
+      from: 'userpreferences',
+      localField: '_id',
+      foreignField: 'user',
+      as: 'preferenceDoc',
+    },
+  },
+  {
+    $lookup: {
+      from: 'userstatistics',
+      localField: '_id',
+      foreignField: 'user',
+      as: 'statisticDoc',
+    },
+  },
+  {
+    $lookup: {
       from: 'subscriptions',
       localField: '_id',
       foreignField: 'channel',
@@ -22,6 +38,12 @@ export const buildCurrentUserProfilePipeline = ({ userId }) => [
   },
   {
     $addFields: {
+      preferences: {
+        $ifNull: [{ $first: '$preferenceDoc' }, '$preferences'],
+      },
+      statistics: {
+        $ifNull: [{ $first: '$statisticDoc' }, '$statistics'],
+      },
       subscribersCount: { $size: '$subscribers' },
       subscribedToCount: { $size: '$subscribedTo' },
     },
@@ -32,6 +54,16 @@ export const buildCurrentUserProfilePipeline = ({ userId }) => [
       refreshTokens: 0,
       subscribers: 0,
       subscribedTo: 0,
+      preferenceDoc: 0,
+      statisticDoc: 0,
+      'preferences._id': 0,
+      'preferences.user': 0,
+      'preferences.createdAt': 0,
+      'preferences.updatedAt': 0,
+      'statistics._id': 0,
+      'statistics.user': 0,
+      'statistics.createdAt': 0,
+      'statistics.updatedAt': 0,
     },
   },
 ];
@@ -101,30 +133,18 @@ export const buildChannelProfilePipeline = ({ username, viewerUserId }) => [
 export const buildWatchHistoryPipeline = ({ userId, skip, limit }) => [
   {
     $match: {
-      _id: new mongoose.Types.ObjectId(userId),
-    },
-  },
-  {
-    $project: {
-      watchHistory: 1,
-    },
-  },
-  {
-    $unwind: {
-      path: '$watchHistory',
-      includeArrayIndex: 'watchIndex',
-      preserveNullAndEmptyArrays: false,
+      user: new mongoose.Types.ObjectId(userId),
     },
   },
   {
     $sort: {
-      watchIndex: -1,
+      lastWatchedAt: -1,
     },
   },
   {
     $lookup: {
       from: 'videos',
-      localField: 'watchHistory',
+      localField: 'video',
       foreignField: '_id',
       as: 'video',
       pipeline: [
@@ -176,6 +196,21 @@ export const buildWatchHistoryPipeline = ({ userId, skip, limit }) => [
     $unwind: {
       path: '$video',
       preserveNullAndEmptyArrays: false,
+    },
+  },
+  {
+    $addFields: {
+      watchState: {
+        progressSeconds: '$progressSeconds',
+        completed: '$completed',
+        watchCount: '$watchCount',
+        lastWatchedAt: '$lastWatchedAt',
+      },
+    },
+  },
+  {
+    $addFields: {
+      'video.watchState': '$watchState',
     },
   },
   {

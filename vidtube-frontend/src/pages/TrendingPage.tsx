@@ -22,18 +22,21 @@ export const TrendingPage: React.FC = () => {
   const videos = data?.docs || [];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="page-wrap page-stack">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="page-hero"
       >
-        <div className="flex items-center gap-3 mb-2">
-          <TrendingUp className="w-8 h-8 text-primary-500" />
-          <h1 className="text-4xl font-bold text-gradient">Trending</h1>
+        <span className="kicker-pill">Live Rankings</span>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="icon-badge">
+            <TrendingUp className="w-5 h-5" />
+          </div>
+          <h1 className="page-title">Trending</h1>
         </div>
-        <p className="text-text-secondary text-lg">
-          Most popular videos right now
+        <p className="page-subtitle mt-2">
+          Most popular videos right now, ranked by community momentum.
         </p>
       </motion.div>
 
@@ -43,7 +46,7 @@ export const TrendingPage: React.FC = () => {
             <VideoCardSkeleton key={i} />
           ))}
         </div>
-      ) : (
+      ) : videos.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {videos.map((video: Video, index: number) => (
             <motion.div
@@ -54,7 +57,7 @@ export const TrendingPage: React.FC = () => {
             >
               <div className="relative">
                 {index < 3 && (
-                  <div className="absolute -top-2 -left-2 z-10 w-8 h-8 bg-linear-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                  <div className="absolute -top-2 -left-2 z-10 w-8 h-8 bg-linear-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg border border-yellow-200/40">
                     {index + 1}
                   </div>
                 )}
@@ -62,6 +65,18 @@ export const TrendingPage: React.FC = () => {
               </div>
             </motion.div>
           ))}
+        </div>
+      ) : (
+        <div className="empty-state text-center">
+          <div className="icon-badge mx-auto mb-4">
+            <TrendingUp className="w-6 h-6" />
+          </div>
+          <h3 className="text-xl font-semibold text-text-primary mb-2">
+            No trending videos yet
+          </h3>
+          <p className="text-text-secondary">
+            Trending videos will appear here once activity picks up.
+          </p>
         </div>
       )}
     </div>

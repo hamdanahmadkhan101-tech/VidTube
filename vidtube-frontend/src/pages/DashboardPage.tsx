@@ -67,30 +67,39 @@ export const DashboardPage: React.FC = () => {
     currentUserProfile?.subscribersCount ?? user?.subscribersCount ?? 0;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="page-wrap page-stack">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        className="page-stack"
       >
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-text-primary">Dashboard</h1>
-          <Link to="/upload" className="btn-primary">
-            Upload Video
-          </Link>
+        <div className="page-hero">
+          <span className="kicker-pill">Creator Studio</span>
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h1 className="page-title mb-1">Dashboard</h1>
+              <p className="page-subtitle">
+                Track channel performance and manage your latest videos.
+              </p>
+            </div>
+            <Link to="/upload" className="btn-primary">
+              Upload Video
+            </Link>
+          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {error && (
-            <div className="col-span-full glass-card p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <div className="col-span-full section-card p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
               <p className="text-red-400 text-sm">
                 Error loading videos: {String(error)}
               </p>
             </div>
           )}
-          <div className="glass-card p-6">
+          <div className="stat-tile">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-primary-500/20 rounded-xl">
+              <div className="icon-badge">
                 <VideoIcon className="w-6 h-6 text-primary-500" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -101,9 +110,9 @@ export const DashboardPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="glass-card p-6">
+          <div className="stat-tile">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-accent-blue/20 rounded-xl">
+              <div className="icon-badge">
                 <Eye className="w-6 h-6 text-accent-blue" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -114,9 +123,9 @@ export const DashboardPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="glass-card p-6">
+          <div className="stat-tile">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-accent-pink/20 rounded-xl">
+              <div className="icon-badge">
                 <ThumbsUp className="w-6 h-6 text-accent-pink" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -127,9 +136,9 @@ export const DashboardPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="glass-card p-6">
+          <div className="stat-tile">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-accent-cyan/20 rounded-xl">
+              <div className="icon-badge">
                 <BarChart3 className="w-6 h-6 text-accent-cyan" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -142,8 +151,8 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Recent Videos */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="section-card p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h2 className="text-2xl font-bold text-text-primary">
               Your Videos
             </h2>
@@ -152,7 +161,7 @@ export const DashboardPage: React.FC = () => {
               onChange={(e) =>
                 setTimeRange(e.target.value as "week" | "month" | "year")
               }
-              className="glass-input"
+              className="glass-input w-full sm:w-auto"
             >
               <option value="week">Last 7 days</option>
               <option value="month">Last 30 days</option>
@@ -171,13 +180,16 @@ export const DashboardPage: React.FC = () => {
               {videos.map((video: Video) => (
                 <div
                   key={video._id}
-                  className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface transition-colors group"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-xl section-card-soft hover:bg-surface-hover transition-colors group"
                 >
-                  <Link to={`/watch/${video._id}`} className="shrink-0">
+                  <Link
+                    to={`/watch/${video._id}`}
+                    className="shrink-0 w-full sm:w-auto"
+                  >
                     <img
                       src={video.thumbnailUrl || "/default-thumbnail.jpg"}
                       alt={video.title}
-                      className="w-32 h-20 object-cover rounded-lg"
+                      className="w-full sm:w-32 h-44 sm:h-20 object-cover rounded-lg"
                     />
                   </Link>
                   <Link to={`/watch/${video._id}`} className="flex-1 min-w-0">
@@ -188,7 +200,7 @@ export const DashboardPage: React.FC = () => {
                       {formatRelativeTime(video.createdAt)}
                     </p>
                   </Link>
-                  <div className="flex items-center gap-6 text-sm text-text-secondary">
+                  <div className="flex items-center gap-4 sm:gap-6 text-sm text-text-secondary w-full sm:w-auto justify-between sm:justify-start">
                     <div className="flex items-center gap-1">
                       <Eye className="w-4 h-4" />
                       {formatViewCount(video.views)}
@@ -200,7 +212,7 @@ export const DashboardPage: React.FC = () => {
                   </div>
                   <Link
                     to={`/edit/${video._id}`}
-                    className="btn-glass opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="btn-glass opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity self-end sm:self-auto"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Edit2 className="w-4 h-4" />
@@ -209,8 +221,10 @@ export const DashboardPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <VideoIcon className="w-16 h-16 text-text-muted mx-auto mb-4" />
+            <div className="empty-state text-center py-12">
+              <div className="icon-badge mx-auto mb-4">
+                <VideoIcon className="w-6 h-6" />
+              </div>
               <p className="text-text-secondary">No videos yet</p>
               <Link to="/upload" className="btn-primary mt-4">
                 Upload Your First Video

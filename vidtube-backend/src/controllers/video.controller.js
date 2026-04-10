@@ -24,6 +24,8 @@ import Video from '../models/video.model.js';
 import { User } from '../models/user.model.js';
 import Like from '../models/like.model.js';
 import Comment from '../models/comment.model.js';
+import WatchHistoryEntry from '../models/watchHistoryEntry.model.js';
+import UserStatistic from '../models/userStatistic.model.js';
 
 // Services
 import {
@@ -355,6 +357,9 @@ const deleteVideo = asyncHandler(async (req, res) => {
   }
 
   // Remove video from all users' watch history
+  deletePromises.push(WatchHistoryEntry.deleteMany({ video: video._id }));
+
+  // Legacy cleanup for embedded watch history arrays (safe no-op if absent)
   deletePromises.push(
     User.updateMany(
       { watchHistory: video._id },
@@ -544,6 +549,7 @@ const getVideosByOwner = asyncHandler(async (req, res) => {
  */
 const addVideoToWatchHistory = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  const { source = 'watch-page' } = req.body || {};
   validateObjectId(videoId, 'videoId');
 
   const video = await Video.findById(videoId);
@@ -555,22 +561,156 @@ const addVideoToWatchHistory = asyncHandler(async (req, res) => {
     throw new ForbiddenError('Cannot add unpublished video to watch history');
   }
 
-  // Atomically avoid duplicate watch-history insertions under concurrent requests.
-  const historyUpdateResult = await User.updateOne(
-    { _id: req.user._id, watchHistory: { $ne: video._id } },
-    { $push: { watchHistory: video._id } }
+  const now = new Date();
+
+  const historyUpdateResult = await WatchHistoryEntry.updateOne(
+    {
+      user: req.user._id,
+      video: video._id,
+    },
+    {
+      $set: {
+        lastWatchedAt: now,
+        source,
+      },
+      $setOnInsert: {
+        firstWatchedAt: now,
+        watchCount: 0,
+      },
+      $inc: {
+        watchCount: 1,
+      },
+    },
+    {
+      upsert: true,
+    }
   );
 
-  const shouldCountView = historyUpdateResult.modifiedCount > 0;
+  const shouldCountView = historyUpdateResult.upsertedCount > 0;
 
   if (shouldCountView) {
     await Video.updateOne({ _id: video._id }, { $inc: { views: 1 } });
+
+    await UserStatistic.updateOne(
+      { user: req.user._id },
+      {
+        $set: {
+          lastActiveAt: now,
+        },
+        $setOnInsert: {
+          user: req.user._id,
+        },
+        $inc: {
+          totalVideosWatched: 1,
+        },
+      },
+      { upsert: true }
+    );
   }
+
+  // Legacy compatibility: keep embedded array up to date while old clients still rely on it.
+  await User.updateOne(
+    { _id: req.user._id, watchHistory: { $ne: video._id } },
+    { $push: { watchHistory: video._id } }
+  );
 
   res.status(200).json(
     new apiResponse(200, 'Video added to watch history successfully', {
       videoId,
       viewCounted: shouldCountView,
+      source,
+    })
+  );
+});
+
+/**
+ * Update user's watch progress for a video
+ * @route PATCH /api/v1/videos/:videoId/watch-progress
+ * @access Private
+ */
+const updateWatchProgress = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const { progressSeconds, completed, source = 'watch-page' } = req.body;
+
+  validateObjectId(videoId, 'videoId');
+
+  const video = await Video.findById(videoId).select(
+    '_id duration isPublished'
+  );
+  if (!video) {
+    throw new NotFoundError('Video', videoId);
+  }
+
+  if (!video.isPublished) {
+    throw new ForbiddenError('Cannot update progress for unpublished video');
+  }
+
+  const now = new Date();
+  const safeProgress = Math.min(
+    Math.max(Number(progressSeconds) || 0, 0),
+    Math.max(video.duration || 0, 0)
+  );
+  const completionThreshold = Math.max(
+    30,
+    Math.floor((video.duration || 0) * 0.9)
+  );
+  const resolvedCompleted =
+    completed !== undefined ? completed : safeProgress >= completionThreshold;
+
+  const existingEntry = await WatchHistoryEntry.findOne({
+    user: req.user._id,
+    video: video._id,
+  }).select('progressSeconds');
+
+  const previousProgress = existingEntry?.progressSeconds || 0;
+  const watchTimeDelta = Math.max(0, safeProgress - previousProgress);
+
+  await WatchHistoryEntry.updateOne(
+    {
+      user: req.user._id,
+      video: video._id,
+    },
+    {
+      $set: {
+        progressSeconds: safeProgress,
+        completed: resolvedCompleted,
+        lastWatchedAt: now,
+        source,
+      },
+      $setOnInsert: {
+        firstWatchedAt: now,
+        watchCount: 1,
+      },
+    },
+    {
+      upsert: true,
+    }
+  );
+
+  if (watchTimeDelta > 0) {
+    await UserStatistic.updateOne(
+      { user: req.user._id },
+      {
+        $set: {
+          lastActiveAt: now,
+        },
+        $setOnInsert: {
+          user: req.user._id,
+        },
+        $inc: {
+          totalWatchTimeSeconds: Math.round(watchTimeDelta),
+        },
+      },
+      { upsert: true }
+    );
+  }
+
+  res.status(200).json(
+    new apiResponse(200, 'Watch progress updated successfully', {
+      videoId,
+      progressSeconds: safeProgress,
+      completed: resolvedCompleted,
+      source,
     })
   );
 });
@@ -597,4 +737,5 @@ export {
 
   // Video Interactions
   addVideoToWatchHistory,
+  updateWatchProgress,
 };

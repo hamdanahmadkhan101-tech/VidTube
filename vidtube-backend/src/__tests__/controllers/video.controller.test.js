@@ -148,10 +148,12 @@ describe('Video Controller', () => {
     test('should upload video successfully', async () => {
       const videoPath = getTestAssetPath('test-video.mp4');
       const thumbnailPath = getTestAssetPath('test-cover.jpg');
+      const idemKey = 'video-upload:test-success-idempotency-key-001';
 
       const response = await request(testApp)
         .post('/api/v1/videos/upload')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('Idempotency-Key', idemKey)
         .field('title', 'My Test Video')
         .field('description', 'Video description')
         .field('videoformat', 'mp4')

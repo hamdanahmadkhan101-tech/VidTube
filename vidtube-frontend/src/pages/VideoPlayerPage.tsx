@@ -388,7 +388,7 @@ export const VideoPlayerPage: React.FC = () => {
 
   if (videoLoading || !video) {
     return (
-      <div className="container mx-auto px-4 py-6">
+      <div className="page-wrap py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <VideoPageSkeleton />
@@ -400,8 +400,8 @@ export const VideoPlayerPage: React.FC = () => {
 
   if (videoError) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="glass-card p-8 text-center">
+      <div className="page-wrap py-6">
+        <div className="empty-state text-center">
           <h2 className="text-2xl font-bold text-text-primary mb-4">
             Video Not Found
           </h2>
@@ -417,7 +417,15 @@ export const VideoPlayerPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-6">
+    <div className="page-wrap page-stack py-2 sm:py-6">
+      <div className="page-hero">
+        <span className="kicker-pill">Now Playing</span>
+        <h1 className="page-title mt-3 line-clamp-2">{video.title}</h1>
+        <p className="page-subtitle mt-2">
+          Watch, engage, and explore related videos in one view.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-3 sm:space-y-6">
@@ -458,13 +466,13 @@ export const VideoPlayerPage: React.FC = () => {
                 <div className="relative" ref={videoMenuRef}>
                   <button
                     onClick={() => setShowVideoMenu(!showVideoMenu)}
-                    className="glass-card hover:bg-surface-hover p-2 rounded-xl text-text-primary transition-all cursor-pointer"
+                    className="section-card-soft hover:bg-surface-hover p-2 rounded-xl text-text-primary transition-all cursor-pointer"
                   >
                     <MoreVertical className="w-5 h-5" />
                   </button>
 
                   {showVideoMenu && (
-                    <div className="absolute right-0 top-full mt-2 glass-card p-2 min-w-48 z-10 rounded-xl shadow-xl">
+                    <div className="absolute right-0 top-full mt-2 section-card p-2 min-w-48 z-10 rounded-xl shadow-xl">
                       <Link
                         to={`/edit/${videoId}`}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
@@ -521,7 +529,7 @@ export const VideoPlayerPage: React.FC = () => {
                     "flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all cursor-pointer",
                     video.isLiked
                       ? "bg-primary-500 text-white shadow-glow"
-                      : "glass-card hover:bg-surface-hover text-text-primary",
+                      : "section-card-soft hover:bg-surface-hover text-text-primary",
                     !isAuthenticated && "opacity-50 cursor-not-allowed",
                   )}
                 >
@@ -534,7 +542,7 @@ export const VideoPlayerPage: React.FC = () => {
 
                 <button
                   onClick={handleShare}
-                  className="glass-card hover:bg-surface-hover px-4 py-2 rounded-xl flex items-center gap-2 text-text-primary font-medium transition-all cursor-pointer"
+                  className="section-card-soft hover:bg-surface-hover px-4 py-2 rounded-xl flex items-center gap-2 text-text-primary font-medium transition-all cursor-pointer"
                 >
                   <Share2 className="w-5 h-5" />
                   Share
@@ -548,7 +556,7 @@ export const VideoPlayerPage: React.FC = () => {
                     }
                     setShowPlaylistModal(true);
                   }}
-                  className="glass-card hover:bg-surface-hover px-4 py-2 rounded-xl flex items-center gap-2 text-text-primary font-medium transition-all cursor-pointer"
+                  className="section-card-soft hover:bg-surface-hover px-4 py-2 rounded-xl flex items-center gap-2 text-text-primary font-medium transition-all cursor-pointer"
                   title="Save to playlist"
                 >
                   <Plus className="w-5 h-5" />
@@ -559,7 +567,7 @@ export const VideoPlayerPage: React.FC = () => {
                   onClick={handleReport}
                   disabled={!isAuthenticated}
                   className={cn(
-                    "glass-card hover:bg-surface-hover p-2 rounded-xl text-text-primary transition-all cursor-pointer",
+                    "section-card-soft hover:bg-surface-hover p-2 rounded-xl text-text-primary transition-all cursor-pointer",
                     !isAuthenticated && "opacity-50 cursor-not-allowed",
                   )}
                   title="Report video"
@@ -575,7 +583,7 @@ export const VideoPlayerPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="glass-card p-3 sm:p-6"
+            className="section-card p-3 sm:p-6"
           >
             <div className="flex items-start justify-between gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
               <Link
@@ -609,7 +617,7 @@ export const VideoPlayerPage: React.FC = () => {
                   className={cn(
                     "px-6 py-2 rounded-xl font-medium transition-all cursor-pointer",
                     video.owner.isSubscribed
-                      ? "glass-card hover:bg-surface-hover text-text-primary"
+                      ? "btn-glass"
                       : "bg-primary-500 text-white shadow-glow hover:bg-primary-600",
                     subscribeMutation.isPending &&
                       "opacity-50 cursor-not-allowed",
@@ -709,7 +717,9 @@ export const VideoPlayerPage: React.FC = () => {
             transition={{ delay: 0.2 }}
             className="sticky top-6 space-y-4"
           >
-            <h2 className="text-xl font-bold text-text-primary">Up Next</h2>
+            <div className="section-card-soft p-3 rounded-xl">
+              <h2 className="text-xl font-bold text-text-primary">Up Next</h2>
+            </div>
 
             <div className="space-y-4">
               {relatedVideos?.docs.map((relatedVideo) => (

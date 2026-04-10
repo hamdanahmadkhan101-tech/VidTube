@@ -63,23 +63,31 @@ export const PlaylistsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center page-wrap">
         <Loader2 className="w-12 h-12 text-primary-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-text-primary">My Playlists</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Create Playlist
-        </button>
+    <div className="page-wrap page-stack">
+      <div className="page-hero">
+        <span className="kicker-pill">Library</span>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="page-title mb-1">My Playlists</h1>
+            <p className="page-subtitle">
+              Curate your best collections and organize watch sessions.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Create Playlist
+          </button>
+        </div>
       </div>
 
       {playlists && playlists.length > 0 ? (
@@ -89,7 +97,7 @@ export const PlaylistsPage: React.FC = () => {
               key={playlist._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card p-6 hover:shadow-glow transition-all"
+              className="section-card p-6 hover:shadow-glass-lg transition-all"
             >
               <Link to={`/playlist/${playlist._id}`}>
                 <div className="aspect-video bg-linear-to-br from-primary-500 to-accent-blue rounded-xl mb-4 flex items-center justify-center overflow-hidden">
@@ -116,7 +124,7 @@ export const PlaylistsPage: React.FC = () => {
               )}
 
               <div className="flex items-center justify-between text-sm text-text-tertiary mb-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 section-card-soft px-2.5 py-1.5 rounded-lg">
                   {playlist.isPublic === false ? (
                     <Lock className="w-4 h-4" />
                   ) : (
@@ -139,7 +147,7 @@ export const PlaylistsPage: React.FC = () => {
                 <button
                   onClick={() => deleteMutation.mutate(playlist._id)}
                   disabled={deleteMutation.isPending}
-                  className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                  className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors border border-red-500/20"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -148,8 +156,10 @@ export const PlaylistsPage: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="glass-card p-12 text-center">
-          <Play className="w-16 h-16 text-text-muted mx-auto mb-4" />
+        <div className="empty-state text-center">
+          <div className="icon-badge mx-auto mb-4">
+            <Play className="w-6 h-6" />
+          </div>
           <h3 className="text-xl font-semibold text-text-primary mb-2">
             No playlists yet
           </h3>
@@ -171,7 +181,7 @@ export const PlaylistsPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-card p-6 w-full max-w-md"
+            className="section-card p-6 w-full max-w-md"
           >
             <h2 className="text-2xl font-bold text-text-primary mb-6">
               Create New Playlist

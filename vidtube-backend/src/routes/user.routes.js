@@ -15,6 +15,8 @@ import {
   updateUserProfile,
   updateUserAvatar,
   updateUserCoverImage,
+  getUserPreferences,
+  updateUserPreferences,
 
   // Account Security Controllers
   changeCurrentUserPassword,
@@ -45,6 +47,7 @@ import {
   resetPasswordWithOtpSchema,
   updateProfileSchema,
   changePasswordSchema,
+  updatePreferencesSchema,
   usernameAvailabilityParamSchema,
   emailAvailabilityParamSchema,
 } from '../validators/user.validator.js';
@@ -144,6 +147,15 @@ router.route('/logout').post(verifyJWT, logoutUser);
 
 // Profile Information & Management
 router.route('/profile').get(verifyJWT, getCurrentUserProfile);
+router.route('/preferences').get(verifyJWT, getUserPreferences);
+router
+  .route('/preferences')
+  .patch(
+    verifyJWT,
+    profileMutationLimiter,
+    validate(updatePreferencesSchema),
+    updateUserPreferences
+  );
 router
   .route('/update-profile')
   .patch(

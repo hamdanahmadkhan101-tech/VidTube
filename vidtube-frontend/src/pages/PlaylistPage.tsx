@@ -18,7 +18,7 @@ export const PlaylistPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center page-wrap">
         <Loader2 className="w-12 h-12 text-primary-500 animate-spin" />
       </div>
     );
@@ -26,8 +26,8 @@ export const PlaylistPage: React.FC = () => {
 
   if (!playlist) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center page-wrap">
+        <div className="empty-state text-center">
           <h2 className="text-2xl font-bold text-text-primary mb-2">
             Playlist Not Found
           </h2>
@@ -46,22 +46,28 @@ export const PlaylistPage: React.FC = () => {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="page-wrap page-stack">
+      <div className="page-hero">
+        <span className="kicker-pill">Playlist</span>
+        <div className="mt-3">
+          <h1 className="page-title mb-1">{playlist.name}</h1>
+          <p className="page-subtitle">
+            {playlist.description || "Handpicked videos from this collection."}
+          </p>
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Playlist Info Sidebar */}
         <div className="lg:col-span-1">
-          <div className="glass-card p-6 sticky top-24">
+          <div className="section-card p-6 sticky top-24">
             <div className="aspect-video bg-linear-to-br from-primary-500 to-accent-blue rounded-xl mb-4 flex items-center justify-center">
               <Play className="w-16 h-16 text-white" />
             </div>
 
-            <h1 className="text-2xl font-bold text-text-primary mb-2">
-              {playlist.name}
-            </h1>
-
             <Link
               to={`/channel/${playlist.owner.username}`}
-              className="flex items-center gap-2 mb-4 hover:text-primary-500 transition-colors"
+              className="flex items-center gap-2 mb-4 hover:text-primary-300 transition-colors"
             >
               <img
                 src={playlist.owner.avatarUrl || "/default-avatar.jpg"}
@@ -80,11 +86,11 @@ export const PlaylistPage: React.FC = () => {
             )}
 
             <div className="space-y-2 text-sm text-text-secondary">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 section-card-soft px-3 py-2 rounded-lg">
                 <Play className="w-4 h-4" />
                 <span>{videos.length} videos</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 section-card-soft px-3 py-2 rounded-lg">
                 {playlist.isPublic === false ? (
                   <Lock className="w-4 h-4" />
                 ) : (
@@ -94,7 +100,7 @@ export const PlaylistPage: React.FC = () => {
                   {playlist.isPublic === false ? "Private" : "Public"}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 section-card-soft px-3 py-2 rounded-lg">
                 <Calendar className="w-4 h-4" />
                 <span>Updated {formatRelativeTime(playlist.updatedAt)}</span>
               </div>
@@ -115,8 +121,10 @@ export const PlaylistPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="glass-card p-12 text-center">
-              <Play className="w-16 h-16 text-text-muted mx-auto mb-4" />
+            <div className="empty-state text-center">
+              <div className="icon-badge mx-auto mb-4">
+                <Play className="w-6 h-6" />
+              </div>
               <h3 className="text-xl font-semibold text-text-primary mb-2">
                 No videos in this playlist
               </h3>

@@ -54,35 +54,40 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-liquid-lux">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 auth-shell">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
         {/* Logo */}
         <div className="text-center mb-8">
+          <span className="inline-flex rounded-full border border-primary-300/35 bg-primary-300/10 px-3 py-1 text-[11px] font-semibold tracking-widest uppercase text-primary-100 mb-4">
+            Secure access
+          </span>
           <motion.div
-            whileHover={{ rotate: 360 }}
-            transition={{ duration: 0.5 }}
-            className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow mx-auto mb-4"
+            whileHover={{ scale: 1.04 }}
+            transition={{ duration: 0.25 }}
+            className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 via-accent-blue to-accent-cyan flex items-center justify-center shadow-glow mx-auto mb-4 ring-1 ring-white/25"
           >
             <Video className="w-8 h-8 text-white" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-gradient mb-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gradient mb-2 leading-tight">
             Welcome Back
           </h1>
-          <p className="text-text-secondary">Sign in to continue to VidTube</p>
+          <p className="text-text-secondary text-sm sm:text-base">
+            Sign in to continue to your creator workspace.
+          </p>
         </div>
 
         {/* Form Card */}
-        <div className="glass-card p-8">
+        <div className="glass-card p-7 sm:p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Email */}
             <div>
               <label
                 htmlFor="email"
-                className="block text-text-primary font-medium mb-2"
+                className="block text-text-primary font-semibold mb-2 text-sm"
               >
                 Email
               </label>
@@ -107,7 +112,7 @@ export const LoginPage: React.FC = () => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-text-primary font-medium mb-2"
+                className="block text-text-primary font-semibold mb-2 text-sm"
               >
                 Password
               </label>
@@ -143,7 +148,7 @@ export const LoginPage: React.FC = () => {
             <div className="text-right">
               <Link
                 to="/forgot-password"
-                className="text-primary-500 hover:text-primary-400 text-sm font-medium transition-colors"
+                className="text-primary-300 hover:text-primary-100 text-sm font-semibold transition-colors"
               >
                 Forgot Password?
               </Link>
@@ -178,7 +183,7 @@ export const LoginPage: React.FC = () => {
             Don't have an account?{" "}
             <Link
               to="/register"
-              className="text-primary-500 hover:text-primary-400 font-medium transition-colors"
+              className="text-primary-300 hover:text-primary-100 font-semibold transition-colors"
             >
               Sign Up
             </Link>

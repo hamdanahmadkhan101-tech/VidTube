@@ -17,6 +17,7 @@ import {
 
   // Video Interactions
   addVideoToWatchHistory,
+  updateWatchProgress,
 } from '../controllers/video.controller.js';
 import {
   uploadVideo as uploadVideoMiddleware,
@@ -41,6 +42,8 @@ import {
   videoSearchSchema,
   videoSuggestionsSchema,
   videoListQuerySchema,
+  videoWatchProgressSchema,
+  videoWatchEventSchema,
 } from '../validators/video.validator.js';
 import { buildObjectIdParamSchema } from '../validators/common.validator.js';
 
@@ -146,7 +149,18 @@ router
     verifyJWT,
     watchHistoryLimiter,
     validate(buildObjectIdParamSchema('videoId'), 'params'),
+    validate(videoWatchEventSchema),
     addVideoToWatchHistory
+  );
+
+router
+  .route('/:videoId/watch-progress')
+  .patch(
+    verifyJWT,
+    watchHistoryLimiter,
+    validate(buildObjectIdParamSchema('videoId'), 'params'),
+    validate(videoWatchProgressSchema),
+    updateWatchProgress
   );
 
 export default router;

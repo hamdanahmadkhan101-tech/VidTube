@@ -93,7 +93,7 @@ export const EditVideoPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="page-wrap py-8">
         <div className="max-w-4xl mx-auto">
           <div className="skeleton h-12 mb-6" />
           <div className="skeleton h-64 mb-6" />
@@ -105,8 +105,8 @@ export const EditVideoPage: React.FC = () => {
 
   if (!video) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
+      <div className="page-wrap py-8">
+        <div className="empty-state text-center">
           <p className="text-text-secondary">Video not found</p>
         </div>
       </div>
@@ -114,27 +114,32 @@ export const EditVideoPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="page-wrap py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto"
+        className="max-w-4xl mx-auto page-stack"
       >
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(`/watch/${videoId}`)}
-            className="p-2 hover:bg-surface rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6 text-text-primary" />
-          </button>
-          <h1 className="text-3xl font-bold text-text-primary">Edit Video</h1>
+        <div className="page-hero flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(`/watch/${videoId}`)}
+              className="p-2 hover:bg-surface rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6 text-text-primary" />
+            </button>
+            <div>
+              <h1 className="page-title mb-1">Edit Video</h1>
+              <p className="page-subtitle">Refine metadata and thumbnail.</p>
+            </div>
+          </div>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Thumbnail Upload */}
-          <div className="glass-card p-6">
+          <div className="section-card p-6">
             <label className="block text-text-primary font-semibold mb-4">
               Thumbnail
             </label>
@@ -163,7 +168,7 @@ export const EditVideoPage: React.FC = () => {
           </div>
 
           {/* Title */}
-          <div className="glass-card p-6">
+          <div className="section-card p-6">
             <label className="block text-text-primary font-semibold mb-2">
               Title *
             </label>
@@ -182,7 +187,7 @@ export const EditVideoPage: React.FC = () => {
           </div>
 
           {/* Description */}
-          <div className="glass-card p-6">
+          <div className="section-card p-6">
             <label className="block text-text-primary font-semibold mb-2">
               Description
             </label>

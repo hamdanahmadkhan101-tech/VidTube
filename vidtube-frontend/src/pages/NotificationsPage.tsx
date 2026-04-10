@@ -60,7 +60,7 @@ export const NotificationsPage: React.FC = () => {
         return <UserPlus className="w-5 h-5 text-green-500" />;
       case "upload":
       case "video_upload":
-        return <Video className="w-5 h-5 text-purple-500" />;
+        return <Video className="w-5 h-5 text-primary-400" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
@@ -110,36 +110,37 @@ export const NotificationsPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="page-wrap page-stack max-w-4xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
       >
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-primary-500/20 flex items-center justify-center">
-              <Bell className="w-6 h-6 text-primary-500" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-text-primary">
-                Notifications
-              </h1>
-              {unreadCount > 0 && (
-                <p className="text-sm text-text-secondary">
-                  {unreadCount} unread notification
-                  {unreadCount !== 1 ? "s" : ""}
+        <div className="page-hero">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="icon-badge">
+                <Bell className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="page-title">Notifications</h1>
+                <p className="page-subtitle">
+                  Stay on top of comments, likes, and subscriber activity.
                 </p>
-              )}
+              </div>
             </div>
+
+            {unreadCount > 0 && (
+              <span className="kicker-pill">{unreadCount} unread</span>
+            )}
           </div>
 
           {unreadCount > 0 && (
             <button
               onClick={() => markAllAsReadMutation.mutate()}
               disabled={markAllAsReadMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl glass-card hover:bg-surface-hover text-text-primary transition-all"
+              className="mt-4 flex items-center justify-center sm:justify-start gap-2 px-4 py-2 rounded-xl btn-glass text-text-primary w-full sm:w-auto"
             >
               <Check className="w-4 h-4" />
               Mark all as read
@@ -148,7 +149,7 @@ export const NotificationsPage: React.FC = () => {
         </div>
 
         {/* Notifications List */}
-        <div className="glass-card divide-y divide-white/5">
+        <div className="section-card divide-y divide-white/5">
           {isLoading ? (
             <div className="p-8 flex items-center justify-center">
               <Loader2 className="w-6 h-6 text-primary-500 animate-spin" />
@@ -164,8 +165,8 @@ export const NotificationsPage: React.FC = () => {
                       markAsReadMutation.mutate(notification._id);
                     }
                   }}
-                  className={`flex items-start gap-4 p-4 hover:bg-surface transition-colors ${
-                    !notification.isRead ? "bg-surface/50" : ""
+                  className={`flex items-start gap-3 sm:gap-4 p-4 hover:bg-surface-hover transition-colors ${
+                    !notification.isRead ? "bg-surface/45" : ""
                   }`}
                 >
                   {/* Avatar */}
@@ -182,7 +183,7 @@ export const NotificationsPage: React.FC = () => {
                       notification.relatedUser?.fullName ||
                       "User"
                     }
-                    className="w-12 h-12 rounded-full object-cover shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shrink-0"
                   />
 
                   {/* Content */}
@@ -220,7 +221,7 @@ export const NotificationsPage: React.FC = () => {
                   <button
                     onClick={() => setPage((p) => p + 1)}
                     disabled={isLoading}
-                    className="w-full py-3 rounded-xl glass-card hover:bg-surface-hover text-text-primary transition-all font-medium"
+                    className="w-full py-3 rounded-xl section-card-soft hover:bg-surface-hover text-text-primary transition-all font-medium"
                   >
                     {isLoading ? "Loading..." : "Load More"}
                   </button>
@@ -228,8 +229,10 @@ export const NotificationsPage: React.FC = () => {
               )}
             </>
           ) : (
-            <div className="p-12 text-center">
-              <Bell className="w-16 h-16 text-text-muted mx-auto mb-4" />
+            <div className="p-12 text-center empty-state m-4">
+              <div className="icon-badge mx-auto mb-4">
+                <Bell className="w-6 h-6" />
+              </div>
               <h3 className="text-lg font-semibold text-text-primary mb-2">
                 No notifications yet
               </h3>

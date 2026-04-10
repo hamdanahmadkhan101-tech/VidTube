@@ -165,6 +165,44 @@ export const changePasswordSchema = z
     path: ['newPassword'],
   });
 
+export const updatePreferencesSchema = z
+  .object({
+    emailNotifications: z.boolean().optional(),
+    pushNotifications: z.boolean().optional(),
+    privacy: z
+      .object({
+        showEmail: z.boolean().optional(),
+        showWatchHistory: z.boolean().optional(),
+      })
+      .optional(),
+    playback: z
+      .object({
+        autoplay: z.boolean().optional(),
+        defaultQuality: z
+          .enum(['auto', '1080p', '720p', '480p', '360p'])
+          .optional(),
+      })
+      .optional(),
+    ui: z
+      .object({
+        compactMode: z.boolean().optional(),
+        rightSidebarMenu: z.boolean().optional(),
+      })
+      .optional(),
+  })
+  .refine(
+    (data) =>
+      data.emailNotifications !== undefined ||
+      data.pushNotifications !== undefined ||
+      data.privacy !== undefined ||
+      data.playback !== undefined ||
+      data.ui !== undefined,
+    {
+      message: 'At least one preference field must be provided',
+      path: ['emailNotifications'],
+    }
+  );
+
 export const usernameAvailabilityParamSchema = z.object({
   username: z
     .string()

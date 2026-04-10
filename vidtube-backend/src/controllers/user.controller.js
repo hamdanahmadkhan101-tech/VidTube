@@ -10,6 +10,9 @@ import mongoose from 'mongoose';
 // Models
 import { User } from '../models/user.model.js';
 import Subscription from '../models/subscription.model.js';
+import UserPreference from '../models/userPreference.model.js';
+import UserStatistic from '../models/userStatistic.model.js';
+import WatchHistoryEntry from '../models/watchHistoryEntry.model.js';
 
 // Services
 import {
@@ -90,6 +93,23 @@ const rollbackRegistrationArtifacts = async ({
   await Promise.allSettled(cleanupTasks);
 };
 
+const formatPreferences = (preferences) => ({
+  emailNotifications: preferences?.emailNotifications ?? true,
+  pushNotifications: preferences?.pushNotifications ?? true,
+  privacy: {
+    showEmail: preferences?.privacy?.showEmail ?? false,
+    showWatchHistory: preferences?.privacy?.showWatchHistory ?? true,
+  },
+  playback: {
+    autoplay: preferences?.playback?.autoplay ?? true,
+    defaultQuality: preferences?.playback?.defaultQuality ?? 'auto',
+  },
+  ui: {
+    compactMode: preferences?.ui?.compactMode ?? false,
+    rightSidebarMenu: preferences?.ui?.rightSidebarMenu ?? true,
+  },
+});
+
 // ============================================
 // AUTHENTICATION CONTROLLERS
 // ============================================
@@ -144,6 +164,38 @@ const registerUser = asyncHandler(async (req, res) => {
     avatarUrl: avatarUploadResult?.url || defaultAvatarUrl,
     coverUrl: coverUploadResult?.url || '',
   });
+
+  const [preferenceInitResult, statisticInitResult] = await Promise.allSettled([
+    UserPreference.updateOne(
+      { user: newUser._id },
+      { $setOnInsert: { user: newUser._id } },
+      { upsert: true }
+    ),
+    UserStatistic.updateOne(
+      { user: newUser._id },
+      {
+        $setOnInsert: {
+          user: newUser._id,
+          lastActiveAt: new Date(),
+        },
+      },
+      { upsert: true }
+    ),
+  ]);
+
+  if (preferenceInitResult.status === 'rejected') {
+    logWarn('Failed to initialize user preferences', {
+      userId: newUser._id?.toString(),
+      message: preferenceInitResult.reason?.message,
+    });
+  }
+
+  if (statisticInitResult.status === 'rejected') {
+    logWarn('Failed to initialize user statistics', {
+      userId: newUser._id?.toString(),
+      message: statisticInitResult.reason?.message,
+    });
+  }
 
   const createdUser = await User.findById(newUser._id).select(
     '-password -refreshTokens'
@@ -520,6 +572,24 @@ const changeCurrentUserPassword = asyncHandler(async (req, res) => {
  * @access Private
  */
 const getCurrentUserProfile = asyncHandler(async (req, res) => {
+  await Promise.allSettled([
+    UserPreference.updateOne(
+      { user: req.user._id },
+      { $setOnInsert: { user: req.user._id } },
+      { upsert: true }
+    ),
+    UserStatistic.updateOne(
+      { user: req.user._id },
+      {
+        $setOnInsert: {
+          user: req.user._id,
+          lastActiveAt: new Date(),
+        },
+      },
+      { upsert: true }
+    ),
+  ]);
+
   const userProfile = await User.aggregate(
     buildCurrentUserProfilePipeline({ userId: req.user._id })
   );
@@ -541,7 +611,7 @@ const getCurrentUserProfile = asyncHandler(async (req, res) => {
  * @access Private
  */
 const updateUserProfile = asyncHandler(async (req, res) => {
-  const { fullName, email, username, bio } = req.body;
+  const { fullName, email, username, bio, socialLinks } = req.body;
 
   // If username is being changed, check if new username is taken
   if (username && username !== req.user.username) {
@@ -561,6 +631,15 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
   }
 
+  const socialLinkUpdates = {};
+  if (socialLinks && typeof socialLinks === 'object') {
+    for (const [platform, value] of Object.entries(socialLinks)) {
+      if (value !== undefined) {
+        socialLinkUpdates[`socialLinks.${platform}`] = value;
+      }
+    }
+  }
+
   // Update fields
   const updatedUser = await User.findByIdAndUpdate(
     req.user._id,
@@ -570,6 +649,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         ...(email && { email: email.toLowerCase() }),
         ...(username && { username: username.toLowerCase() }),
         ...(bio !== undefined && { bio }), // Allow empty string for bio
+        ...socialLinkUpdates,
       },
     },
     { new: true, runValidators: true }
@@ -659,6 +739,96 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   } catch (error) {
     throw error;
   }
+});
+
+/**
+ * Get current user's preferences
+ * @route GET /api/v1/users/preferences
+ * @access Private
+ */
+const getUserPreferences = asyncHandler(async (req, res) => {
+  const preferences = await UserPreference.findOneAndUpdate(
+    { user: req.user._id },
+    { $setOnInsert: { user: req.user._id } },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    }
+  ).lean();
+
+  res.status(200).json(
+    new apiResponse(200, 'Preferences fetched successfully', {
+      preferences: formatPreferences(preferences),
+    })
+  );
+});
+
+/**
+ * Update current user's preferences
+ * @route PATCH /api/v1/users/preferences
+ * @access Private
+ */
+const updateUserPreferences = asyncHandler(async (req, res) => {
+  const { emailNotifications, pushNotifications, privacy, playback, ui } =
+    req.body;
+
+  const updatePayload = {};
+
+  if (emailNotifications !== undefined) {
+    updatePayload.emailNotifications = emailNotifications;
+  }
+
+  if (pushNotifications !== undefined) {
+    updatePayload.pushNotifications = pushNotifications;
+  }
+
+  if (privacy?.showEmail !== undefined) {
+    updatePayload['privacy.showEmail'] = privacy.showEmail;
+  }
+
+  if (privacy?.showWatchHistory !== undefined) {
+    updatePayload['privacy.showWatchHistory'] = privacy.showWatchHistory;
+  }
+
+  if (playback?.autoplay !== undefined) {
+    updatePayload['playback.autoplay'] = playback.autoplay;
+  }
+
+  if (playback?.defaultQuality !== undefined) {
+    updatePayload['playback.defaultQuality'] = playback.defaultQuality;
+  }
+
+  if (ui?.compactMode !== undefined) {
+    updatePayload['ui.compactMode'] = ui.compactMode;
+  }
+
+  if (ui?.rightSidebarMenu !== undefined) {
+    updatePayload['ui.rightSidebarMenu'] = ui.rightSidebarMenu;
+  }
+
+  if (Object.keys(updatePayload).length === 0) {
+    throw new apiError(400, 'No preference fields provided for update');
+  }
+
+  const updatedPreferences = await UserPreference.findOneAndUpdate(
+    { user: req.user._id },
+    {
+      $set: updatePayload,
+      $setOnInsert: { user: req.user._id },
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    }
+  ).lean();
+
+  res.status(200).json(
+    new apiResponse(200, 'Preferences updated successfully', {
+      preferences: formatPreferences(updatedPreferences),
+    })
+  );
 });
 
 // ============================================
@@ -797,8 +967,8 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
 
   const skip = (page - 1) * limit;
 
-  // Fetch paginated watch history directly from DB to avoid in-memory slicing for large histories
-  const [watchHistoryResult] = await User.aggregate(
+  // Fetch paginated watch history from dedicated watch-history entries collection.
+  const [watchHistoryResult] = await WatchHistoryEntry.aggregate(
     buildWatchHistoryPipeline({
       userId: req.user._id,
       skip,
@@ -843,6 +1013,8 @@ export {
   updateUserProfile,
   updateUserAvatar,
   updateUserCoverImage,
+  getUserPreferences,
+  updateUserPreferences,
 
   // Account Security Controllers
   changeCurrentUserPassword,

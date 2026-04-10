@@ -86,24 +86,27 @@ export const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-liquid-lux">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 auth-shell">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
+          <span className="inline-flex rounded-full border border-primary-300/35 bg-primary-300/10 px-3 py-1 text-[11px] font-semibold tracking-widest uppercase text-primary-100 mb-4">
+            Account Recovery
+          </span>
           <motion.div
-            whileHover={{ rotate: 360 }}
-            transition={{ duration: 0.5 }}
-            className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 to-accent-blue flex items-center justify-center shadow-glow mx-auto mb-4"
+            whileHover={{ scale: 1.04 }}
+            transition={{ duration: 0.25 }}
+            className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 via-accent-blue to-accent-cyan flex items-center justify-center shadow-glow mx-auto mb-4 ring-1 ring-white/25"
           >
             <Video className="w-8 h-8 text-white" />
           </motion.div>
           <h1 className="text-3xl font-bold text-gradient mb-2">
             Reset Password
           </h1>
-          <p className="text-text-secondary">
+          <p className="text-text-secondary text-sm sm:text-base">
             {otpRequested
               ? "Enter OTP and your new password"
               : "Request an OTP to reset your password"}
@@ -119,7 +122,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="request-email"
-                  className="block text-text-primary font-medium mb-2"
+                  className="block text-text-primary font-semibold mb-2 text-sm"
                 >
                   Email
                 </label>
@@ -163,7 +166,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="reset-email"
-                  className="block text-text-primary font-medium mb-2"
+                  className="block text-text-primary font-semibold mb-2 text-sm"
                 >
                   Email
                 </label>
@@ -183,7 +186,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="reset-otp"
-                  className="block text-text-primary font-medium mb-2"
+                  className="block text-text-primary font-semibold mb-2 text-sm"
                 >
                   OTP Code
                 </label>
@@ -208,7 +211,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <div>
                 <label
                   htmlFor="new-password"
-                  className="block text-text-primary font-medium mb-2"
+                  className="block text-text-primary font-semibold mb-2 text-sm"
                 >
                   New Password
                 </label>

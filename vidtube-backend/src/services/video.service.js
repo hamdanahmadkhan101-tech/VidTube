@@ -1,9 +1,19 @@
 import mongoose from 'mongoose';
 import Video from '../models/video.model.js';
 import { User } from '../models/user.model.js';
-import { NotFoundError, ForbiddenError, ValidationError, apiError } from '../errors/index.js';
+import WatchHistoryEntry from '../models/watchHistoryEntry.model.js';
+import UserStatistic from '../models/userStatistic.model.js';
+import {
+  NotFoundError,
+  ForbiddenError,
+  ValidationError,
+  apiError,
+} from '../errors/index.js';
 import { formatVideo } from '../utils/formatters.js';
-import { uploadOnCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js';
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from '../utils/cloudinary.js';
 
 /**
  * Video Service
@@ -193,7 +203,12 @@ export const checkVideoOwnership = async (videoId, userId) => {
  * @param {Object} options.matchStage - Match stage for filtering
  * @returns {Promise<Object>} Paginated video results
  */
-export const getPaginatedVideos = async ({ page, limit, sortStage, matchStage = {} }) => {
+export const getPaginatedVideos = async ({
+  page,
+  limit,
+  sortStage,
+  matchStage = {},
+}) => {
   const pipeline = [
     {
       $match: {
@@ -254,7 +269,12 @@ export const searchVideos = async (searchQuery, page, limit) => {
  * @param {boolean} includeUnpublished - Include unpublished videos (owner only)
  * @returns {Promise<Object>} Paginated video results
  */
-export const getVideosByOwner = async (userId, page, limit, includeUnpublished = false) => {
+export const getVideosByOwner = async (
+  userId,
+  page,
+  limit,
+  includeUnpublished = false
+) => {
   const matchStage = {
     owner: new mongoose.Types.ObjectId(userId),
   };
@@ -357,6 +377,9 @@ export const deleteVideo = async (videoId, userId) => {
   }
 
   // Remove video from all users' watch history
+  deletePromises.push(WatchHistoryEntry.deleteMany({ video: video._id }));
+
+  // Legacy cleanup for embedded watch history arrays (safe no-op if absent)
   deletePromises.push(
     User.updateMany(
       { watchHistory: video._id },
@@ -412,32 +435,66 @@ export const addVideoToWatchHistory = async (videoId, userId) => {
     throw new ForbiddenError('Cannot add unpublished video to watch history');
   }
 
-  // Check if video is already in watch history
-  const user = await User.findById(userId);
-  const alreadyInHistory = user.watchHistory?.some(
-    (v) => v.toString() === videoId.toString()
+  const now = new Date();
+
+  const historyUpdateResult = await WatchHistoryEntry.updateOne(
+    {
+      user: userId,
+      video: videoId,
+    },
+    {
+      $set: {
+        lastWatchedAt: now,
+      },
+      $setOnInsert: {
+        firstWatchedAt: now,
+        watchCount: 0,
+      },
+      $inc: {
+        watchCount: 1,
+      },
+    },
+    {
+      upsert: true,
+    }
   );
 
-  // Only increment views if this is the first time user watches
-  if (!alreadyInHistory) {
-    // Increment views atomically
+  const shouldCountView = historyUpdateResult.upsertedCount > 0;
+
+  if (shouldCountView) {
     await Video.findByIdAndUpdate(
       videoId,
       { $inc: { views: 1 } },
       { new: false }
     );
 
-    // Add to watch history
-    await User.findByIdAndUpdate(
-      userId,
-      { $push: { watchHistory: videoId } },
-      { new: true }
+    await UserStatistic.updateOne(
+      { user: userId },
+      {
+        $setOnInsert: {
+          user: userId,
+        },
+        $set: {
+          lastActiveAt: now,
+        },
+        $inc: {
+          totalVideosWatched: 1,
+        },
+      },
+      { upsert: true }
     );
   }
 
+  // Legacy compatibility for embedded array while transitioning to dedicated model.
+  await User.findByIdAndUpdate(
+    userId,
+    { $addToSet: { watchHistory: videoId } },
+    { new: false }
+  );
+
   return {
     videoId,
-    viewCounted: !alreadyInHistory,
+    viewCounted: shouldCountView,
   };
 };
 

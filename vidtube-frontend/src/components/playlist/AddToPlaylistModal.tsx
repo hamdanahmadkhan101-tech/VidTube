@@ -108,7 +108,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
           )}
 
           <ModalWrapper {...modalProps}>
-            <div className="glass-card w-full max-w-md max-h-[80vh] flex flex-col">
+            <div className="section-card w-full max-w-md max-h-[80vh] flex flex-col">
               <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <h2 className="text-xl font-bold text-text-primary">
                   Save to playlist
@@ -149,7 +149,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                               addToPlaylistMutation.mutate(playlist._id);
                             }
                           }}
-                          className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-surface transition-colors cursor-pointer"
+                          className="w-full flex items-center gap-3 p-3 rounded-lg section-card-soft hover:bg-surface-hover transition-colors cursor-pointer"
                         >
                           <div
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
@@ -183,7 +183,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                 )}
 
                 {showCreateForm ? (
-                  <div className="mt-4 p-4 glass-card rounded-xl">
+                  <div className="mt-4 p-4 section-card-soft rounded-xl">
                     <input
                       type="text"
                       value={newPlaylistName}
@@ -237,7 +237,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                 ) : (
                   <button
                     onClick={() => setShowCreateForm(true)}
-                    className="w-full flex items-center gap-3 p-3 mt-4 rounded-lg hover:bg-surface transition-colors border border-white/10 cursor-pointer"
+                    className="w-full flex items-center gap-3 p-3 mt-4 rounded-lg hover:bg-surface-hover transition-colors border border-white/10 cursor-pointer"
                   >
                     <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center">
                       <Plus className="w-5 h-5 text-primary-500" />

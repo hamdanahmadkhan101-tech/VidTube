@@ -83,7 +83,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen app-shell bg-background">
           <Header />
           <NotificationRealtimeBridge />
 
@@ -197,8 +197,8 @@ function App() {
                 <Route
                   path="*"
                   element={
-                    <div className="min-h-screen flex items-center justify-center">
-                      <div className="text-center">
+                    <div className="min-h-screen flex items-center justify-center px-4">
+                      <div className="page-hero text-center max-w-xl w-full">
                         <h1 className="text-6xl font-bold text-gradient mb-4">
                           404
                         </h1>
@@ -220,18 +220,19 @@ function App() {
           <Toaster
             position="top-right"
             toastOptions={{
-              duration: 2000,
+              duration: 2200,
               style: {
-                background: "rgba(20, 20, 20, 0.9)",
-                color: "#fff",
+                background: "rgba(19, 25, 34, 0.94)",
+                color: "#f2f4f7",
                 backdropFilter: "blur(12px)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                borderRadius: "12px",
-                padding: "16px",
+                border: "1px solid rgba(190, 206, 226, 0.22)",
+                borderRadius: "14px",
+                padding: "14px 16px",
+                boxShadow: "0 16px 32px rgba(2, 6, 12, 0.45)",
               },
               success: {
                 iconTheme: {
-                  primary: "#8b5cf6",
+                  primary: "#c26e2e",
                   secondary: "#fff",
                 },
               },

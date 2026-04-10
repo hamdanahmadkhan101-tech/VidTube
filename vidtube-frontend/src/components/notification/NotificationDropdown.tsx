@@ -74,7 +74,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return <UserPlus className="w-5 h-5 text-green-500" />;
       case "upload":
       case "video_upload":
-        return <Video className="w-5 h-5 text-purple-500" />;
+        return <Video className="w-5 h-5 text-primary-400" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
@@ -124,8 +124,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   };
 
   const dropdownClass = isMobile
-    ? "fixed bottom-0 left-0 right-0 w-full rounded-t-2xl max-h-[80vh]"
-    : "absolute right-0 top-full mt-2 w-96 rounded-2xl";
+    ? "fixed bottom-2 left-2 right-2 w-auto rounded-2xl max-h-[min(82vh,40rem)]"
+    : "absolute right-0 top-full mt-2 w-[22rem] rounded-2xl";
 
   return (
     <AnimatePresence>
@@ -137,7 +137,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]"
           />
 
           {/* Dropdown */}
@@ -145,7 +145,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             initial={{ opacity: 0, y: isMobile ? 100 : -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: isMobile ? 100 : -10 }}
-            className={`${dropdownClass} bg-background-secondary backdrop-blur-xl shadow-2xl border border-white/10 z-50 flex flex-col`}
+            className={`${dropdownClass} bg-background-secondary/95 backdrop-blur-xl shadow-2xl border border-white/12 z-50 flex flex-col`}
           >
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
@@ -165,14 +165,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   <button
                     onClick={() => markAllAsReadMutation.mutate()}
                     disabled={markAllAsReadMutation.isPending}
-                    className="text-xs text-primary-500 hover:text-primary-400 transition-colors"
+                    className="text-xs text-primary-300 hover:text-primary-100 transition-colors px-2 py-1 rounded-md hover:bg-white/5"
                   >
                     Mark all read
                   </button>
                 )}
                 <button
                   onClick={onClose}
-                  className="text-text-muted hover:text-text-primary transition-colors"
+                  className="text-text-muted hover:text-text-primary transition-colors p-1 rounded-md hover:bg-white/5"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -197,7 +197,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         }
                         onClose();
                       }}
-                      className={`flex items-start gap-3 p-4 hover:bg-surface transition-colors cursor-pointer ${
+                      className={`flex items-start gap-3 p-4 hover:bg-surface-hover transition-colors cursor-pointer ${
                         !notification.isRead ? "bg-surface/50" : ""
                       }`}
                     >
@@ -256,7 +256,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 <Link
                   to="/notifications"
                   onClick={onClose}
-                  className="block text-center text-sm text-primary-500 hover:text-primary-400 transition-colors"
+                  className="block text-center text-sm text-primary-300 hover:text-primary-100 transition-colors"
                 >
                   View all notifications
                 </Link>

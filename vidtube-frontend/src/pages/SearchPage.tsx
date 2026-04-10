@@ -36,10 +36,20 @@ export const SearchPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="page-wrap page-stack">
       {/* Search Header */}
-      <div className="glass-card p-6 mb-8">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="page-hero">
+        <span className="kicker-pill">Search</span>
+        <div className="mt-3 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="page-title mb-1">Find Your Next Watch</h1>
+            <p className="page-subtitle">
+              Search by topic and narrow results by what matters most.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-col md:flex-row gap-4">
           {/* Search Input */}
           <div className="flex-1 relative">
             <input
@@ -62,7 +72,7 @@ export const SearchPage: React.FC = () => {
             className="btn-glass flex items-center gap-2"
           >
             <Filter className="w-5 h-5" />
-            Filters
+            {showFilters ? "Hide Filters" : "Filters"}
           </button>
         </div>
 
@@ -72,7 +82,7 @@ export const SearchPage: React.FC = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="mt-4 pt-4 border-t border-white/10"
+            className="mt-4 section-card-soft p-4"
           >
             <div className="flex flex-wrap gap-4">
               <div>
@@ -99,7 +109,7 @@ export const SearchPage: React.FC = () => {
       {/* Results */}
       {query ? (
         <>
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-text-primary">
               Search results for "{query}"
             </h2>
@@ -123,25 +133,29 @@ export const SearchPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="glass-card p-12 text-center">
-              <SearchIcon className="w-16 h-16 text-text-muted mx-auto mb-4" />
+            <div className="empty-state text-center">
+              <div className="icon-badge mx-auto mb-4">
+                <SearchIcon className="w-6 h-6" />
+              </div>
               <h3 className="text-xl font-semibold text-text-primary mb-2">
                 No results found
               </h3>
               <p className="text-text-secondary">
-                Try different keywords or remove search filters
+                Try different keywords or remove search filters.
               </p>
             </div>
           )}
         </>
       ) : (
-        <div className="glass-card p-12 text-center">
-          <SearchIcon className="w-16 h-16 text-text-muted mx-auto mb-4" />
+        <div className="empty-state text-center">
+          <div className="icon-badge mx-auto mb-4">
+            <SearchIcon className="w-6 h-6" />
+          </div>
           <h3 className="text-xl font-semibold text-text-primary mb-2">
             Start searching
           </h3>
           <p className="text-text-secondary">
-            Enter keywords to find videos you're looking for
+            Enter keywords to find videos you are looking for.
           </p>
         </div>
       )}

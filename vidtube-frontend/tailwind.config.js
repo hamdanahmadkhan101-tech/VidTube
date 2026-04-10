@@ -5,58 +5,58 @@ export default {
   theme: {
     extend: {
       colors: {
-        // OLED Black Theme with Purple/Blue Accents
+        // Deep slate base with refined blue/cyan accents
         background: {
-          DEFAULT: "#000000", // Pure OLED black
-          secondary: "#0A0A0A",
-          tertiary: "#121212",
+          DEFAULT: "#090f17",
+          secondary: "#101927",
+          tertiary: "#182335",
         },
         surface: {
-          DEFAULT: "rgba(20, 20, 20, 0.7)", // Glass surface
-          hover: "rgba(30, 30, 30, 0.8)",
-          active: "rgba(40, 40, 40, 0.9)",
+          DEFAULT: "rgba(22, 33, 49, 0.72)",
+          hover: "rgba(31, 45, 67, 0.84)",
+          active: "rgba(40, 58, 86, 0.92)",
         },
         primary: {
-          50: "#f5f3ff",
-          100: "#ede9fe",
-          200: "#ddd6fe",
-          300: "#c4b5fd",
-          400: "#a78bfa",
-          500: "#8b5cf6", // Main purple
-          600: "#7c3aed",
-          700: "#6d28d9",
-          800: "#5b21b6",
-          900: "#4c1d95",
+          50: "#eef8ff",
+          100: "#d6edff",
+          200: "#aedbff",
+          300: "#7ec3ff",
+          400: "#49a7ff",
+          500: "#1f8fff",
+          600: "#0d76de",
+          700: "#0b60b5",
+          800: "#0f4d8f",
+          900: "#113f74",
         },
         accent: {
-          blue: "#3b82f6",
-          cyan: "#06b6d4",
-          purple: "#8b5cf6",
-          pink: "#ec4899",
+          blue: "#43b8ff",
+          cyan: "#14d3c6",
+          purple: "#4f6eff",
+          pink: "#ff6f9d",
         },
         text: {
-          primary: "#FFFFFF",
-          secondary: "rgba(255, 255, 255, 0.7)",
-          tertiary: "rgba(255, 255, 255, 0.5)",
-          muted: "rgba(255, 255, 255, 0.3)",
+          primary: "#f7fbff",
+          secondary: "rgba(232, 241, 255, 0.78)",
+          tertiary: "rgba(198, 214, 235, 0.58)",
+          muted: "rgba(168, 189, 216, 0.42)",
         },
       },
       backgroundImage: {
         "glass-gradient":
-          "linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)",
+          "linear-gradient(135deg, rgba(67, 184, 255, 0.16) 0%, rgba(20, 211, 198, 0.12) 100%)",
         "glass-gradient-hover":
-          "linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)",
+          "linear-gradient(135deg, rgba(67, 184, 255, 0.26) 0%, rgba(20, 211, 198, 0.2) 100%)",
         "liquid-lux":
-          "radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%)",
+          "radial-gradient(circle at 20% 10%, rgba(67, 184, 255, 0.2) 0%, transparent 45%), radial-gradient(circle at 88% 8%, rgba(20, 211, 198, 0.16) 0%, transparent 40%)",
       },
       backdropBlur: {
         xs: "2px",
       },
       boxShadow: {
-        glass: "0 8px 32px 0 rgba(139, 92, 246, 0.1)",
-        "glass-lg": "0 12px 48px 0 rgba(139, 92, 246, 0.15)",
-        glow: "0 0 20px rgba(139, 92, 246, 0.4)",
-        "glow-blue": "0 0 20px rgba(59, 130, 246, 0.4)",
+        glass: "0 20px 42px rgba(2, 8, 20, 0.45)",
+        "glass-lg": "0 28px 64px rgba(2, 8, 20, 0.58)",
+        glow: "0 14px 30px rgba(31, 143, 255, 0.35)",
+        "glow-blue": "0 14px 30px rgba(20, 211, 198, 0.3)",
       },
       animation: {
         "fade-in": "fadeIn 0.3s ease-in-out",

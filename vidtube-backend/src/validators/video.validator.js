@@ -81,3 +81,23 @@ export const videoListQuerySchema = z.object({
   sortBy: z.enum(['createdAt', 'views', 'title', 'trending']).optional(),
   sortType: z.enum(['asc', 'desc']).optional(),
 });
+
+export const videoWatchProgressSchema = z.object({
+  progressSeconds: z.coerce
+    .number({
+      required_error: 'progressSeconds is required',
+      invalid_type_error: 'progressSeconds must be a number',
+    })
+    .min(0, 'progressSeconds must be greater than or equal to 0')
+    .max(86400, 'progressSeconds cannot exceed 24 hours (86400 seconds)'),
+  completed: z.boolean().optional(),
+  source: z
+    .enum(['watch-page', 'autoplay', 'search', 'channel', 'external'])
+    .optional(),
+});
+
+export const videoWatchEventSchema = z.object({
+  source: z
+    .enum(['watch-page', 'autoplay', 'search', 'channel', 'external'])
+    .optional(),
+});

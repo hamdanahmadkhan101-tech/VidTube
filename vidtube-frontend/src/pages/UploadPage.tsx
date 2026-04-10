@@ -207,17 +207,16 @@ export const UploadPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-4xl">
+    <div className="page-wrap page-stack max-w-4xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card p-4 sm:p-6 lg:p-8"
+        className="section-card p-4 sm:p-6 lg:p-8"
       >
-        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2">
-          Upload Video
-        </h1>
-        <p className="text-text-secondary mb-4 sm:mb-8 text-sm sm:text-base">
-          Share your content with the world
+        <span className="kicker-pill">Publish</span>
+        <h1 className="page-title mt-3 mb-1">Upload Video</h1>
+        <p className="page-subtitle mb-4 sm:mb-8 text-sm sm:text-base">
+          Share your content with the world and keep uploads organized.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
@@ -227,7 +226,7 @@ export const UploadPage: React.FC = () => {
               Video File *
             </label>
             {!videoFile ? (
-              <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-primary-500 transition-colors glass-card">
+              <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-primary-500 transition-colors section-card-soft">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Film className="w-12 h-12 text-text-muted mb-4" />
                   <p className="mb-2 text-sm text-text-secondary">
@@ -246,7 +245,7 @@ export const UploadPage: React.FC = () => {
                 />
               </label>
             ) : (
-              <div className="relative glass-card p-4 rounded-xl">
+              <div className="relative section-card-soft p-4 rounded-xl">
                 <button
                   type="button"
                   onClick={() => {
@@ -286,7 +285,7 @@ export const UploadPage: React.FC = () => {
               Thumbnail (Optional)
             </label>
             {!thumbnailFile ? (
-              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-primary-500 transition-colors glass-card">
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-primary-500 transition-colors section-card-soft">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Image className="w-8 h-8 text-text-muted mb-2" />
                   <p className="text-sm text-text-secondary">
@@ -302,7 +301,7 @@ export const UploadPage: React.FC = () => {
                 />
               </label>
             ) : (
-              <div className="relative glass-card p-4 rounded-xl">
+              <div className="relative section-card-soft p-4 rounded-xl">
                 <button
                   type="button"
                   onClick={() => {
@@ -405,7 +404,7 @@ export const UploadPage: React.FC = () => {
 
           {/* Upload Progress */}
           {uploadMutation.isPending && (
-            <div className="glass-card p-4 rounded-xl">
+            <div className="section-card-soft p-4 rounded-xl">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-text-primary">Uploading...</span>
                 <span className="text-sm text-text-secondary">
@@ -445,7 +444,7 @@ export const UploadPage: React.FC = () => {
               type="button"
               onClick={handleCancel}
               disabled={false}
-              className="btn-ghost"
+              className="btn-glass"
             >
               Cancel
             </button>

@@ -96,7 +96,12 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
 
   return (
     <>
-      <div className={cn("bento-item group cursor-pointer", className)}>
+      <div
+        className={cn(
+          "bento-item group cursor-pointer border border-white/10 hover:border-primary-300/35",
+          className,
+        )}
+      >
         <Link to={`/watch/${video._id}`} className="block">
           <div className="relative aspect-video overflow-hidden rounded-t-2xl">
             <img
@@ -192,7 +197,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
               <button
                 ref={buttonRef}
                 onClick={handleMenuClick}
-                className="text-text-tertiary hover:text-text-primary transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
+                className="text-text-tertiary hover:text-text-primary transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer shrink-0"
               >
                 <MoreVertical className="w-5 h-5" />
               </button>
@@ -204,7 +209,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({
       {showMenu && (
         <div
           ref={menuRef}
-          className="fixed z-50 w-56 glass-card rounded-lg shadow-xl py-2"
+          className="fixed z-50 w-56 section-card rounded-lg shadow-xl py-2"
           style={{
             top: `${menuPosition.top}px`,
             left: `${menuPosition.left}px`,

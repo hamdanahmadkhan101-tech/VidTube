@@ -85,7 +85,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
 
       {/* Add Comment Form */}
       {isAuthenticated ? (
-        <div className="flex gap-3">
+        <div className="flex gap-3 section-card p-4">
           <img
             src={user?.avatarUrl || user?.avatar || "/default-avatar.jpg"}
             alt={user?.username || "User"}
@@ -118,7 +118,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
           </div>
         </div>
       ) : (
-        <div className="glass-card p-6 text-center">
+        <div className="section-card p-6 text-center">
           <p className="text-text-secondary mb-3">Sign in to leave a comment</p>
           <Link to="/login" className="btn-primary inline-block">
             Sign In
@@ -162,7 +162,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                 whileTap={{ scale: 0.98 }}
                 onClick={onLoadMore}
                 disabled={isLoading}
-                className="w-full glass-card hover:bg-surface-hover p-4 flex items-center justify-center gap-2 text-text-secondary hover:text-primary-500 transition-all font-medium"
+                className="w-full section-card hover:bg-surface-hover p-4 flex items-center justify-center gap-2 text-text-secondary hover:text-primary-200 transition-all font-medium"
               >
                 {isLoading ? (
                   <>
@@ -179,7 +179,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
             )}
           </>
         ) : (
-          <div className="glass-card p-12 text-center">
+          <div className="empty-state text-center">
             <MessageSquare className="w-12 h-12 text-text-muted mx-auto mb-3" />
             <p className="text-text-secondary">
               No comments yet. Be the first to comment!
