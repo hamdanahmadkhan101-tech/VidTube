@@ -195,8 +195,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
     ...ownerLookupPipeline,
   ];
 
-  // If sorting by trending, calculate engagement score
-  if (req.query.sortBy === 'trending' || req.query.sortBy === 'views') {
+  // Only compute engagement score for explicit trending sort.
+  // For sortBy=views, rely on indexed numeric sort for faster landing-page queries.
+  if (req.query.sortBy === 'trending') {
     pipeline.push({
       $addFields: {
         // Calculate trending score: views * 0.5 + likes * 2 + comments * 3
@@ -223,16 +224,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
         },
       },
     });
-    // Sort by trending score when sortBy is 'views' or 'trending'
-    if (req.query.sortBy === 'views') {
-      pipeline.push({
-        $sort: { trendingScore: -1, createdAt: -1 },
-      });
-    } else {
-      pipeline.push({
-        $sort: sortStage,
-      });
-    }
+    pipeline.push({
+      $sort: sortStage,
+    });
   } else {
     pipeline.push({
       $sort: sortStage,
