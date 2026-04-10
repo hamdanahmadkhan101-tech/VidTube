@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "sync:indexes": "node src/scripts/sync-indexes.js",
     "test": "cross-env NODE_ENV=test jest --coverage",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
     "test:verbose": "cross-env NODE_ENV=test jest --verbose",
