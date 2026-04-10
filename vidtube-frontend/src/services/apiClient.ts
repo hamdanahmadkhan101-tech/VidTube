@@ -111,6 +111,9 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError<ApiResponse>) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
+    const isUploadRequest = Boolean(
+      originalRequest?.url?.includes("/videos/upload"),
+    );
 
     // Handle 401 Unauthorized (Token expired)
     // Don't retry for logout, refresh-token, or login endpoints
@@ -174,9 +177,16 @@ apiClient.interceptors.response.use(
     }
 
     // Handle network errors
-    if (!error.response && !hasShownNetworkError) {
+    const isTimeoutError =
+      error.code === "ECONNABORTED" || /timeout/i.test(error.message || "");
+
+    if (!error.response && !hasShownNetworkError && !isUploadRequest) {
       hasShownNetworkError = true;
-      toast.error("Network error. Please check your connection.");
+      toast.error(
+        isTimeoutError
+          ? "Request timed out. Please retry."
+          : "Network/server issue. Please try again.",
+      );
       // Reset flag after 5 seconds
       setTimeout(() => {
         hasShownNetworkError = false;
@@ -202,6 +212,17 @@ export const handleApiError = (error: unknown): string => {
 
     if (apiError.response?.data?.message) {
       return apiError.response.data.message;
+    }
+
+    if (
+      apiError.code === "ECONNABORTED" ||
+      /timeout/i.test(apiError.message || "")
+    ) {
+      return "Upload timed out due to a slow network/server path. Please retry.";
+    }
+
+    if (!apiError.response) {
+      return "Temporary network/server issue during upload. Please retry.";
     }
 
     if (apiError.message) {

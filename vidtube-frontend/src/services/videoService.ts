@@ -61,6 +61,17 @@ const mapVideoResponse = (video: VideoPayload): Video => ({
 });
 
 export const videoService = {
+  // Conservative timeout budget for large uploads on slower uplinks.
+  // Formula: size-based timeout with sensible floor/ceiling.
+  getUploadTimeoutMs: (fileSizeBytes: number): number => {
+    const fileSizeMB = fileSizeBytes > 0 ? fileSizeBytes / 1024 / 1024 : 25;
+    const perMbMs = 10000; // 10s per MB
+    const minMs = 2 * 60 * 1000; // 2 minutes
+    const maxMs = 15 * 60 * 1000; // 15 minutes
+
+    return Math.max(minMs, Math.min(maxMs, Math.ceil(fileSizeMB * perMbMs)));
+  },
+
   // Get all videos with pagination and filters
   getVideos: async (
     filters?: VideoFilters,
@@ -154,6 +165,7 @@ export const videoService = {
   uploadVideo: async (
     data: UploadVideoFormData | FormData,
     onProgress?: (progress: number) => void,
+    signal?: AbortSignal,
   ): Promise<Video> => {
     let formData: FormData;
 
@@ -174,22 +186,18 @@ export const videoService = {
       if (data.tags) formData.append("tags", JSON.stringify(data.tags));
     }
 
-    // Calculate timeout based on file size (same logic as backend)
+    // Calculate timeout budget based on file size for slow/variable uplinks.
     const videoFile = formData.get("video") as File;
-    const fileSizeMB = videoFile?.size ? videoFile.size / 1024 / 1024 : 25;
-    const calculatedTimeout = Math.max(
-      30000,
-      Math.min(600000, fileSizeMB * 1200),
+    const calculatedTimeout = videoService.getUploadTimeoutMs(
+      videoFile?.size || 0,
     );
 
     const response = await apiClient.post<ApiResponse<VideoPayload>>(
       "/videos/upload",
       formData,
       {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
         timeout: calculatedTimeout,
+        signal,
         onUploadProgress: (progressEvent) => {
           if (onProgress && progressEvent.total) {
             const progress = Math.round(

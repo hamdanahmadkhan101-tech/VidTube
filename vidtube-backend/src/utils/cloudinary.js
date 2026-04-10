@@ -21,19 +21,26 @@ const uploadOnCloudinary = async (filePath) => {
 
     const fileStats = fs.statSync(filePath);
     const fileSizeMB = fileStats.size / 1024 / 1024;
-    
-    const calculatedTimeout = Math.max(30000, Math.min(600000, fileSizeMB * 1200));
-    
+
+    // Keep server-to-cloud uploads resilient for slower network paths.
+    const perMbMs = 5000; // 5s per MB
+    const calculatedTimeout = Math.max(
+      120000,
+      Math.min(900000, Math.ceil(fileSizeMB * perMbMs))
+    );
+
     const uploadOptions = {
       resource_type: 'auto',
       secure: true,
       timeout: calculatedTimeout,
       chunk_size: 6000000,
     };
-    
+
     // Check if it's a video file
-    const isVideo = filePath.match(/\.(mp4|mov|avi|mkv|flv|wmv|webm|m4v|3gp|ogv|ts|m3u8)$/i);
-    
+    const isVideo = filePath.match(
+      /\.(mp4|mov|avi|mkv|flv|wmv|webm|m4v|3gp|ogv|ts|m3u8)$/i
+    );
+
     if (isVideo) {
       // Add video transformation for MP4 conversion
       uploadOptions.eager = [
@@ -42,11 +49,11 @@ const uploadOnCloudinary = async (filePath) => {
           video_codec: 'h264',
           audio_codec: 'aac',
           bit_rate: '2m',
-        }
+        },
       ];
       uploadOptions.eager_async = true;
     }
-    
+
     const response = await cloudinary.uploader.upload(filePath, uploadOptions);
 
     const secureUrl = response.secure_url || response.url;
@@ -60,19 +67,21 @@ const uploadOnCloudinary = async (filePath) => {
     return response;
   } catch (error) {
     deleteFile(filePath);
-    
+
     if (error.message && error.message.includes('timeout')) {
-      const timeoutError = new Error(`Upload timeout: File too large or connection too slow. Try a smaller file or check your internet connection.`);
+      const timeoutError = new Error(
+        `Upload timeout: File too large or connection too slow. Try a smaller file or check your internet connection.`
+      );
       timeoutError.code = 'UPLOAD_TIMEOUT';
       throw timeoutError;
     }
-    
+
     if (error.http_code) {
       const cloudinaryError = new Error(`Cloudinary error: ${error.message}`);
       cloudinaryError.code = 'CLOUDINARY_ERROR';
       throw cloudinaryError;
     }
-    
+
     throw error;
   }
 };
