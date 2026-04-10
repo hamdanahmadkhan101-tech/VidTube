@@ -94,6 +94,10 @@ Rate limit counters are stored in Redis when `REDIS_URL` is configured and `RATE
 | POST   | `/users/register`                       | Public   | Multipart; optional `avatar` and optional `coverImage`    |
 | POST   | `/users/login`                          | Public   | Accepts email or username + password                      |
 | POST   | `/users/refresh-token`                  | Public   | Reads refresh token from cookie                           |
+| POST   | `/users/verify-email-otp`               | Public   | Verifies account email with 6-digit OTP                   |
+| POST   | `/users/resend-verification-otp`        | Public   | Resends verification OTP with cooldown and daily caps     |
+| POST   | `/users/forgot-password-otp`            | Public   | Sends password reset OTP (generic response)               |
+| POST   | `/users/reset-password-otp`             | Public   | Resets password using OTP                                 |
 | GET    | `/users/check-username/:username`       | Public   | Username availability check                               |
 | GET    | `/users/check-email/:email`             | Public   | Email availability check                                  |
 | POST   | `/users/logout`                         | Required | Clears refresh token cookie and DB token reference        |

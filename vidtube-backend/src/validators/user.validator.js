@@ -57,6 +57,49 @@ export const loginSchema = z
     path: ['email'],
   });
 
+const otpCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{6}$/, 'OTP must be a 6-digit code');
+
+export const verifyEmailOtpSchema = z.object({
+  email: z
+    .string()
+    .email('Please provide a valid email address')
+    .trim()
+    .toLowerCase(),
+  otp: otpCodeSchema,
+});
+
+export const resendVerificationOtpSchema = z.object({
+  email: z
+    .string()
+    .email('Please provide a valid email address')
+    .trim()
+    .toLowerCase(),
+});
+
+export const requestPasswordResetOtpSchema = z.object({
+  email: z
+    .string()
+    .email('Please provide a valid email address')
+    .trim()
+    .toLowerCase(),
+});
+
+export const resetPasswordWithOtpSchema = z.object({
+  email: z
+    .string()
+    .email('Please provide a valid email address')
+    .trim()
+    .toLowerCase(),
+  otp: otpCodeSchema,
+  newPassword: z
+    .string()
+    .min(8, 'New password must be at least 8 characters')
+    .max(128, 'New password must be at most 128 characters'),
+});
+
 export const updateProfileSchema = z
   .object({
     fullName: z

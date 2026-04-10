@@ -5,6 +5,10 @@ import {
   loginUser,
   logoutUser,
   refreshAccessToken,
+  verifyEmailOtp,
+  resendVerificationOtp,
+  requestPasswordResetOtp,
+  resetPasswordWithOtp,
 
   // Profile Management Controllers
   getCurrentUserProfile,
@@ -35,6 +39,10 @@ import { validate } from '../middlewares/validate.middleware.js';
 import {
   registerSchema,
   loginSchema,
+  verifyEmailOtpSchema,
+  resendVerificationOtpSchema,
+  requestPasswordResetOtpSchema,
+  resetPasswordWithOtpSchema,
   updateProfileSchema,
   changePasswordSchema,
   usernameAvailabilityParamSchema,
@@ -63,6 +71,30 @@ router.route('/register').post(
 );
 router.route('/login').post(authLimiter, validate(loginSchema), loginUser);
 router.route('/refresh-token').post(authLimiter, refreshAccessToken);
+router
+  .route('/verify-email-otp')
+  .post(authLimiter, validate(verifyEmailOtpSchema), verifyEmailOtp);
+router
+  .route('/resend-verification-otp')
+  .post(
+    authLimiter,
+    validate(resendVerificationOtpSchema),
+    resendVerificationOtp
+  );
+router
+  .route('/forgot-password-otp')
+  .post(
+    authLimiter,
+    validate(requestPasswordResetOtpSchema),
+    requestPasswordResetOtp
+  );
+router
+  .route('/reset-password-otp')
+  .post(
+    authLimiter,
+    validate(resetPasswordWithOtpSchema),
+    resetPasswordWithOtp
+  );
 
 // Availability checks (for frontend validation)
 router

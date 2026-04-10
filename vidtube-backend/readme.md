@@ -25,6 +25,16 @@ REFRESH_TOKEN_EXPIRY=7d
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-cloudinary-key
 CLOUDINARY_API_SECRET=your-cloudinary-secret
+EMAIL_PROVIDER=brevo
+BREVO_API_KEY=your-brevo-api-key
+MAIL_FROM_NAME=VidTube
+MAIL_FROM_EMAIL=your-verified-sender-email
+OTP_HASH_PEPPER=replace-with-random-hex-secret
+OTP_TTL_MINUTES=10
+OTP_MAX_ATTEMPTS=5
+OTP_RESEND_COOLDOWN_SECONDS=60
+OTP_DAILY_SEND_LIMIT=5
+ACCOUNT_VERIFICATION_REQUIRED=false
 FRONTEND_URL=http://localhost:5173
 ALLOWED_ORIGINS=http://localhost:5173
 METRICS_TOKEN=optional-metrics-token
@@ -83,6 +93,16 @@ Recommended additional variables:
 - `CACHE_DEFAULT_TTL_SECONDS=60`
 - `RATE_LIMIT_REDIS_ENABLED=true`
 - `RATE_LIMIT_PREFIX=vidtube:ratelimit:`
+- `EMAIL_PROVIDER=brevo`
+- `BREVO_API_KEY`
+- `MAIL_FROM_NAME`
+- `MAIL_FROM_EMAIL`
+- `OTP_HASH_PEPPER`
+- `OTP_TTL_MINUTES`
+- `OTP_MAX_ATTEMPTS`
+- `OTP_RESEND_COOLDOWN_SECONDS`
+- `OTP_DAILY_SEND_LIMIT`
+- `ACCOUNT_VERIFICATION_REQUIRED`
 
 If your Upstash plan allows only one Redis database, you can still use it safely across projects by assigning unique prefixes per app/environment:
 

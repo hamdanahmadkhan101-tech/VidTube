@@ -17,6 +17,8 @@ import {
   deleteFromCloudinary,
 } from '../utils/cloudinary.js';
 import { buildDefaultAvatarUrl, isCloudinaryUrl } from '../utils/avatar.js';
+import { logWarn } from '../utils/logger.js';
+import { issueOtp, verifyOtp, OTP_PURPOSE } from '../services/otp.service.js';
 import { createNotificationAndEmit } from '../services/notification.service.js';
 import {
   buildCurrentUserProfilePipeline,
@@ -66,6 +68,9 @@ const getRefreshCookieOptions = () => {
     path: '/',
   };
 };
+
+const isAccountVerificationRequired = () =>
+  process.env.ACCOUNT_VERIFICATION_REQUIRED === 'true';
 
 // ============================================
 // AUTHENTICATION CONTROLLERS
@@ -130,9 +135,31 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new apiError(500, 'User registration failed');
   }
 
-  res
-    .status(201)
-    .json(new apiResponse(201, 'User registered successfully', createdUser));
+  let otpDispatched = false;
+  try {
+    const otpResult = await issueOtp({
+      userId: newUser._id,
+      email: normalizedEmail,
+      fullName,
+      purpose: OTP_PURPOSE.EMAIL_VERIFICATION,
+    });
+    otpDispatched = !otpResult.skipped;
+  } catch (error) {
+    if (isAccountVerificationRequired()) {
+      throw error;
+    }
+
+    logWarn('Email verification OTP dispatch failed after registration', {
+      userId: newUser._id?.toString(),
+      message: error.message,
+    });
+  }
+
+  const message = otpDispatched
+    ? 'User registered successfully. Verification OTP sent to email.'
+    : 'User registered successfully';
+
+  res.status(201).json(new apiResponse(201, message, createdUser));
 });
 
 /**
@@ -175,6 +202,13 @@ const loginUser = asyncHandler(async (req, res) => {
   const isPasswordValid = await user.comparePassword(password);
   if (!isPasswordValid) {
     throw new apiError(401, 'Invalid credentials');
+  }
+
+  if (isAccountVerificationRequired() && !user.isVerified) {
+    throw new apiError(
+      403,
+      'Email verification required. Please verify your email before logging in'
+    );
   }
 
   const tokens = await generateAcessAndRefreshTokens(user._id);
@@ -266,6 +300,150 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       new apiResponse(200, 'Access token refreshed', {
         accessToken,
       })
+    );
+});
+
+/**
+ * Verify user's email using OTP
+ * @route POST /api/v1/users/verify-email-otp
+ * @access Public
+ */
+const verifyEmailOtp = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  const normalizedEmail = String(email).toLowerCase().trim();
+
+  const user = await User.findOne({ email: normalizedEmail });
+  if (!user) {
+    throw new apiError(400, 'Invalid email or OTP');
+  }
+
+  if (user.isVerified) {
+    return res
+      .status(200)
+      .json(new apiResponse(200, 'Email is already verified'));
+  }
+
+  await verifyOtp({
+    userId: user._id,
+    purpose: OTP_PURPOSE.EMAIL_VERIFICATION,
+    otp,
+  });
+
+  user.isVerified = true;
+  await user.save({ validateBeforeSave: false });
+
+  res
+    .status(200)
+    .json(
+      new apiResponse(200, 'Email verified successfully', { isVerified: true })
+    );
+});
+
+/**
+ * Resend email verification OTP
+ * @route POST /api/v1/users/resend-verification-otp
+ * @access Public
+ */
+const resendVerificationOtp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const normalizedEmail = String(email).toLowerCase().trim();
+
+  const user = await User.findOne({ email: normalizedEmail });
+
+  if (!user) {
+    return res
+      .status(200)
+      .json(
+        new apiResponse(
+          200,
+          'If the account exists, a verification OTP has been sent.'
+        )
+      );
+  }
+
+  if (user.isVerified) {
+    return res
+      .status(200)
+      .json(new apiResponse(200, 'Email is already verified'));
+  }
+
+  await issueOtp({
+    userId: user._id,
+    email: user.email,
+    fullName: user.fullName,
+    purpose: OTP_PURPOSE.EMAIL_VERIFICATION,
+  });
+
+  res
+    .status(200)
+    .json(new apiResponse(200, 'Verification OTP sent successfully'));
+});
+
+/**
+ * Request password reset OTP
+ * @route POST /api/v1/users/forgot-password-otp
+ * @access Public
+ */
+const requestPasswordResetOtp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const normalizedEmail = String(email).toLowerCase().trim();
+
+  const user = await User.findOne({ email: normalizedEmail });
+
+  if (user) {
+    try {
+      await issueOtp({
+        userId: user._id,
+        email: user.email,
+        fullName: user.fullName,
+        purpose: OTP_PURPOSE.PASSWORD_RESET,
+      });
+    } catch (error) {
+      logWarn('Password reset OTP dispatch failed', {
+        userId: user._id?.toString(),
+        message: error.message,
+      });
+    }
+  }
+
+  res
+    .status(200)
+    .json(
+      new apiResponse(
+        200,
+        'If the account exists, a password reset OTP has been sent.'
+      )
+    );
+});
+
+/**
+ * Reset password using OTP
+ * @route POST /api/v1/users/reset-password-otp
+ * @access Public
+ */
+const resetPasswordWithOtp = asyncHandler(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  const normalizedEmail = String(email).toLowerCase().trim();
+
+  const user = await User.findOne({ email: normalizedEmail });
+  if (!user) {
+    throw new apiError(400, 'Invalid email or OTP');
+  }
+
+  await verifyOtp({
+    userId: user._id,
+    purpose: OTP_PURPOSE.PASSWORD_RESET,
+    otp,
+  });
+
+  user.password = newPassword;
+  user.refreshTokens = [];
+  await user.save({ validateBeforeSave: false });
+
+  res
+    .status(200)
+    .json(
+      new apiResponse(200, 'Password reset successfully. Please login again.')
     );
 });
 
@@ -628,6 +806,10 @@ export {
   loginUser,
   logoutUser,
   refreshAccessToken,
+  verifyEmailOtp,
+  resendVerificationOtp,
+  requestPasswordResetOtp,
+  resetPasswordWithOtp,
 
   // Profile Management Controllers
   getCurrentUserProfile,
