@@ -6,6 +6,10 @@ import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
 import { NotFoundError, ValidationError } from '../errors/index.js';
 import {
+  getPaginationParams,
+  buildPaginationMeta,
+} from '../utils/pagination.js';
+import {
   validateObjectId,
   validateRequired,
   validateStringLength,
@@ -14,26 +18,7 @@ import {
 // Models
 import Notification from '../models/notification.model.js';
 import { createNotificationAndEmit } from '../services/notification.service.js';
-import {
-  buildNotificationsMatchStage,
-  buildPaginationMeta,
-} from '../services/notificationQuery.service.js';
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-/**
- * Normalize pagination parameters
- */
-const getPaginationParams = (query) => {
-  const page = Math.max(parseInt(query.page, 10) || 1, 1);
-  let limit = parseInt(query.limit, 10) || 10;
-  if (limit > 50) limit = 50;
-  if (limit < 1) limit = 1;
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-};
+import { buildNotificationsMatchStage } from '../services/queries/notificationQuery.service.js';
 
 // ============================================
 // NOTIFICATION MANAGEMENT

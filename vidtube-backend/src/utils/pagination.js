@@ -21,6 +21,20 @@ export const getPaginationParams = (query) => {
 };
 
 /**
+ * Build a standard pagination metadata object
+ * @param {{ page: number, limit: number, total: number }} params
+ * @returns {{ page: number, limit: number, total: number, totalPages: number, hasNextPage: boolean, hasPrevPage: boolean }}
+ */
+export const buildPaginationMeta = ({ page, limit, total }) => ({
+  page,
+  limit,
+  total,
+  totalPages: Math.ceil(total / limit),
+  hasNextPage: page * limit < total,
+  hasPrevPage: page > 1,
+});
+
+/**
  * Validate sort parameters
  * @param {string} sortBy - Field to sort by
  * @param {string} sortType - 'asc' or 'desc'

@@ -5,6 +5,10 @@ import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
 import {
+  getPaginationParams,
+  buildPaginationMeta,
+} from '../utils/pagination.js';
+import {
   ValidationError,
   NotFoundError,
   ForbiddenError,
@@ -21,23 +25,7 @@ import Video from '../models/video.model.js';
 import Comment from '../models/comment.model.js';
 import { User } from '../models/user.model.js';
 import { createNotificationAndEmit } from '../services/notification.service.js';
-import { buildReportsListPipeline } from '../services/reportQuery.service.js';
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-/**
- * Normalize pagination parameters
- */
-const getPaginationParams = (query) => {
-  const page = Math.max(parseInt(query.page, 10) || 1, 1);
-  let limit = parseInt(query.limit, 10) || 10;
-  if (limit > 50) limit = 50;
-  if (limit < 1) limit = 1;
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-};
+import { buildReportsListPipeline } from '../services/queries/reportQuery.service.js';
 
 // ============================================
 // REPORT MANAGEMENT
@@ -198,14 +186,11 @@ const getAllReports = asyncHandler(async (req, res) => {
 
   const response = new apiResponse(200, 'Reports fetched successfully', {
     reports,
-    pagination: {
+    pagination: buildPaginationMeta({
       page,
       limit,
       total: totalCount,
-      totalPages: Math.ceil(totalCount / limit),
-      hasNextPage: page * limit < totalCount,
-      hasPrevPage: page > 1,
-    },
+    }),
   });
 
   res.status(200).json(response);
@@ -320,14 +305,11 @@ const getMyReports = asyncHandler(async (req, res) => {
 
   const response = new apiResponse(200, 'Your reports fetched successfully', {
     reports,
-    pagination: {
+    pagination: buildPaginationMeta({
       page,
       limit,
       total: totalCount,
-      totalPages: Math.ceil(totalCount / limit),
-      hasNextPage: page * limit < totalCount,
-      hasPrevPage: page > 1,
-    },
+    }),
   });
 
   res.status(200).json(response);

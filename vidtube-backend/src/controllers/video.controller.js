@@ -36,7 +36,7 @@ import {
   buildVideoDetailsPipeline,
   buildVideoSearchPipeline,
   buildOwnerVideosPipeline,
-} from '../services/videoQuery.service.js';
+} from '../services/queries/videoQuery.service.js';
 
 // ============================================
 // CORE VIDEO MANAGEMENT

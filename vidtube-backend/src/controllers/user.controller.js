@@ -21,7 +21,7 @@ import {
   buildCurrentUserProfilePipeline,
   buildChannelProfilePipeline,
   buildWatchHistoryPipeline,
-} from '../services/userQuery.service.js';
+} from '../services/queries/userQuery.service.js';
 
 // ============================================
 // UTILITY FUNCTIONS

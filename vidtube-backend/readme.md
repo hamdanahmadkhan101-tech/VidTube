@@ -98,10 +98,12 @@ Example shared-prefix strategy:
 
 - Routes: endpoint and middleware composition
 - Controllers: request orchestration and domain validation
-- Query services: reusable aggregation/query builders that keep controllers focused on HTTP orchestration
+- Query services (`src/services/queries`): reusable aggregation/query builders that keep controllers focused on HTTP orchestration
+- Config (`src/config`): environment/runtime configuration and app constants
 - Models: Mongoose schemas and indexing
+- Services (`src/services`): side-effecting domain operations (for example cache and notification emission)
 - Middlewares: auth, authorization, logging, security, rate limiting, error handling
-- Utilities: API response wrappers, validation helpers, logging, media helpers
+- Utilities (`src/utils`): stateless shared helpers (API wrappers, pagination, validation, formatting, logging/media helpers)
 
 See [../docs/root/ARCHITECTURE.md](../docs/root/ARCHITECTURE.md) for full details.
 

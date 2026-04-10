@@ -1,10 +1,11 @@
 // ============================================
 // IMPORTS & DEPENDENCIES
 // ============================================
-import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
+import { getPaginationParams } from '../utils/pagination.js';
+import { validateObjectId } from '../utils/validation.js';
 
 // Models
 import Video from '../models/video.model.js';
@@ -14,36 +15,11 @@ import { createNotificationAndEmit } from '../services/notification.service.js';
 import {
   buildLikedVideosPipeline,
   buildCommentLikesCountPipeline,
-} from '../services/likeQuery.service.js';
+} from '../services/queries/likeQuery.service.js';
 
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
-
-/**
- * Validate MongoDB ObjectId
- * @param {string} id - The id string to validate
- * @param {string} fieldName - Field name for error messages
- */
-const validateObjectId = (id, fieldName = 'ID') => {
-  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-    throw new apiError(400, `Invalid ${fieldName}`);
-  }
-};
-
-/**
- * Normalize pagination parameters
- * @param {Object} query
- * @returns {{ page: number, limit: number, skip: number }}
- */
-const getPaginationParams = (query) => {
-  const page = Math.max(parseInt(query.page, 10) || 1, 1);
-  let limit = parseInt(query.limit, 10) || 10;
-  if (limit > 50) limit = 50;
-  if (limit < 1) limit = 1;
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-};
 
 // ============================================
 // VIDEO LIKE MANAGEMENT

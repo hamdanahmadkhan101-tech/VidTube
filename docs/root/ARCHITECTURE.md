@@ -33,8 +33,10 @@ Media assets (uploads/thumbnails)
 - Routes: endpoint wiring and middleware composition
 - Controllers: request validation, authorization checks, orchestration
 - Query services: domain-specific pipeline/query builders used by controllers
+- Config: environment and runtime configuration modules (for example CORS and app constants)
 - Models: schema definition, indexes, persistence logic
-- Utilities/services: shared helpers (pagination, validation, formatting, Cloudinary, logging)
+- Services: domain/business operations with side effects (for example cache orchestration, notification emission)
+- Utilities: stateless shared helpers (pagination, validation, formatting, media helper wrappers, logging helpers)
 
 ### Request Pipeline
 
@@ -61,7 +63,7 @@ Notable middleware characteristics:
 ### Data and Query Patterns
 
 - Aggregation pipelines are used for high-value read paths (video details, channel profile, watch history)
-- Aggregation construction is now extracted into dedicated query services (`videoQuery`, `userQuery`, `commentQuery`, `likeQuery`, `playlistQuery`, `reportQuery`, `notificationQuery`) to keep controllers thin and composable
+- Aggregation construction is now extracted into dedicated query services under `src/services/queries` (`videoQuery`, `userQuery`, `commentQuery`, `likeQuery`, `playlistQuery`, `reportQuery`, `notificationQuery`) to keep controllers thin and composable
 - Engagement counters (`likesCount`, `commentsCount`) are denormalized on videos
 - Counter updates are paired with like/comment mutations for predictable read performance
 - Watch history insertion uses atomic checks to avoid duplicate view inflation
