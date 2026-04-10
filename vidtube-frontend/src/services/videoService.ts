@@ -40,6 +40,41 @@ type WatchHistoryPayload = {
   };
 };
 
+type WatchLaterToggleResponse = {
+  videoId: string;
+  isInWatchLater: boolean;
+  action: "added" | "removed";
+};
+
+type WatchProgressSource =
+  | "watch-page"
+  | "autoplay"
+  | "search"
+  | "channel"
+  | "external"
+  | "shorts-feed";
+
+type WatchProgressEvent = {
+  videoId: string;
+  progressSeconds: number;
+  completed?: boolean;
+  source?: WatchProgressSource;
+};
+
+type WatchProgressBatchResponse = {
+  totalEvents: number;
+  dedupedEvents: number;
+  processedEvents: number;
+  skippedEvents: number;
+  totalWatchTimeSecondsAdded: number;
+};
+
+type ShortsFeedPayload = {
+  videos?: VideoPayload[];
+  nextCursor?: string | null;
+  hasMore?: boolean;
+};
+
 type PaginationMeta = NonNullable<
   NonNullable<ApiResponse<unknown>["meta"]>["pagination"]
 >;
@@ -142,6 +177,33 @@ export const videoService = {
     return {
       docs: Array.isArray(videos) ? videos.map(mapVideoResponse) : [],
       pagination: toPagination(response.data.meta?.pagination),
+    };
+  },
+
+  // Get shorts feed with cursor pagination
+  getShortsFeed: async (
+    cursor?: string,
+    limit = 8,
+  ): Promise<{
+    videos: Video[];
+    nextCursor: string | null;
+    hasMore: boolean;
+  }> => {
+    const params = new URLSearchParams();
+    params.append("limit", String(limit));
+    if (cursor) {
+      params.append("cursor", cursor);
+    }
+
+    const response = await apiClient.get<ApiResponse<ShortsFeedPayload>>(
+      `/videos/shorts-feed?${params.toString()}`,
+    );
+    const payload = response.data.data;
+
+    return {
+      videos: (payload?.videos || []).map(mapVideoResponse),
+      nextCursor: payload?.nextCursor ?? null,
+      hasMore: payload?.hasMore ?? false,
     };
   },
 
@@ -341,9 +403,91 @@ export const videoService = {
     };
   },
 
+  // Get watch later videos
+  getWatchLater: async (
+    page = 1,
+    limit = 24,
+  ): Promise<{
+    videos: Video[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalVideos: number;
+      hasNextPage: boolean;
+      hasPrevPage: boolean;
+    };
+  }> => {
+    const response = await apiClient.get<ApiResponse<WatchHistoryPayload>>(
+      `/users/watch-later?page=${page}&limit=${limit}`,
+    );
+    const payload = response.data.data;
+
+    return {
+      videos: (payload?.videos || []).map(mapVideoResponse),
+      pagination: {
+        currentPage: payload?.pagination?.currentPage ?? page,
+        totalPages: payload?.pagination?.totalPages ?? 0,
+        totalVideos: payload?.pagination?.totalVideos ?? 0,
+        hasNextPage: payload?.pagination?.hasNextPage ?? false,
+        hasPrevPage: payload?.pagination?.hasPrevPage ?? false,
+      },
+    };
+  },
+
+  // Toggle watch later
+  toggleWatchLater: async (
+    videoId: string,
+    source:
+      | "watch-page"
+      | "shorts-feed"
+      | "search"
+      | "channel"
+      | "manual" = "watch-page",
+  ): Promise<WatchLaterToggleResponse> => {
+    const response = await apiClient.post<
+      ApiResponse<WatchLaterToggleResponse>
+    >(`/videos/${videoId}/watch-later/toggle`, { source });
+
+    if (!response.data.data) {
+      throw new Error("Failed to update watch later status");
+    }
+
+    return response.data.data;
+  },
+
   // Increment video views
-  incrementViews: async (videoId: string): Promise<void> => {
-    await apiClient.post(`/videos/${videoId}/watch`);
+  incrementViews: async (
+    videoId: string,
+    source: WatchProgressSource = "watch-page",
+  ): Promise<void> => {
+    await apiClient.post(`/videos/${videoId}/watch`, { source });
+  },
+
+  // Update watch progress for one video
+  updateWatchProgress: async (
+    videoId: string,
+    payload: {
+      progressSeconds: number;
+      completed?: boolean;
+      source?: WatchProgressSource;
+    },
+  ): Promise<void> => {
+    await apiClient.patch(`/videos/${videoId}/watch-progress`, payload);
+  },
+
+  // Batch update watch progress events
+  batchUpdateWatchProgress: async (
+    events: WatchProgressEvent[],
+  ): Promise<WatchProgressBatchResponse> => {
+    const response = await apiClient.post<
+      ApiResponse<WatchProgressBatchResponse>
+    >("/videos/watch-progress/batch", { events });
+
+    if (!response.data.data) {
+      throw new Error("Failed to update watch progress batch");
+    }
+
+    return response.data.data;
   },
 
   // Report video

@@ -10,12 +10,14 @@ import {
   Settings,
   LayoutDashboard,
   Video,
+  Clock3,
   History,
   ThumbsUp,
   Menu,
   X,
   Upload,
   Home,
+  Play,
   Flame,
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
@@ -249,6 +251,18 @@ export const Header: React.FC = () => {
             >
               Trending
             </NavLink>
+            <NavLink
+              to="/shorts"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "text-text-primary bg-surface-active"
+                    : "text-text-secondary hover:text-text-primary hover:bg-surface"
+                }`
+              }
+            >
+              Shorts
+            </NavLink>
           </nav>
 
           {/* Desktop Search Bar */}
@@ -335,7 +349,7 @@ export const Header: React.FC = () => {
                   >
                     <Bell className="w-6 h-6" />
                     {unreadNotificationCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-1 bg-red-500 rounded-full text-[9px] font-bold leading-none flex items-center justify-center text-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] sm:-top-1 sm:-right-1 sm:min-w-[1.1rem] sm:h-[1.1rem] sm:text-[10px]">
+                      <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-red-500 rounded-full text-[9px] font-bold leading-none flex items-center justify-center text-white shadow-[0_2px_6px_rgba(0,0,0,0.35)] sm:-top-1 sm:-right-1 sm:min-w-5 sm:h-5 sm:text-[10px]">
                         {unreadNotificationCount > 9
                           ? "9+"
                           : unreadNotificationCount}
@@ -412,6 +426,14 @@ export const Header: React.FC = () => {
                         >
                           <History className="w-5 h-5" />
                           Watch History
+                        </Link>
+
+                        <Link
+                          to="/watch-later"
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-hover transition-colors text-text-primary"
+                        >
+                          <Clock3 className="w-5 h-5" />
+                          Watch Later
                         </Link>
 
                         <Link
@@ -602,6 +624,14 @@ export const Header: React.FC = () => {
                   <Flame className="w-4 h-4 text-text-tertiary" />
                   Trending
                 </Link>
+                <Link
+                  to="/shorts"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                >
+                  <Play className="w-4 h-4 text-text-tertiary" />
+                  Shorts
+                </Link>
                 {isAuthenticated && (
                   <>
                     <Link
@@ -643,6 +673,14 @@ export const Header: React.FC = () => {
                     >
                       <History className="w-4 h-4 text-text-tertiary" />
                       Watch History
+                    </Link>
+                    <Link
+                      to="/watch-later"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface text-text-primary"
+                    >
+                      <Clock3 className="w-4 h-4 text-text-tertiary" />
+                      Watch Later
                     </Link>
                     <Link
                       to="/liked-videos"

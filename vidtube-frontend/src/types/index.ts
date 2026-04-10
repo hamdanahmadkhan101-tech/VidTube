@@ -106,6 +106,7 @@ export interface Video {
   views: number;
   likes: number;
   isLiked?: boolean;
+  isInWatchLater?: boolean;
   privacy: "public" | "unlisted" | "private";
   category?: string;
   tags?: string[];

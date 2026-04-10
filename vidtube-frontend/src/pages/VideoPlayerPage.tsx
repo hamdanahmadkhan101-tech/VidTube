@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ThumbsUp,
+  Clock3,
   Share2,
   Flag,
   Eye,
@@ -142,6 +143,40 @@ export const VideoPlayerPage: React.FC = () => {
         queryClient.setQueryData(["video", videoId], context.previousVideo);
       }
       toast.error("Failed to update like");
+    },
+  });
+
+  const watchLaterMutation = useMutation({
+    mutationFn: () => videoService.toggleWatchLater(videoId!, "watch-page"),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["video", videoId] });
+
+      const previousVideo = queryClient.getQueryData(["video", videoId]);
+
+      queryClient.setQueryData(["video", videoId], (old: Video) => ({
+        ...old,
+        isInWatchLater: !old.isInWatchLater,
+      }));
+
+      return { previousVideo };
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["video", videoId], (old: Video) => ({
+        ...old,
+        isInWatchLater: data.isInWatchLater,
+      }));
+      queryClient.invalidateQueries({ queryKey: ["watchLater"] });
+      toast.success(
+        data.isInWatchLater
+          ? "Saved to Watch Later"
+          : "Removed from Watch Later",
+      );
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousVideo) {
+        queryClient.setQueryData(["video", videoId], context.previousVideo);
+      }
+      toast.error("Failed to update Watch Later");
     },
   });
 
@@ -551,6 +586,32 @@ export const VideoPlayerPage: React.FC = () => {
                 <button
                   onClick={() => {
                     if (!isAuthenticated) {
+                      toast.error("Please sign in to save videos");
+                      return;
+                    }
+                    watchLaterMutation.mutate();
+                  }}
+                  disabled={watchLaterMutation.isPending}
+                  className={cn(
+                    "px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-all cursor-pointer",
+                    video.isInWatchLater
+                      ? "bg-primary-500 text-white shadow-glow"
+                      : "section-card-soft hover:bg-surface-hover text-text-primary",
+                    watchLaterMutation.isPending &&
+                      "opacity-70 cursor-not-allowed",
+                  )}
+                  title="Save to watch later"
+                >
+                  <Clock3
+                    className="w-5 h-5"
+                    fill={video.isInWatchLater ? "currentColor" : "none"}
+                  />
+                  {video.isInWatchLater ? "Saved" : "Watch Later"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
                       toast.error("Please sign in to save to playlist");
                       return;
                     }
@@ -560,7 +621,7 @@ export const VideoPlayerPage: React.FC = () => {
                   title="Save to playlist"
                 >
                   <Plus className="w-5 h-5" />
-                  Save
+                  Playlist
                 </button>
 
                 <button

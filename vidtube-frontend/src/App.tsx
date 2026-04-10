@@ -21,12 +21,14 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const PlaylistPage = lazy(() => import("./pages/PlaylistPage"));
 const TrendingPage = lazy(() => import("./pages/TrendingPage"));
+const ShortsPage = lazy(() => import("./pages/ShortsPage"));
 const SubscriptionsPage = lazy(() => import("./pages/SubscriptionsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const PlaylistsPage = lazy(() => import("./pages/PlaylistsPage"));
 const EditVideoPage = lazy(() => import("./pages/EditVideoPage"));
 const WatchHistoryPage = lazy(() => import("./pages/WatchHistoryPage"));
 const LikedVideosPage = lazy(() => import("./pages/LikedVideosPage"));
+const WatchLaterPage = lazy(() => import("./pages/WatchLaterPage"));
 const Devtools = import.meta.env.DEV
   ? lazy(() =>
       import("@tanstack/react-query-devtools").then((module) => ({
@@ -98,6 +100,7 @@ function App() {
                 <Route path="/channel/:username" element={<ChannelPage />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/trending" element={<TrendingPage />} />
+                <Route path="/shorts" element={<ShortsPage />} />
                 <Route
                   path="/playlist/:playlistId"
                   element={<PlaylistPage />}
@@ -207,6 +210,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <LikedVideosPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/watch-later"
+                  element={
+                    <ProtectedRoute>
+                      <WatchLaterPage />
                     </ProtectedRoute>
                   }
                 />
