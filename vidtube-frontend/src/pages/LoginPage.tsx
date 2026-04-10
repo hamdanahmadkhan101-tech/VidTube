@@ -37,8 +37,15 @@ export const LoginPage: React.FC = () => {
       toast.success("Welcome back!");
       navigate("/");
     },
-    onError: (error) => {
-      toast.error(handleApiError(error));
+    onError: (error, variables) => {
+      const message = handleApiError(error);
+      if (message.toLowerCase().includes("verification required")) {
+        const email = variables?.email || "";
+        if (email) {
+          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+        }
+      }
+      toast.error(message);
     },
   });
 

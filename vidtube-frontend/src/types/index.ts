@@ -37,6 +37,7 @@ export interface User {
   username: string;
   email: string;
   fullName: string;
+  isVerified?: boolean;
   avatar?: string;
   avatarUrl?: string;
   coverImage?: string;
@@ -169,6 +170,21 @@ export interface RegisterFormData {
   password: string;
   avatar?: FileList;
   coverImage?: FileList;
+}
+
+export interface VerifyEmailOtpFormData {
+  email: string;
+  otp: string;
+}
+
+export interface RequestPasswordResetOtpFormData {
+  email: string;
+}
+
+export interface ResetPasswordWithOtpFormData {
+  email: string;
+  otp: string;
+  newPassword: string;
 }
 
 export interface UploadVideoFormData {

@@ -3,8 +3,11 @@ import type {
   ApiResponse,
   AuthUser,
   LoginFormData,
+  RequestPasswordResetOtpFormData,
+  ResetPasswordWithOtpFormData,
   RegisterFormData,
   UpdateProfileFormData,
+  VerifyEmailOtpFormData,
   User,
 } from "../types";
 
@@ -58,6 +61,32 @@ export const authService = {
   // Refresh token
   refreshToken: async (): Promise<void> => {
     await apiClient.post("/users/refresh-token");
+  },
+
+  // Verify email using OTP
+  verifyEmailOtp: async (data: VerifyEmailOtpFormData): Promise<void> => {
+    await apiClient.post<ApiResponse>("/users/verify-email-otp", data);
+  },
+
+  // Resend verification OTP
+  resendVerificationOtp: async (email: string): Promise<void> => {
+    await apiClient.post<ApiResponse>("/users/resend-verification-otp", {
+      email,
+    });
+  },
+
+  // Request password reset OTP
+  requestPasswordResetOtp: async (
+    data: RequestPasswordResetOtpFormData,
+  ): Promise<void> => {
+    await apiClient.post<ApiResponse>("/users/forgot-password-otp", data);
+  },
+
+  // Reset password using OTP
+  resetPasswordWithOtp: async (
+    data: ResetPasswordWithOtpFormData,
+  ): Promise<void> => {
+    await apiClient.post<ApiResponse>("/users/reset-password-otp", data);
   },
 
   // Update profile

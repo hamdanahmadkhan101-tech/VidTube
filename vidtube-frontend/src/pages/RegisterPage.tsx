@@ -27,7 +27,7 @@ const registerSchema = z.object({
   username: z
     .string()
     .min(3, "Username must be at least 3 characters")
-    .max(20, "Username must be at most 20 characters")
+    .max(30, "Username must be at most 30 characters")
     .regex(
       /^[a-zA-Z0-9_]+$/,
       "Username can only contain letters, numbers, and underscores",
@@ -80,9 +80,9 @@ export const RegisterPage: React.FC = () => {
 
   const registerMutation = useMutation({
     mutationFn: authService.register,
-    onSuccess: () => {
-      toast.success("Account created successfully! Please sign in.");
-      navigate("/login");
+    onSuccess: (_, variables) => {
+      toast.success("Account created. Check your email for verification OTP.");
+      navigate(`/verify-email?email=${encodeURIComponent(variables.email)}`);
     },
     onError: (error) => {
       toast.error(handleApiError(error));

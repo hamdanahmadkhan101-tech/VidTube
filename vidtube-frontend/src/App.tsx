@@ -12,6 +12,8 @@ const HomePage = lazy(() => import("./pages/HomePage"));
 const VideoPlayerPage = lazy(() => import("./pages/VideoPlayerPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const ChannelPage = lazy(() => import("./pages/ChannelPage"));
 const UploadPage = lazy(() => import("./pages/UploadPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
@@ -113,6 +115,22 @@ function App() {
                   element={
                     <GuestRoute>
                       <RegisterPage />
+                    </GuestRoute>
+                  }
+                />
+                <Route
+                  path="/verify-email"
+                  element={
+                    <GuestRoute>
+                      <VerifyEmailPage />
+                    </GuestRoute>
+                  }
+                />
+                <Route
+                  path="/forgot-password"
+                  element={
+                    <GuestRoute>
+                      <ForgotPasswordPage />
                     </GuestRoute>
                   }
                 />
