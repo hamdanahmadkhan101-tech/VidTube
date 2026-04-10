@@ -91,7 +91,7 @@ function App() {
           <Header />
           <NotificationRealtimeBridge />
 
-          <main className="app-main">
+          <main>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public Routes */}

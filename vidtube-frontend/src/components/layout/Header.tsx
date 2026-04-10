@@ -150,28 +150,10 @@ export const Header: React.FC = () => {
   });
 
   const prefersRightSidebarMenu = userPreferences?.ui?.rightSidebarMenu ?? true;
-  const drawerOffscreenX = prefersRightSidebarMenu ? 340 : -340;
+  const drawerOffscreenX = prefersRightSidebarMenu ? "100%" : "-100%";
   const drawerPositionClass = prefersRightSidebarMenu
     ? "right-0 border-l"
     : "left-0 border-r";
-
-  useEffect(() => {
-    if (showMobileMenu) {
-      document.body.setAttribute("data-drawer-open", "true");
-      document.body.setAttribute(
-        "data-drawer-side",
-        prefersRightSidebarMenu ? "right" : "left",
-      );
-    } else {
-      document.body.removeAttribute("data-drawer-open");
-      document.body.removeAttribute("data-drawer-side");
-    }
-
-    return () => {
-      document.body.removeAttribute("data-drawer-open");
-      document.body.removeAttribute("data-drawer-side");
-    };
-  }, [showMobileMenu, prefersRightSidebarMenu]);
 
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
@@ -581,15 +563,16 @@ export const Header: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               onClick={() => setShowMobileMenu(false)}
               className="fixed inset-0 z-40 bg-black/45"
               aria-label="Close mobile menu"
             />
             <motion.div
-              initial={{ x: drawerOffscreenX, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: drawerOffscreenX, opacity: 0 }}
-              transition={{ type: "tween", duration: 0.22, ease: "easeOut" }}
+              initial={{ x: drawerOffscreenX }}
+              animate={{ x: 0 }}
+              exit={{ x: drawerOffscreenX }}
+              transition={{ type: "tween", duration: 0.18, ease: "easeOut" }}
               style={{ willChange: "transform" }}
               className={`fixed top-0 bottom-0 z-50 w-[min(90vw,22rem)] ${drawerPositionClass} border-white/12 bg-background-secondary shadow-[0_16px_44px_rgba(0,0,0,0.5)]`}
             >

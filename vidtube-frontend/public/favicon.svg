@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
     <linearGradient id="vt-bg" x1="8" y1="6" x2="57" y2="58" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#A78BFA" />
-      <stop offset="0.5" stop-color="#8B5CF6" />
-      <stop offset="1" stop-color="#2563EB" />
+      <stop offset="0" stop-color="#DD9B63" />
+      <stop offset="0.55" stop-color="#C26E2E" />
+      <stop offset="1" stop-color="#7B461E" />
     </linearGradient>
     <linearGradient id="vt-screen" x1="18" y1="20" x2="46" y2="44" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#111827" stop-opacity="0.62" />
-      <stop offset="1" stop-color="#0F172A" stop-opacity="0.3" />
+      <stop offset="0" stop-color="#11161D" stop-opacity="0.72" />
+      <stop offset="1" stop-color="#0B0F14" stop-opacity="0.35" />
     </linearGradient>
   </defs>
 

@@ -97,7 +97,6 @@ body {
   overflow-x: hidden;
   color: var(--color-text-primary);
   font-family: "Instrument Sans", "Segoe UI", "Helvetica Neue", sans-serif;
-  --drawer-width: min(90vw, 22rem);
   background:
     radial-gradient(
       circle at 12% 0%,
@@ -184,21 +183,6 @@ select {
       rgba(123, 147, 173, 0.1) 0%,
       transparent 34%
     );
-}
-
-.app-main {
-  transition: transform 0.22s ease-out;
-}
-
-@media (min-width: 1024px) {
-  body[data-drawer-open="true"] .app-main {
-    transform: translateX(calc(-1 * var(--drawer-width)));
-    will-change: transform;
-  }
-
-  body[data-drawer-open="true"][data-drawer-side="left"] .app-main {
-    transform: translateX(var(--drawer-width));
-  }
 }
 
 /* Scrollbar */
