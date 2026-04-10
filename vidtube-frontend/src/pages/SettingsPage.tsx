@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Lock, Camera, Save, Loader2 } from "lucide-react";
 import { authService } from "../services/authService.ts";
+import { userPreferenceService } from "../services/userPreferenceService.ts";
 import { useAuthStore } from "../store/authStore.ts";
 import { handleApiError } from "../services/apiClient.ts";
 import toast from "react-hot-toast";
@@ -29,6 +30,19 @@ export const SettingsPage: React.FC = () => {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [rightSidebarMenuOverride, setRightSidebarMenuOverride] = useState<
+    boolean | null
+  >(null);
+
+  const { data: userPreferences, isLoading: isPreferencesLoading } = useQuery({
+    queryKey: ["userPreferences"],
+    queryFn: userPreferenceService.getPreferences,
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+
+  const savedRightSidebarMenu = userPreferences?.ui?.rightSidebarMenu ?? true;
+  const rightSidebarMenu = rightSidebarMenuOverride ?? savedRightSidebarMenu;
 
   const updateProfileMutation = useMutation({
     mutationFn: async () => {
@@ -71,6 +85,27 @@ export const SettingsPage: React.FC = () => {
       toast.error(handleApiError(error));
     },
   });
+
+  const updatePreferencesMutation = useMutation({
+    mutationFn: () =>
+      userPreferenceService.updatePreferences({
+        ui: {
+          rightSidebarMenu,
+        },
+      }),
+    onSuccess: (updatedPreferences) => {
+      queryClient.setQueryData(["userPreferences"], updatedPreferences);
+      queryClient.invalidateQueries({ queryKey: ["userPreferences"] });
+      setRightSidebarMenuOverride(null);
+      toast.success("Interface preferences updated");
+    },
+    onError: (error) => {
+      toast.error(handleApiError(error));
+    },
+  });
+
+  const hasRightSidebarPreferenceChanged =
+    rightSidebarMenu !== savedRightSidebarMenu;
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -258,6 +293,70 @@ export const SettingsPage: React.FC = () => {
               )}
             </button>
           </form>
+        </div>
+
+        {/* Interface Preferences */}
+        <div className="section-card p-8">
+          <h2 className="text-2xl font-bold text-text-primary mb-6">
+            Interface Preferences
+          </h2>
+
+          <div className="section-card-soft p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-text-primary font-semibold">
+                  Right-side mobile menu
+                </p>
+                <p className="text-sm text-text-secondary mt-1">
+                  Control whether the hamburger drawer opens from the right or
+                  left side.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                disabled={isPreferencesLoading}
+                onClick={() => setRightSidebarMenuOverride(!rightSidebarMenu)}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition-colors ${
+                  rightSidebarMenu
+                    ? "bg-primary-500 border-primary-300/70"
+                    : "bg-surface border-white/20"
+                } ${isPreferencesLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+                aria-label="Toggle mobile menu side"
+                aria-pressed={rightSidebarMenu}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                    rightSidebarMenu ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="mt-4 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => updatePreferencesMutation.mutate()}
+                disabled={
+                  updatePreferencesMutation.isPending ||
+                  !hasRightSidebarPreferenceChanged
+                }
+                className="btn-primary flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {updatePreferencesMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Save Interface
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Change Password */}

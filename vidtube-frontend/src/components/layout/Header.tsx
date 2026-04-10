@@ -20,6 +20,7 @@ import { authService } from "../../services/authService";
 import { videoService } from "../../services/videoService";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { notificationService } from "../../services/notificationService.ts";
+import { userPreferenceService } from "../../services/userPreferenceService.ts";
 import { NotificationDropdown } from "../notification/NotificationDropdown";
 import { useNotificationSocketConnection } from "../../hooks/useNotificationSocketConnection";
 import toast from "react-hot-toast";
@@ -130,6 +131,19 @@ export const Header: React.FC = () => {
     refetchInterval: isRealtimeConnected ? false : 30_000,
     refetchIntervalInBackground: false,
   });
+
+  const { data: userPreferences } = useQuery({
+    queryKey: ["userPreferences"],
+    queryFn: userPreferenceService.getPreferences,
+    enabled: isAuthenticated,
+    staleTime: 5 * 60_000,
+  });
+
+  const prefersRightSidebarMenu = userPreferences?.ui?.rightSidebarMenu ?? true;
+  const drawerOffscreenX = prefersRightSidebarMenu ? 340 : -340;
+  const drawerPositionClass = prefersRightSidebarMenu
+    ? "right-0 border-l"
+    : "left-0 border-r";
 
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
@@ -486,11 +500,11 @@ export const Header: React.FC = () => {
               aria-label="Close mobile menu"
             />
             <motion.div
-              initial={{ x: 340, opacity: 0 }}
+              initial={{ x: drawerOffscreenX, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 340, opacity: 0 }}
+              exit={{ x: drawerOffscreenX, opacity: 0 }}
               transition={{ type: "spring", stiffness: 320, damping: 28 }}
-              className="md:hidden fixed top-0 right-0 bottom-0 z-50 w-[min(88vw,22rem)] border-l border-white/10 bg-background-secondary/98 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.58)]"
+              className={`md:hidden fixed top-0 bottom-0 z-50 w-[min(88vw,22rem)] ${drawerPositionClass} border-white/10 bg-background-secondary/98 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.58)]`}
             >
               <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
                 <p className="text-sm font-semibold tracking-[0.18em] text-text-tertiary uppercase">

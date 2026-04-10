@@ -60,6 +60,40 @@ export interface AuthUser extends User {
   accessToken?: string;
 }
 
+export interface UserPreferences {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  privacy: {
+    showEmail: boolean;
+    showWatchHistory: boolean;
+  };
+  playback: {
+    autoplay: boolean;
+    defaultQuality: "auto" | "1080p" | "720p" | "480p" | "360p";
+  };
+  ui: {
+    compactMode: boolean;
+    rightSidebarMenu: boolean;
+  };
+}
+
+export interface UpdateUserPreferencesPayload {
+  emailNotifications?: boolean;
+  pushNotifications?: boolean;
+  privacy?: {
+    showEmail?: boolean;
+    showWatchHistory?: boolean;
+  };
+  playback?: {
+    autoplay?: boolean;
+    defaultQuality?: "auto" | "1080p" | "720p" | "480p" | "360p";
+  };
+  ui?: {
+    compactMode?: boolean;
+    rightSidebarMenu?: boolean;
+  };
+}
+
 // Video Types
 export interface Video {
   _id: string;
