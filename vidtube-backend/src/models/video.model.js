@@ -17,13 +17,11 @@ const videoSchema = new Schema(
       type: String,
       enum: ['public', 'unlisted', 'private'],
       default: 'public',
-      index: true, // For filtering by privacy
     },
     category: {
       type: String,
       default: 'general',
       trim: true,
-      index: true, // For category-based filtering
     },
     tags: [
       {
@@ -36,7 +34,6 @@ const videoSchema = new Schema(
     likesCount: {
       type: Number,
       default: 0,
-      index: true, // For sorting by popularity
     },
     commentsCount: {
       type: Number,
@@ -62,32 +59,8 @@ videoSchema.index({ isPublished: 1, createdAt: -1 });
 // Index for: Get all published videos sorted by views (trending)
 videoSchema.index({ isPublished: 1, views: -1 });
 
-// Index for: Privacy-based queries
-videoSchema.index({ privacy: 1, isPublished: 1, createdAt: -1 });
-
-// Index for: Category-based queries
-videoSchema.index({ category: 1, isPublished: 1, createdAt: -1 });
-
-// Index for: Tags-based queries
-videoSchema.index({ tags: 1, isPublished: 1 });
-
-// Index for: Likes count sorting (popularity)
-videoSchema.index({ likesCount: -1 });
-
-// Text index for search functionality (MongoDB allows only one text index per collection)
-// This enables $text search queries on title and description
-videoSchema.index({ title: 'text', description: 'text' });
-
-// Individual indexes for regex-based search fallback (used in searchVideos controller)
-// These are still useful for case-insensitive regex queries
-videoSchema.index({ title: 1 });
-videoSchema.index({ description: 1 });
-
-// Index for timestamp sorting (backup for other sort operations)
-videoSchema.index({ createdAt: -1 });
-
-// Index for views sorting (trending queries)
-videoSchema.index({ views: -1 });
+// Index for: Published videos sorted alphabetically by title
+videoSchema.index({ isPublished: 1, title: 1 });
 
 videoSchema.plugin(mongooseAggregatePaginate);
 

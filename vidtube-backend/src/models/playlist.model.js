@@ -18,7 +18,6 @@ const playlistSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     videos: [
       {
@@ -40,7 +39,6 @@ const playlistSchema = new Schema(
     isPublic: {
       type: Boolean,
       default: true,
-      index: true,
     },
     thumbnailUrl: {
       type: String,
@@ -52,8 +50,7 @@ const playlistSchema = new Schema(
 
 // Indexes
 playlistSchema.index({ owner: 1, createdAt: -1 });
-playlistSchema.index({ isPublic: 1, createdAt: -1 });
-playlistSchema.index({ name: 'text', description: 'text' }); // Text search
+playlistSchema.index({ owner: 1, isPublic: 1, createdAt: -1 });
 
 const Playlist = mongoose.model('Playlist', playlistSchema);
 

@@ -6,7 +6,6 @@ const notificationSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     type: {
       type: String,
@@ -19,7 +18,6 @@ const notificationSchema = new Schema(
         'mention',
         'system',
       ],
-      index: true,
     },
     title: {
       type: String,
@@ -44,7 +42,6 @@ const notificationSchema = new Schema(
     isRead: {
       type: Boolean,
       default: false,
-      index: true,
     },
     readAt: {
       type: Date,
@@ -59,9 +56,8 @@ const notificationSchema = new Schema(
 );
 
 // Indexes for efficient querying
+notificationSchema.index({ recipient: 1, createdAt: -1 });
 notificationSchema.index({ recipient: 1, isRead: 1, createdAt: -1 });
-notificationSchema.index({ recipient: 1, type: 1, createdAt: -1 });
-notificationSchema.index({ createdAt: -1 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 

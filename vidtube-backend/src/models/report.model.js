@@ -6,18 +6,15 @@ const reportSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     type: {
       type: String,
       required: true,
       enum: ['video', 'comment', 'user', 'channel'],
-      index: true,
     },
     reportedItem: {
       type: Schema.Types.ObjectId,
       required: true,
-      index: true,
     },
     reason: {
       type: String,
@@ -31,7 +28,6 @@ const reportSchema = new Schema(
         'violence',
         'other',
       ],
-      index: true,
     },
     description: {
       type: String,
@@ -42,7 +38,6 @@ const reportSchema = new Schema(
       type: String,
       enum: ['pending', 'reviewing', 'resolved', 'dismissed'],
       default: 'pending',
-      index: true,
     },
     reviewedBy: {
       type: Schema.Types.ObjectId,
@@ -64,10 +59,14 @@ const reportSchema = new Schema(
 
 // Indexes
 reportSchema.index({ status: 1, createdAt: -1 });
+reportSchema.index({ type: 1, createdAt: -1 });
 reportSchema.index({ type: 1, status: 1, createdAt: -1 });
 reportSchema.index({ reportedBy: 1, createdAt: -1 });
 // Prevent duplicate reports from same user for same item
-reportSchema.index({ reportedBy: 1, type: 1, reportedItem: 1 }, { unique: true });
+reportSchema.index(
+  { reportedBy: 1, type: 1, reportedItem: 1 },
+  { unique: true }
+);
 
 const Report = mongoose.model('Report', reportSchema);
 

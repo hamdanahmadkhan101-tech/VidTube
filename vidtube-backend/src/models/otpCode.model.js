@@ -6,20 +6,17 @@ const otpCodeSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     email: {
       type: String,
       required: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
     purpose: {
       type: String,
       enum: ['email_verification', 'password_reset'],
       required: true,
-      index: true,
     },
     otpHash: {
       type: String,
@@ -44,7 +41,7 @@ const otpCodeSchema = new Schema(
 
 // Remove expired OTP documents automatically.
 otpCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-otpCodeSchema.index({ user: 1, purpose: 1, createdAt: -1 });
+otpCodeSchema.index({ user: 1, purpose: 1, consumedAt: 1, createdAt: -1 });
 otpCodeSchema.index({ email: 1, purpose: 1, createdAt: -1 });
 
 export const OtpCode = mongoose.model('OtpCode', otpCodeSchema);

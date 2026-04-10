@@ -3,13 +3,12 @@ import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
 
 const likeSchema = new Schema(
   {
-    video: { type: Schema.Types.ObjectId, ref: 'Video', index: true },
-    comment: { type: Schema.Types.ObjectId, ref: 'Comment', index: true },
+    video: { type: Schema.Types.ObjectId, ref: 'Video' },
+    comment: { type: Schema.Types.ObjectId, ref: 'Comment' },
     likedBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
   },
   { timestamps: true }
@@ -21,9 +20,6 @@ likeSchema.index({ video: 1, likedBy: 1 }, { unique: true, sparse: true });
 
 // Compound unique index: Prevent duplicate likes by the same user on the same comment
 likeSchema.index({ comment: 1, likedBy: 1 }, { unique: true, sparse: true });
-
-// Index for: Get all likes for a video (for like count) - optimized aggregation
-likeSchema.index({ video: 1, createdAt: -1 });
 
 // Index for: Get all videos liked by a user (user's liked videos page)
 likeSchema.index({ likedBy: 1, createdAt: -1 });

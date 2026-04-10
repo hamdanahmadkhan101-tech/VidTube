@@ -11,7 +11,6 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true, // For channel profile lookup
     },
     email: {
       type: String,
@@ -19,9 +18,8 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true, // For login queries
     },
-    fullName: { type: String, required: true, trim: true, index: true },
+    fullName: { type: String, required: true, trim: true },
     password: { type: String, required: [true, 'Password is required'] },
     avatarUrl: { type: String, required: true, default: DEFAULT_AVATAR_URL },
     coverUrl: { type: String, default: '' },
@@ -38,18 +36,15 @@ const userSchema = new Schema(
     isVerified: {
       type: Boolean,
       default: false,
-      index: true, // For filtering verified users
     },
     isBanned: {
       type: Boolean,
       default: false,
-      index: true, // For filtering banned users
     },
     role: {
       type: String,
       enum: ['user', 'moderator', 'admin'],
       default: 'user',
-      index: true,
     },
     bannedUntil: {
       type: Date,
@@ -75,10 +70,7 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-// Compound indexes for common query patterns
-// Note: email and username already have unique indexes from schema definition
-// Timestamps index for sorting user lists by creation date
-userSchema.index({ createdAt: -1 });
+// Note: username and email are already indexed via unique constraints.
 
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
