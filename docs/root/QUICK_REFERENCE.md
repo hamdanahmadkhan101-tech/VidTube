@@ -68,6 +68,13 @@ npm run build
 - Notifications: `/notifications/*`
 - Reports: `/reports/*`
 
+Key newer video endpoints:
+
+- `GET /videos/shorts-feed` (cursor-based shorts feed, short TTL cache)
+- `POST /videos/:videoId/watch-later/toggle` (watch-later toggle)
+- `POST /videos/watch-progress/batch` (batched progress updates, max 20 events)
+- `GET /users/watch-later` (watch-later library)
+
 Use [API_DOCUMENTATION.md](../backend/API_DOCUMENTATION.md) for full endpoint definitions.
 
 ## Environment Variables (Minimal)
@@ -100,6 +107,8 @@ Use [API_DOCUMENTATION.md](../backend/API_DOCUMENTATION.md) for full endpoint de
 - Refresh token is managed via secure HTTP-only cookie.
 - Request IDs are attached to responses via `X-Request-Id`.
 - Realtime notification channel uses Socket.io user rooms (`user:<userId>`).
+- Shorts feed is served via cursor pagination (`nextCursor`) with strict projection.
+- Watch progress writes should prefer batch endpoint for autoplay-heavy surfaces.
 
 ## Known Baseline Notes
 

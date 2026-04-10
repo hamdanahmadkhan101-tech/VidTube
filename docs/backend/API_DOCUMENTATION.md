@@ -67,6 +67,7 @@ Rate limiting is enforced by middleware and may return `429` with `RateLimit-*` 
 - Subscription toggles: `40 requests / 15 minutes / IP`
 - Video management mutations (publish/update/delete): `60 requests / 15 minutes / IP`
 - Watch events (`POST /videos/:videoId/watch`): `120 requests / minute / IP`
+- Watch progress batch (`POST /videos/watch-progress/batch`): `120 requests / minute / IP`
 - Comment mutations: `45 requests / minute / IP`
 - Like toggles: `120 requests / minute / IP`
 - Notification reads: `120 requests / minute / IP`
@@ -109,21 +110,57 @@ Rate limit counters are stored in Redis when `REDIS_URL` is configured and `RATE
 | GET    | `/users/c/:username`                    | Optional | Public channel profile with optional subscription context |
 | POST   | `/users/toggle-subscription/:channelId` | Required | Subscribe/unsubscribe toggle                              |
 | GET    | `/users/watch-history`                  | Required | Paginated watch history                                   |
+| GET    | `/users/watch-later`                    | Required | Paginated watch-later library                             |
 
 ## Videos
 
-| Method | Path                              | Auth     | Notes                                                 |
-| ------ | --------------------------------- | -------- | ----------------------------------------------------- |
-| GET    | `/videos`                         | Optional | List published videos; pagination + sort              |
-| GET    | `/videos/search`                  | Optional | Supports `q` or `query`                               |
-| GET    | `/videos/suggestions`             | Public   | Query-based title suggestions                         |
-| GET    | `/videos/user/:userId`            | Optional | Owner sees all; others see published only             |
-| GET    | `/videos/:videoId`                | Optional | Unpublished videos restricted to owner                |
-| POST   | `/videos/upload`                  | Required | Multipart (`video`, optional `thumbnail`)             |
-| PATCH  | `/videos/toggle/publish/:videoId` | Required | Owner-only publish status toggle                      |
-| PATCH  | `/videos/:videoId`                | Required | Owner-only metadata and optional thumbnail update     |
-| DELETE | `/videos/:videoId`                | Required | Owner-only delete with media cleanup                  |
-| POST   | `/videos/:videoId/watch`          | Required | Adds to watch history; increments view if first watch |
+| Method | Path                                  | Auth     | Notes                                                 |
+| ------ | ------------------------------------- | -------- | ----------------------------------------------------- |
+| GET    | `/videos`                             | Optional | List published videos; pagination + sort              |
+| GET    | `/videos/search`                      | Optional | Supports `q` or `query`                               |
+| GET    | `/videos/suggestions`                 | Public   | Query-based title suggestions                         |
+| GET    | `/videos/shorts-feed`                 | Optional | Cursor feed for short-form videos (`duration <= 90s`) |
+| GET    | `/videos/user/:userId`                | Optional | Owner sees all; others see published only             |
+| GET    | `/videos/:videoId`                    | Optional | Unpublished videos restricted to owner                |
+| POST   | `/videos/upload`                      | Required | Multipart (`video`, optional `thumbnail`)             |
+| PATCH  | `/videos/toggle/publish/:videoId`     | Required | Owner-only publish status toggle                      |
+| PATCH  | `/videos/:videoId`                    | Required | Owner-only metadata and optional thumbnail update     |
+| DELETE | `/videos/:videoId`                    | Required | Owner-only delete with media cleanup                  |
+| POST   | `/videos/:videoId/watch`              | Required | Adds to watch history; increments view if first watch |
+| POST   | `/videos/:videoId/watch-later/toggle` | Required | Toggle watch-later save state for the current user    |
+| PATCH  | `/videos/:videoId/watch-progress`     | Required | Update watch progress for one video                   |
+| POST   | `/videos/watch-progress/batch`        | Required | Batch watch progress updates (1-20 events)            |
+
+### Search behavior
+
+- Search endpoint uses weighted MongoDB text search first (title > description).
+- If text index is unavailable or result set is empty, it falls back to regex relevance scoring.
+
+### Shorts feed behavior
+
+- Returns strict projection only: minimal fields needed by vertical feed rendering.
+- Cursor pagination uses `nextCursor` from the last returned item and `hasMore` flag.
+- Feed slices are Redis-cacheable (`videos:shorts` namespace, short TTL) and invalidated on video mutations.
+
+### Watch progress batching
+
+- `POST /videos/watch-progress/batch` accepts:
+
+```json
+{
+  "events": [
+    {
+      "videoId": "507f1f77bcf86cd799439011",
+      "progressSeconds": 42,
+      "completed": false,
+      "source": "shorts-feed"
+    }
+  ]
+}
+```
+
+- Batch processing is deduped by video server-side (latest event wins per video in a request).
+- Hard cap of 20 events/request to prevent unbounded write amplification.
 
 ## Comments
 

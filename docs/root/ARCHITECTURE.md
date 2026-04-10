@@ -67,6 +67,9 @@ Notable middleware characteristics:
 - Engagement counters (`likesCount`, `commentsCount`) are denormalized on videos
 - Counter updates are paired with like/comment mutations for predictable read performance
 - Watch history insertion uses atomic checks to avoid duplicate view inflation
+- Shorts feed uses a cursor-based aggregation path with strict field projection and short-lived cached feed slices
+- Search uses weighted MongoDB text search first with regex fallback for resilience and partial-term recovery
+- Watch progress writes support both single-update and batched-update endpoints to reduce write amplification in autoplay surfaces
 
 ## Frontend Architecture
 
@@ -102,6 +105,8 @@ Pages
 - Aggregation-first retrieval for complex page payloads
 - Request throttling on abuse-prone endpoints
 - Redis-backed distributed response cache for hot-read endpoint families
+- Vertical feed strategy: cursor pagination + strict projection + short TTL cache to keep DB read cost bounded
+- Write amplification control: client-queued watch-progress events flushed in batches with bounded payload size
 
 ### Planned / Next
 

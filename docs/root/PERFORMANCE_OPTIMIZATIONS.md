@@ -9,6 +9,8 @@ This document summarizes the optimizations currently implemented and the next re
 - Reworked high-traffic retrieval paths using aggregation pipelines
 - Reduced payload overhead in video detail and list responses
 - Improved watch history retrieval with database-side pagination rather than in-memory slicing
+- Added cursor-based shorts feed aggregation with strict projection and small payload slices
+- Added weighted text search with regex fallback to keep search relevant and resilient
 
 ### Denormalized Counters
 
@@ -37,6 +39,7 @@ This document summarizes the optimizations currently implemented and the next re
 - Redis-backed response caching added for high-traffic read endpoints
 - Write paths trigger namespace-based invalidation for freshness
 - Cache health and counters are available through `/metrics/cache`
+- Shorts feed slices are cached under a dedicated namespace with short TTLs
 
 ## Frontend Optimizations Implemented
 
@@ -45,6 +48,7 @@ This document summarizes the optimizations currently implemented and the next re
 - TanStack Query keys and invalidations were aligned for consistency
 - Reduced unnecessary refetch patterns in notification and related flows
 - Improved cache behavior to lower avoidable network churn
+- Shorts feed prefetching is bounded to the next 1-2 items to avoid overfetch
 
 ### API Contract Alignment
 
@@ -78,6 +82,12 @@ Current architecture supports horizontal API scaling because:
 3. Add API response compression and explicit cache headers where safe
 4. Add DB query-level profiling and APM instrumentation in production
 5. Add rate-limit observability dashboards and alert thresholds for abuse spikes
+
+## Recent Additions (2026)
+
+- Batched watch-progress endpoint to reduce write amplification from autoplay feeds
+- Cursor-based shorts feed with strict projection and Redis-backed slice caching
+- Weighted text search index with regex fallback for partial matches
 
 ## Performance Verification Workflow
 

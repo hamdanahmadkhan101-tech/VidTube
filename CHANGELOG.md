@@ -11,12 +11,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and
 - Role-based authorization middleware and admin gating for report moderation routes
 - Production-gated metrics token enforcement for `/metrics`
 - Documentation refresh across root technical guides
+- Cursor-based shorts feed endpoint with strict projection and Redis slice caching
+- Watch-later persistence (model + endpoints + UI routes)
+- Batch watch-progress endpoint to reduce write amplification
 
 ### Changed
 
 - Refresh token handling and rotation behavior in auth flow
 - Frontend service contracts to match backend endpoint behavior
 - Query key and invalidation consistency in frontend data fetching paths
+- Search now uses weighted text index first with regex fallback
 
 ### Fixed
 

@@ -43,11 +43,14 @@ Detailed technical docs:
 
 - Authentication with JWT access tokens and refresh-token rotation
 - Video upload, playback metadata, search, and owner management
+- Shorts feed with cursor pagination and autoplay-optimized delivery
 - Comments with replies and engagement sorting
 - Like system for videos and comments
 - Playlist management and video curation
+- Watch later library with per-video toggle state
 - Notification flows for engagement events
 - Reporting workflow with admin-only moderation routes
+- Batched watch-progress updates for autoplay surfaces
 
 ## Tech Stack
 
