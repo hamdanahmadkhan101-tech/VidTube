@@ -11,6 +11,7 @@ import Playlist from '../models/playlist.model.js';
 import Report from '../models/report.model.js';
 import Subscription from '../models/subscription.model.js';
 import { OtpCode } from '../models/otpCode.model.js';
+import IdempotencyKey from '../models/idempotencyKey.model.js';
 
 const models = [
   User,
@@ -22,6 +23,7 @@ const models = [
   Report,
   Subscription,
   OtpCode,
+  IdempotencyKey,
 ];
 
 const run = async () => {

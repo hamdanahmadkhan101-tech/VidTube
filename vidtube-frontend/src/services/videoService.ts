@@ -166,6 +166,7 @@ export const videoService = {
     data: UploadVideoFormData | FormData,
     onProgress?: (progress: number) => void,
     signal?: AbortSignal,
+    idempotencyKey?: string,
   ): Promise<Video> => {
     let formData: FormData;
 
@@ -196,6 +197,11 @@ export const videoService = {
       "/videos/upload",
       formData,
       {
+        headers: idempotencyKey
+          ? {
+              "Idempotency-Key": idempotencyKey,
+            }
+          : undefined,
         timeout: calculatedTimeout,
         signal,
         onUploadProgress: (progressEvent) => {

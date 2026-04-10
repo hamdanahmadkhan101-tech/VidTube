@@ -22,6 +22,7 @@ import {
   uploadVideo as uploadVideoMiddleware,
   uploadImage,
 } from '../middlewares/multer.middleware.js';
+import { enforceIdempotency } from '../middlewares/idempotency.middleware.js';
 import { verifyJWT, optionalJWT } from '../middlewares/auth.middleware.js';
 import {
   uploadLimiter,
@@ -105,6 +106,7 @@ router.route('/upload').post(
     { name: 'thumbnail', maxCount: 1 },
   ]),
   validate(videoUploadSchema),
+  enforceIdempotency({ requireKey: false }),
   invalidateVideoDiscoveryCache,
   uploadVideo
 );

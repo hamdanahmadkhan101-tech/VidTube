@@ -25,6 +25,49 @@ export const UploadPage: React.FC = () => {
   const [uploadController, setUploadController] =
     useState<AbortController | null>(null);
 
+  const buildUploadIdempotencyKey = async () => {
+    if (!videoFile) {
+      return `video-upload:${crypto.randomUUID()}`;
+    }
+
+    const normalizedTags = tags
+      .split(",")
+      .map((tag) => tag.trim().toLowerCase())
+      .filter(Boolean)
+      .sort()
+      .join(",");
+
+    const thumbnailFingerprint = thumbnailFile
+      ? `${thumbnailFile.name}:${thumbnailFile.size}:${thumbnailFile.lastModified}:${thumbnailFile.type}`
+      : "none";
+
+    const payloadFingerprint = [
+      title.trim(),
+      description.trim(),
+      privacy,
+      category.trim().toLowerCase(),
+      normalizedTags,
+      String(videoDuration),
+      `${videoFile.name}:${videoFile.size}:${videoFile.lastModified}:${videoFile.type}`,
+      thumbnailFingerprint,
+    ].join("|");
+
+    if (typeof crypto?.subtle?.digest !== "function") {
+      return `video-upload:${crypto.randomUUID()}`;
+    }
+
+    const digest = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(payloadFingerprint),
+    );
+
+    const hashHex = Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+
+    return `video-upload:${hashHex.slice(0, 48)}`;
+  };
+
   // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
@@ -67,12 +110,15 @@ export const UploadPage: React.FC = () => {
       formData.append("videoformat", videoFile.type.split("/")[1] || "mp4");
       formData.append("duration", videoDuration.toString());
 
+      const idempotencyKey = await buildUploadIdempotencyKey();
+
       return videoService.uploadVideo(
         formData,
         (progress) => {
           setUploadProgress(progress);
         },
         controller.signal,
+        idempotencyKey,
       );
     },
     retry: 2, // Retry failed uploads twice

@@ -1,8 +1,17 @@
 import request from 'supertest';
 import testApp from '../setup/testApp.js';
-import { connectTestDB, closeTestDB, clearTestDB } from '../setup/testDatabase.js';
-import { createTestUser, createAndLoginTestUser, createTestVideo } from '../setup/testHelpers.js';
+import {
+  connectTestDB,
+  closeTestDB,
+  clearTestDB,
+} from '../setup/testDatabase.js';
+import {
+  createTestUser,
+  createAndLoginTestUser,
+  createTestVideo,
+} from '../setup/testHelpers.js';
 import Video from '../../models/video.model.js';
+import { uploadOnCloudinary } from '../../utils/cloudinary.js';
 import path from 'path';
 
 // Use path.resolve for test assets
@@ -47,9 +56,18 @@ describe('Video Controller', () => {
   describe('GET /api/v1/videos', () => {
     test('should get all published videos', async () => {
       // Create some test videos
-      await createTestVideo(testUser._id, { isPublished: true, title: 'Video 1' });
-      await createTestVideo(testUser._id, { isPublished: true, title: 'Video 2' });
-      await createTestVideo(testUser._id, { isPublished: false, title: 'Draft Video' });
+      await createTestVideo(testUser._id, {
+        isPublished: true,
+        title: 'Video 1',
+      });
+      await createTestVideo(testUser._id, {
+        isPublished: true,
+        title: 'Video 2',
+      });
+      await createTestVideo(testUser._id, {
+        isPublished: false,
+        title: 'Draft Video',
+      });
 
       const response = await request(testApp)
         .get('/api/v1/videos')
@@ -65,9 +83,9 @@ describe('Video Controller', () => {
     test('should support pagination', async () => {
       // Create multiple videos
       for (let i = 0; i < 5; i++) {
-        await createTestVideo(testUser._id, { 
-          isPublished: true, 
-          title: `Video ${i + 1}` 
+        await createTestVideo(testUser._id, {
+          isPublished: true,
+          title: `Video ${i + 1}`,
         });
       }
 
@@ -93,8 +111,9 @@ describe('Video Controller', () => {
         description: 'Test description',
       });
 
-      const response = await request(testApp)
-        .get(`/api/v1/videos/${video._id}`);
+      const response = await request(testApp).get(
+        `/api/v1/videos/${video._id}`
+      );
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -105,8 +124,7 @@ describe('Video Controller', () => {
 
     test('should return 404 for non-existent video', async () => {
       const fakeId = '507f1f77bcf86cd799439011';
-      const response = await request(testApp)
-        .get(`/api/v1/videos/${fakeId}`);
+      const response = await request(testApp).get(`/api/v1/videos/${fakeId}`);
 
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
@@ -115,8 +133,9 @@ describe('Video Controller', () => {
     test('should get video details', async () => {
       const video = await createTestVideo(testUser._id, { views: 10 });
 
-      const response = await request(testApp)
-        .get(`/api/v1/videos/${video._id}`);
+      const response = await request(testApp).get(
+        `/api/v1/videos/${video._id}`
+      );
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -145,9 +164,10 @@ describe('Video Controller', () => {
       expect(response.body.data).toHaveProperty('title', 'My Test Video');
       // Owner might be object with _id property
       if (response.body.data.owner) {
-        const ownerId = typeof response.body.data.owner === 'object' 
-          ? response.body.data.owner._id || response.body.data.owner 
-          : response.body.data.owner;
+        const ownerId =
+          typeof response.body.data.owner === 'object'
+            ? response.body.data.owner._id || response.body.data.owner
+            : response.body.data.owner;
         expect(ownerId.toString()).toBe(testUser._id.toString());
       }
     }, 30000);
@@ -169,6 +189,78 @@ describe('Video Controller', () => {
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
+
+    test('should replay response for duplicate idempotency key without duplicate side effects', async () => {
+      const videoPath = getTestAssetPath('test-video.mp4');
+      const idemKey = 'video-upload:test-idempotency-key-001';
+
+      const firstResponse = await request(testApp)
+        .post('/api/v1/videos/upload')
+        .set('Authorization', `Bearer ${authToken}`)
+        .set('Idempotency-Key', idemKey)
+        .field('title', 'Idempotent Upload')
+        .field('description', 'First attempt')
+        .field('videoformat', 'mp4')
+        .field('duration', '120')
+        .attach('video', videoPath);
+
+      expect(firstResponse.status).toBe(201);
+      expect(firstResponse.body.success).toBe(true);
+      expect(firstResponse.headers['idempotency-replayed']).toBeUndefined();
+
+      const secondResponse = await request(testApp)
+        .post('/api/v1/videos/upload')
+        .set('Authorization', `Bearer ${authToken}`)
+        .set('Idempotency-Key', idemKey)
+        .field('title', 'Idempotent Upload')
+        .field('description', 'First attempt')
+        .field('videoformat', 'mp4')
+        .field('duration', '120')
+        .attach('video', videoPath);
+
+      expect(secondResponse.status).toBe(201);
+      expect(secondResponse.body.success).toBe(true);
+      expect(secondResponse.headers['idempotency-replayed']).toBe('true');
+      expect(secondResponse.body.data._id).toBe(firstResponse.body.data._id);
+
+      const totalVideos = await Video.countDocuments({
+        owner: testUser._id,
+        title: 'Idempotent Upload',
+      });
+      expect(totalVideos).toBe(1);
+      expect(uploadOnCloudinary).toHaveBeenCalledTimes(1);
+    }, 30000);
+
+    test('should reject same idempotency key when payload changes', async () => {
+      const videoPath = getTestAssetPath('test-video.mp4');
+      const idemKey = 'video-upload:test-idempotency-key-002';
+
+      const firstResponse = await request(testApp)
+        .post('/api/v1/videos/upload')
+        .set('Authorization', `Bearer ${authToken}`)
+        .set('Idempotency-Key', idemKey)
+        .field('title', 'Stable Payload')
+        .field('description', 'Original description')
+        .field('videoformat', 'mp4')
+        .field('duration', '120')
+        .attach('video', videoPath);
+
+      expect(firstResponse.status).toBe(201);
+
+      const changedPayloadResponse = await request(testApp)
+        .post('/api/v1/videos/upload')
+        .set('Authorization', `Bearer ${authToken}`)
+        .set('Idempotency-Key', idemKey)
+        .field('title', 'Changed Payload')
+        .field('description', 'Original description')
+        .field('videoformat', 'mp4')
+        .field('duration', '120')
+        .attach('video', videoPath);
+
+      expect(changedPayloadResponse.status).toBe(409);
+      expect(changedPayloadResponse.body.success).toBe(false);
+      expect(changedPayloadResponse.body.message).toMatch(/different payload/i);
+    }, 30000);
   });
 
   describe('PATCH /api/v1/videos/:videoId', () => {
