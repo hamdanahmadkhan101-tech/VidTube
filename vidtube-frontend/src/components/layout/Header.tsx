@@ -155,6 +155,24 @@ export const Header: React.FC = () => {
     ? "right-0 border-l"
     : "left-0 border-r";
 
+  useEffect(() => {
+    if (showMobileMenu) {
+      document.body.setAttribute("data-drawer-open", "true");
+      document.body.setAttribute(
+        "data-drawer-side",
+        prefersRightSidebarMenu ? "right" : "left",
+      );
+    } else {
+      document.body.removeAttribute("data-drawer-open");
+      document.body.removeAttribute("data-drawer-side");
+    }
+
+    return () => {
+      document.body.removeAttribute("data-drawer-open");
+      document.body.removeAttribute("data-drawer-side");
+    };
+  }, [showMobileMenu, prefersRightSidebarMenu]);
+
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
@@ -571,8 +589,9 @@ export const Header: React.FC = () => {
               initial={{ x: drawerOffscreenX, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: drawerOffscreenX, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 320, damping: 28 }}
-              className={`fixed top-0 bottom-0 z-50 w-[min(88vw,22rem)] ${drawerPositionClass} border-white/10 bg-background-secondary/98 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.58)]`}
+              transition={{ type: "tween", duration: 0.22, ease: "easeOut" }}
+              style={{ willChange: "transform" }}
+              className={`fixed top-0 bottom-0 z-50 w-[min(90vw,22rem)] ${drawerPositionClass} border-white/12 bg-background-secondary shadow-[0_16px_44px_rgba(0,0,0,0.5)]`}
             >
               <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
                 <p className="text-sm font-semibold tracking-[0.18em] text-text-tertiary uppercase">
@@ -589,7 +608,7 @@ export const Header: React.FC = () => {
 
               <div className="px-4 py-4 space-y-2 max-h-[calc(100dvh-4.5rem)] overflow-y-auto">
                 {isAuthenticated && (
-                  <div className="section-card-soft p-3 mb-2">
+                  <div className="rounded-xl border border-white/10 bg-surface p-3 mb-2">
                     <div className="flex items-center gap-3">
                       <img
                         src={user?.avatarUrl || "/default-avatar.jpg"}
