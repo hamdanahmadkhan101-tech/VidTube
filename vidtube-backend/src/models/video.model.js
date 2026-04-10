@@ -62,6 +62,18 @@ videoSchema.index({ isPublished: 1, views: -1 });
 // Index for: Published videos sorted alphabetically by title
 videoSchema.index({ isPublished: 1, title: 1 });
 
+// Weighted text index for relevance-first search queries.
+videoSchema.index(
+  { title: 'text', description: 'text' },
+  {
+    weights: {
+      title: 10,
+      description: 4,
+    },
+    name: 'video_text_search',
+  }
+);
+
 videoSchema.plugin(mongooseAggregatePaginate);
 
 const Video = mongoose.model('Video', videoSchema);

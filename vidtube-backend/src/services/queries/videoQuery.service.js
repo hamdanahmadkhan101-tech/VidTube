@@ -176,6 +176,48 @@ export const buildVideoSearchPipeline = ({ escapedQuery }) => {
   ];
 };
 
+export const buildVideoTextSearchPipeline = ({ searchQuery }) => [
+  {
+    $match: {
+      isPublished: true,
+      $text: {
+        $search: searchQuery,
+      },
+    },
+  },
+  ...ownerLookupPipeline,
+  {
+    $addFields: {
+      textScore: {
+        $meta: 'textScore',
+      },
+    },
+  },
+  {
+    $addFields: {
+      relevanceScore: {
+        $add: [
+          {
+            $multiply: ['$textScore', 8],
+          },
+          {
+            $multiply: ['$views', 0.001],
+          },
+          {
+            $multiply: ['$likesCount', 0.01],
+          },
+        ],
+      },
+    },
+  },
+  {
+    $sort: {
+      relevanceScore: -1,
+      createdAt: -1,
+    },
+  },
+];
+
 export const buildOwnerVideosPipeline = ({ ownerId, includeUnpublished }) => {
   const matchStage = {
     owner: new mongoose.Types.ObjectId(ownerId),
@@ -195,5 +237,50 @@ export const buildOwnerVideosPipeline = ({ ownerId, includeUnpublished }) => {
       },
     },
     { $sort: { createdAt: -1 } },
+  ];
+};
+
+export const buildShortsFeedPipeline = ({ cursorDate, limit, category }) => {
+  const matchStage = {
+    isPublished: true,
+    privacy: 'public',
+    duration: { $lte: 90 },
+  };
+
+  if (cursorDate) {
+    matchStage.createdAt = { $lt: cursorDate };
+  }
+
+  if (category) {
+    matchStage.category = category;
+  }
+
+  return [
+    { $match: matchStage },
+    ...ownerLookupPipeline,
+    {
+      $project: {
+        title: 1,
+        description: 1,
+        url: 1,
+        thumbnailUrl: 1,
+        duration: 1,
+        views: 1,
+        likesCount: 1,
+        category: 1,
+        tags: 1,
+        createdAt: 1,
+        owner: 1,
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+        _id: -1,
+      },
+    },
+    {
+      $limit: limit + 1,
+    },
   ];
 };

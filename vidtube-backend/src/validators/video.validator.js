@@ -75,12 +75,27 @@ export const videoSuggestionsSchema = z.object({
     .optional(),
 });
 
+export const shortsFeedQuerySchema = z.object({
+  cursor: z.string().trim().datetime().optional(),
+  limit: z.coerce.number().int().min(1).max(20).optional(),
+  category: z.string().trim().max(50).optional(),
+});
+
 export const videoListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).optional(),
   sortBy: z.enum(['createdAt', 'views', 'title', 'trending']).optional(),
   sortType: z.enum(['asc', 'desc']).optional(),
 });
+
+const watchProgressSourceSchema = z.enum([
+  'watch-page',
+  'autoplay',
+  'search',
+  'channel',
+  'external',
+  'shorts-feed',
+]);
 
 export const videoWatchProgressSchema = z.object({
   progressSeconds: z.coerce
@@ -91,13 +106,32 @@ export const videoWatchProgressSchema = z.object({
     .min(0, 'progressSeconds must be greater than or equal to 0')
     .max(86400, 'progressSeconds cannot exceed 24 hours (86400 seconds)'),
   completed: z.boolean().optional(),
-  source: z
-    .enum(['watch-page', 'autoplay', 'search', 'channel', 'external'])
-    .optional(),
+  source: watchProgressSourceSchema.optional(),
 });
 
 export const videoWatchEventSchema = z.object({
-  source: z
-    .enum(['watch-page', 'autoplay', 'search', 'channel', 'external'])
-    .optional(),
+  source: watchProgressSourceSchema.optional(),
+});
+
+export const videoWatchProgressBatchSchema = z.object({
+  events: z
+    .array(
+      z.object({
+        videoId: z
+          .string()
+          .trim()
+          .regex(/^[a-fA-F0-9]{24}$/, 'Invalid videoId'),
+        progressSeconds: z.coerce
+          .number({
+            required_error: 'progressSeconds is required',
+            invalid_type_error: 'progressSeconds must be a number',
+          })
+          .min(0, 'progressSeconds must be greater than or equal to 0')
+          .max(86400, 'progressSeconds cannot exceed 24 hours (86400 seconds)'),
+        completed: z.boolean().optional(),
+        source: watchProgressSourceSchema.optional(),
+      })
+    )
+    .min(1, 'At least one progress event is required')
+    .max(20, 'A maximum of 20 progress events can be processed per batch'),
 });

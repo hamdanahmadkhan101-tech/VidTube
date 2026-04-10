@@ -13,6 +13,7 @@ import Subscription from '../models/subscription.model.js';
 import UserPreference from '../models/userPreference.model.js';
 import UserStatistic from '../models/userStatistic.model.js';
 import WatchHistoryEntry from '../models/watchHistoryEntry.model.js';
+import WatchLaterEntry from '../models/watchLaterEntry.model.js';
 
 // Services
 import {
@@ -27,6 +28,7 @@ import {
   buildCurrentUserProfilePipeline,
   buildChannelProfilePipeline,
   buildWatchHistoryPipeline,
+  buildWatchLaterPipeline,
 } from '../services/queries/userQuery.service.js';
 
 // ============================================
@@ -994,6 +996,50 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * Get user's watch later videos with pagination
+ * @route GET /api/v1/users/watch-later
+ * @access Private
+ */
+const getUserWatchLater = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  if (page < 1 || limit < 1 || limit > 50) {
+    throw new apiError(
+      400,
+      'Invalid pagination parameters. Page must be >= 1, limit must be 1-50'
+    );
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [watchLaterResult] = await WatchLaterEntry.aggregate(
+    buildWatchLaterPipeline({
+      userId: req.user._id,
+      skip,
+      limit,
+    })
+  );
+
+  const paginatedVideos = watchLaterResult?.videos || [];
+  const totalVideos = watchLaterResult?.totalCount?.[0]?.count || 0;
+  const totalPages = Math.ceil(totalVideos / limit);
+
+  res.status(200).json(
+    new apiResponse(200, 'Watch later videos retrieved successfully', {
+      videos: paginatedVideos,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalVideos,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    })
+  );
+});
+
 // ============================================
 // EXPORTS - Organized by Functionality
 // ============================================
@@ -1025,4 +1071,5 @@ export {
 
   // Content Controllers
   getUserWatchHistory,
+  getUserWatchLater,
 };

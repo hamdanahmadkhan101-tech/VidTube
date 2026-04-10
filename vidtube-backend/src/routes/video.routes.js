@@ -14,10 +14,13 @@ import {
   searchVideos,
   getSearchSuggestions,
   getVideosByOwner,
+  getShortsFeed,
+  toggleWatchLater,
 
   // Video Interactions
   addVideoToWatchHistory,
   updateWatchProgress,
+  batchUpdateWatchProgress,
 } from '../controllers/video.controller.js';
 import {
   uploadVideo as uploadVideoMiddleware,
@@ -41,8 +44,10 @@ import {
   videoUpdateSchema,
   videoSearchSchema,
   videoSuggestionsSchema,
+  shortsFeedQuerySchema,
   videoListQuerySchema,
   videoWatchProgressSchema,
+  videoWatchProgressBatchSchema,
   videoWatchEventSchema,
 } from '../validators/video.validator.js';
 import { buildObjectIdParamSchema } from '../validators/common.validator.js';
@@ -50,7 +55,12 @@ import { buildObjectIdParamSchema } from '../validators/common.validator.js';
 const router = Router();
 
 const invalidateVideoDiscoveryCache = invalidateCacheOnSuccess({
-  namespaces: ['videos:list', 'videos:search', 'videos:suggestions'],
+  namespaces: [
+    'videos:list',
+    'videos:search',
+    'videos:suggestions',
+    'videos:shorts',
+  ],
 });
 
 // ============================================
@@ -81,6 +91,15 @@ router
     validate(videoSuggestionsSchema, 'query'),
     cacheResponse({ namespace: 'videos:suggestions', ttlSeconds: 300 }),
     getSearchSuggestions
+  );
+router
+  .route('/shorts-feed')
+  .get(
+    searchLimiter,
+    optionalJWT,
+    validate(shortsFeedQuerySchema, 'query'),
+    cacheResponse({ namespace: 'videos:shorts', ttlSeconds: 20 }),
+    getShortsFeed
   );
 router
   .route('/user/:userId')
@@ -154,6 +173,15 @@ router
   );
 
 router
+  .route('/:videoId/watch-later/toggle')
+  .post(
+    verifyJWT,
+    watchHistoryLimiter,
+    validate(buildObjectIdParamSchema('videoId'), 'params'),
+    toggleWatchLater
+  );
+
+router
   .route('/:videoId/watch-progress')
   .patch(
     verifyJWT,
@@ -161,6 +189,15 @@ router
     validate(buildObjectIdParamSchema('videoId'), 'params'),
     validate(videoWatchProgressSchema),
     updateWatchProgress
+  );
+
+router
+  .route('/watch-progress/batch')
+  .post(
+    verifyJWT,
+    watchHistoryLimiter,
+    validate(videoWatchProgressBatchSchema),
+    batchUpdateWatchProgress
   );
 
 export default router;

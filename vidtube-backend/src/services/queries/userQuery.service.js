@@ -225,3 +225,97 @@ export const buildWatchHistoryPipeline = ({ userId, skip, limit }) => [
     },
   },
 ];
+
+export const buildWatchLaterPipeline = ({ userId, skip, limit }) => [
+  {
+    $match: {
+      user: new mongoose.Types.ObjectId(userId),
+    },
+  },
+  {
+    $sort: {
+      savedAt: -1,
+    },
+  },
+  {
+    $lookup: {
+      from: 'videos',
+      localField: 'video',
+      foreignField: '_id',
+      as: 'video',
+      pipeline: [
+        {
+          $match: {
+            isPublished: true,
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'owner',
+            foreignField: '_id',
+            as: 'owner',
+            pipeline: [
+              {
+                $project: {
+                  username: 1,
+                  fullName: 1,
+                  avatarUrl: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $addFields: {
+            owner: {
+              $first: '$owner',
+            },
+          },
+        },
+        {
+          $project: {
+            title: 1,
+            description: 1,
+            url: 1,
+            thumbnailUrl: 1,
+            duration: 1,
+            views: 1,
+            createdAt: 1,
+            owner: 1,
+          },
+        },
+      ],
+    },
+  },
+  {
+    $unwind: {
+      path: '$video',
+      preserveNullAndEmptyArrays: false,
+    },
+  },
+  {
+    $addFields: {
+      watchLaterState: {
+        savedAt: '$savedAt',
+        source: '$source',
+      },
+    },
+  },
+  {
+    $addFields: {
+      'video.watchLaterState': '$watchLaterState',
+    },
+  },
+  {
+    $replaceRoot: {
+      newRoot: '$video',
+    },
+  },
+  {
+    $facet: {
+      videos: [{ $skip: skip }, { $limit: limit }],
+      totalCount: [{ $count: 'count' }],
+    },
+  },
+];

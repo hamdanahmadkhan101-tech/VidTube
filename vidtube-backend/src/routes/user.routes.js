@@ -27,6 +27,7 @@ import {
 
   // Content Controllers
   getUserWatchHistory,
+  getUserWatchLater,
 } from '../controllers/user.controller.js';
 import { User } from '../models/user.model.js';
 import { uploadImage } from '../middlewares/multer.middleware.js';
@@ -218,5 +219,9 @@ router
     validate(paginationQuerySchema, 'query'),
     getUserWatchHistory
   );
+
+router
+  .route('/watch-later')
+  .get(verifyJWT, validate(paginationQuerySchema, 'query'), getUserWatchLater);
 
 export default router;

@@ -13,6 +13,7 @@ import Subscription from '../models/subscription.model.js';
 import { OtpCode } from '../models/otpCode.model.js';
 import IdempotencyKey from '../models/idempotencyKey.model.js';
 import WatchHistoryEntry from '../models/watchHistoryEntry.model.js';
+import WatchLaterEntry from '../models/watchLaterEntry.model.js';
 import UserPreference from '../models/userPreference.model.js';
 import UserStatistic from '../models/userStatistic.model.js';
 
@@ -28,6 +29,7 @@ const models = [
   OtpCode,
   IdempotencyKey,
   WatchHistoryEntry,
+  WatchLaterEntry,
   UserPreference,
   UserStatistic,
 ];

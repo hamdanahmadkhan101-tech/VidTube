@@ -25,6 +25,7 @@ import { User } from '../models/user.model.js';
 import Like from '../models/like.model.js';
 import Comment from '../models/comment.model.js';
 import WatchHistoryEntry from '../models/watchHistoryEntry.model.js';
+import WatchLaterEntry from '../models/watchLaterEntry.model.js';
 import UserStatistic from '../models/userStatistic.model.js';
 
 // Services
@@ -37,7 +38,9 @@ import {
   buildPublishedVideosPipeline,
   buildVideoDetailsPipeline,
   buildVideoSearchPipeline,
+  buildVideoTextSearchPipeline,
   buildOwnerVideosPipeline,
+  buildShortsFeedPipeline,
 } from '../services/queries/videoQuery.service.js';
 
 // ============================================
@@ -213,12 +216,20 @@ const getVideoById = asyncHandler(async (req, res) => {
   }
 
   let isLiked = false;
+  let isInWatchLater = false;
   if (currentUserId) {
-    const likeExists = await Like.exists({
-      video: new mongoose.Types.ObjectId(videoId),
-      likedBy: currentUserId,
-    });
+    const [likeExists, watchLaterExists] = await Promise.all([
+      Like.exists({
+        video: new mongoose.Types.ObjectId(videoId),
+        likedBy: currentUserId,
+      }),
+      WatchLaterEntry.exists({
+        user: currentUserId,
+        video: new mongoose.Types.ObjectId(videoId),
+      }),
+    ]);
     isLiked = Boolean(likeExists);
+    isInWatchLater = Boolean(watchLaterExists);
   }
 
   const detailedVideo = {
@@ -226,6 +237,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     likesCount: detailedVideoData?.likesCount || 0,
     commentsCount: detailedVideoData?.commentsCount || 0,
     isLiked,
+    isInWatchLater,
   };
 
   res
@@ -358,6 +370,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
   // Remove video from all users' watch history
   deletePromises.push(WatchHistoryEntry.deleteMany({ video: video._id }));
+  deletePromises.push(WatchLaterEntry.deleteMany({ video: video._id }));
 
   // Legacy cleanup for embedded watch history arrays (safe no-op if absent)
   deletePromises.push(
@@ -432,13 +445,45 @@ const searchVideos = asyncHandler(async (req, res) => {
   // Escape special regex characters for safe search
   const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  const pipeline = buildVideoSearchPipeline({ escapedQuery });
+  const executeSearch = async (pipelineBuilder) => {
+    const pipeline = pipelineBuilder();
+    const aggregate = Video.aggregate(pipeline);
+    return Video.aggregatePaginate(aggregate, {
+      page,
+      limit,
+    });
+  };
 
-  const aggregate = Video.aggregate(pipeline);
-  const result = await Video.aggregatePaginate(aggregate, {
-    page,
-    limit,
-  });
+  const isTextSearchIndexError = (error) => {
+    const message = `${error?.message || ''}`.toLowerCase();
+    return (
+      error?.code === 27 ||
+      message.includes('text index required') ||
+      message.includes('index for $text')
+    );
+  };
+
+  let result;
+
+  try {
+    result = await executeSearch(() =>
+      buildVideoTextSearchPipeline({ searchQuery })
+    );
+
+    if (!result?.docs?.length) {
+      result = await executeSearch(() =>
+        buildVideoSearchPipeline({ escapedQuery })
+      );
+    }
+  } catch (error) {
+    if (!isTextSearchIndexError(error)) {
+      throw error;
+    }
+
+    result = await executeSearch(() =>
+      buildVideoSearchPipeline({ escapedQuery })
+    );
+  }
 
   // Format videos and use standardized paginated response
   const formattedVideos = (result.docs || []).map(formatVideo);
@@ -536,6 +581,123 @@ const getVideosByOwner = asyncHandler(async (req, res) => {
   );
 
   res.status(200).json(response);
+});
+
+/**
+ * Get shorts feed with cursor pagination
+ * @route GET /api/v1/videos/shorts-feed
+ * @access Public
+ */
+const getShortsFeed = asyncHandler(async (req, res) => {
+  const { cursor, category } = req.query;
+  const limit = Math.min(Math.max(Number(req.query.limit) || 8, 1), 20);
+
+  let cursorDate = null;
+  if (cursor) {
+    cursorDate = new Date(cursor);
+    if (Number.isNaN(cursorDate.getTime())) {
+      throw new ValidationError('Invalid cursor format', [
+        { field: 'cursor', message: 'Cursor must be a valid ISO date string' },
+      ]);
+    }
+  }
+
+  const pipeline = buildShortsFeedPipeline({
+    cursorDate,
+    limit,
+    category: category?.trim() || undefined,
+  });
+
+  const feedVideos = await Video.aggregate(pipeline);
+  const hasMore = feedVideos.length > limit;
+  const slicedVideos = hasMore ? feedVideos.slice(0, limit) : feedVideos;
+  const formattedVideos = slicedVideos.map(formatVideo);
+
+  if (req.user?._id && formattedVideos.length) {
+    const videoIds = formattedVideos.map((video) => video._id);
+    const watchLaterEntries = await WatchLaterEntry.find({
+      user: req.user._id,
+      video: { $in: videoIds },
+    })
+      .select('video')
+      .lean();
+
+    const watchLaterVideoIds = new Set(
+      watchLaterEntries.map((entry) => entry.video.toString())
+    );
+
+    for (const video of formattedVideos) {
+      video.isInWatchLater = watchLaterVideoIds.has(video._id.toString());
+    }
+  }
+
+  const lastItem = formattedVideos[formattedVideos.length - 1] || null;
+
+  res.status(200).json(
+    new apiResponse(200, 'Shorts feed fetched successfully', {
+      videos: formattedVideos,
+      nextCursor: hasMore && lastItem?.createdAt ? lastItem.createdAt : null,
+      hasMore,
+    })
+  );
+});
+
+/**
+ * Toggle watch later status for a video
+ * @route POST /api/v1/videos/:videoId/watch-later/toggle
+ * @access Private
+ */
+const toggleWatchLater = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const { source = 'watch-page' } = req.body || {};
+
+  validateObjectId(videoId, 'videoId');
+
+  const video = await Video.findById(videoId).select('_id isPublished');
+  if (!video) {
+    throw new NotFoundError('Video', videoId);
+  }
+
+  if (!video.isPublished) {
+    throw new ForbiddenError('Cannot save unpublished video to watch later');
+  }
+
+  const existingEntry = await WatchLaterEntry.findOne({
+    user: req.user._id,
+    video: video._id,
+  }).select('_id');
+
+  if (existingEntry) {
+    await WatchLaterEntry.deleteOne({ _id: existingEntry._id });
+
+    return res.status(200).json(
+      new apiResponse(200, 'Removed from watch later', {
+        videoId,
+        isInWatchLater: false,
+        action: 'removed',
+      })
+    );
+  }
+
+  try {
+    await WatchLaterEntry.create({
+      user: req.user._id,
+      video: video._id,
+      source,
+    });
+  } catch (error) {
+    if (error?.code !== 11000) {
+      throw error;
+    }
+  }
+
+  res.status(200).json(
+    new apiResponse(200, 'Added to watch later', {
+      videoId,
+      isInWatchLater: true,
+      action: 'added',
+    })
+  );
 });
 
 // ============================================
@@ -715,6 +877,143 @@ const updateWatchProgress = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * Batch update watch progress for multiple videos
+ * @route POST /api/v1/videos/watch-progress/batch
+ * @access Private
+ */
+const batchUpdateWatchProgress = asyncHandler(async (req, res) => {
+  const { events } = req.body;
+
+  if (!Array.isArray(events) || events.length === 0) {
+    throw new ValidationError('At least one progress event is required', [
+      { field: 'events', message: 'At least one progress event is required' },
+    ]);
+  }
+
+  // Keep the latest event per video to minimize writes per scroll session.
+  const latestEventsByVideoId = new Map();
+  for (const event of events) {
+    latestEventsByVideoId.set(event.videoId, event);
+  }
+
+  const dedupedEvents = Array.from(latestEventsByVideoId.values());
+  const videoObjectIds = dedupedEvents.map(
+    (event) => new mongoose.Types.ObjectId(event.videoId)
+  );
+
+  const [videos, existingEntries] = await Promise.all([
+    Video.find({
+      _id: { $in: videoObjectIds },
+      isPublished: true,
+    })
+      .select('_id duration')
+      .lean(),
+    WatchHistoryEntry.find({
+      user: req.user._id,
+      video: { $in: videoObjectIds },
+    })
+      .select('video progressSeconds')
+      .lean(),
+  ]);
+
+  const videoById = new Map(
+    videos.map((video) => [video._id.toString(), video])
+  );
+  const previousProgressByVideoId = new Map(
+    existingEntries.map((entry) => [
+      entry.video.toString(),
+      entry.progressSeconds || 0,
+    ])
+  );
+
+  const now = new Date();
+  const bulkOperations = [];
+  let totalWatchTimeDelta = 0;
+  let processedEvents = 0;
+  let skippedEvents = 0;
+
+  for (const event of dedupedEvents) {
+    const video = videoById.get(event.videoId);
+    if (!video) {
+      skippedEvents += 1;
+      continue;
+    }
+
+    const safeProgress = Math.min(
+      Math.max(Number(event.progressSeconds) || 0, 0),
+      Math.max(video.duration || 0, 0)
+    );
+    const completionThreshold = Math.max(
+      30,
+      Math.floor((video.duration || 0) * 0.9)
+    );
+    const resolvedCompleted =
+      event.completed !== undefined
+        ? event.completed
+        : safeProgress >= completionThreshold;
+    const previousProgress = previousProgressByVideoId.get(event.videoId) || 0;
+    const watchTimeDelta = Math.max(0, safeProgress - previousProgress);
+
+    totalWatchTimeDelta += watchTimeDelta;
+    processedEvents += 1;
+
+    bulkOperations.push({
+      updateOne: {
+        filter: {
+          user: req.user._id,
+          video: video._id,
+        },
+        update: {
+          $set: {
+            progressSeconds: safeProgress,
+            completed: resolvedCompleted,
+            lastWatchedAt: now,
+            source: event.source || 'watch-page',
+          },
+          $setOnInsert: {
+            firstWatchedAt: now,
+            watchCount: 1,
+          },
+        },
+        upsert: true,
+      },
+    });
+  }
+
+  if (bulkOperations.length) {
+    await WatchHistoryEntry.bulkWrite(bulkOperations, { ordered: false });
+  }
+
+  if (totalWatchTimeDelta > 0) {
+    await UserStatistic.updateOne(
+      { user: req.user._id },
+      {
+        $set: {
+          lastActiveAt: now,
+        },
+        $setOnInsert: {
+          user: req.user._id,
+        },
+        $inc: {
+          totalWatchTimeSeconds: Math.round(totalWatchTimeDelta),
+        },
+      },
+      { upsert: true }
+    );
+  }
+
+  res.status(200).json(
+    new apiResponse(200, 'Watch progress batch updated successfully', {
+      totalEvents: events.length,
+      dedupedEvents: dedupedEvents.length,
+      processedEvents,
+      skippedEvents,
+      totalWatchTimeSecondsAdded: Math.round(totalWatchTimeDelta),
+    })
+  );
+});
+
 // ============================================
 // EXPORTS
 // ============================================
@@ -734,8 +1033,11 @@ export {
   searchVideos,
   getSearchSuggestions,
   getVideosByOwner,
+  getShortsFeed,
+  toggleWatchLater,
 
   // Video Interactions
   addVideoToWatchHistory,
   updateWatchProgress,
+  batchUpdateWatchProgress,
 };
