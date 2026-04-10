@@ -161,6 +161,34 @@ select {
     opacity 0.2s ease;
 }
 
+@media (max-width: 640px) {
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    transition-duration: 0.12s;
+  }
+
+  .glass-card,
+  .glass-card-hover,
+  .bento-item,
+  .glass-input {
+    backdrop-filter: none;
+  }
+
+  .backdrop-blur-none,
+  .backdrop-blur-sm,
+  .backdrop-blur,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-3xl {
+    backdrop-filter: none !important;
+  }
+}
+
 .app-shell {
   position: relative;
   isolation: isolate;
